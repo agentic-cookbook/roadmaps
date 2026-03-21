@@ -679,8 +679,9 @@ function renderTickets(container, items, type) {
 }
 
 function render(data) {
-  document.getElementById('title').textContent = data.title || data.feature || 'Progress';
-  document.title = 'Progress \u2014 ' + (data.title || data.feature || '');
+  var displayTitle = (data.title || data.feature || 'Progress') + ' Roadmap';
+  document.getElementById('title').textContent = displayTitle;
+  document.title = displayTitle;
 
   // Render environment info (once)
   if (data.environment) renderEnv(data.environment);
