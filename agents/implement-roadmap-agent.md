@@ -78,6 +78,47 @@ The `progress-dashboard` skill is preloaded — follow its instructions to start
 
 If any step fails (e.g., skill files not found, server won't start), log the error and continue without the dashboard — it is not required for implementation.
 
+### Dashboard Updates
+
+Throughout implementation, update the dashboard by overwriting `$DASH_DIR/progress.json`. Write the entire JSON file each time using the Write tool or bash:
+
+```bash
+cat > "$DASH_DIR/progress.json" << 'ENDJSON'
+{
+  "title": "<FeatureName>",
+  "status": "running",
+  "steps": [
+    {
+      "name": "<step description from Roadmap>",
+      "status": "<not_started|in_progress|complete|error>",
+      "detail": "<current activity or result summary, or null>",
+      "links": [
+        { "label": "PR #42", "url": "https://github.com/<owner>/<repo>/pull/42" }
+      ],
+      "updated_at": "<ISO 8601 timestamp or null>"
+    }
+  ],
+  "events": [
+    { "time": "<ISO 8601 timestamp>", "message": "<what happened>" }
+  ],
+  "updated_at": "<ISO 8601 timestamp>"
+}
+ENDJSON
+```
+
+**When to update:**
+
+| Moment | What to change |
+|--------|----------------|
+| Step starts | Set step status to `in_progress`, add event "Step N started: \<name\>" |
+| PR created | Set step detail to "PR #N created", add PR link to step's `links`, add event |
+| Reviews complete | Set step detail to "Reviews passed", add event |
+| PR merged | Set step status to `complete`, add event "Step N complete" |
+| Error occurs | Set step status to `error`, set detail to error message, set root `status` to `error` |
+| All steps done | Set root `status` to `complete` |
+
+**Always** include all steps in the array (not just the current one) so the dashboard shows the full picture. The `events` array is append-only — add new entries, never remove old ones.
+
 ### 5. Read Feature Definition
 
 Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to understand:
