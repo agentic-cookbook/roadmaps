@@ -33,12 +33,29 @@
     padding: 1.25rem 1.5rem 0 1.5rem;
   }
   header {
+    margin-bottom: 0.75rem;
+  }
+  .header-row {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 0.75rem;
   }
   h1 { font-size: 1.5rem; font-weight: 600; }
+  .env-info {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .env-info a { color: var(--accent); text-decoration: none; }
+  .env-info a:hover { text-decoration: underline; }
+  .env-label {
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin-right: 0.2rem;
+  }
   .badge {
     display: inline-block;
     padding: 0.2rem 0.6rem;
@@ -69,8 +86,6 @@
   .progress-eta {
     font-size: 0.75rem;
     color: var(--text-muted);
-    text-align: center;
-    margin-top: 0.35rem;
   }
   .progress-eta .eta-value {
     color: var(--text);
@@ -89,10 +104,16 @@
     transition: width 0.5s ease;
   }
 
+  .progress-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.35rem;
+  }
   .controls {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
+    align-items: center;
   }
   .controls button {
     padding: 0.3rem 0.75rem;
@@ -138,12 +159,15 @@
     flex-shrink: 0;
     /* width set dynamically by JS based on longest step name */
   }
-  .pane-events {
+  .pane-right {
     flex: 1;
     min-width: 0;
     border-left: 1px solid var(--border);
     padding-left: 1.25rem;
     margin-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .pane-header {
@@ -215,6 +239,67 @@
     margin-top: 0.15rem;
   }
 
+  /* --- Issues & PRs panels --- */
+  .right-panels {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .right-panel {
+  }
+  .right-panel-header {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.35rem;
+  }
+  .right-panel-empty {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+    font-style: italic;
+    padding: 0.2rem 0;
+  }
+  .ticket {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0;
+    font-size: 0.75rem;
+  }
+  .ticket-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ticket-dot-open { background: var(--green); }
+  .ticket-dot-in_progress { background: var(--yellow); }
+  .ticket-dot-closed { background: var(--text-muted); }
+  .ticket-dot-merged { background: var(--accent); }
+  .ticket a { color: var(--text); text-decoration: none; }
+  .ticket a:hover { color: var(--accent); text-decoration: underline; }
+  .ticket-status {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* --- Events section (fills remaining space) --- */
+  .events-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
   /* --- Events --- */
   .event {
     font-size: 0.75rem;
@@ -261,8 +346,11 @@
 <body>
   <div class="top-bar">
     <header>
-      <h1 id="title">Loading...</h1>
-      <span id="status-badge" class="badge badge-waiting">waiting</span>
+      <div class="header-row">
+        <h1 id="title">Loading...</h1>
+        <span id="status-badge" class="badge badge-waiting">waiting</span>
+      </div>
+      <div id="env-info" class="env-info"></div>
     </header>
 
     <div class="progress-bar-container">
@@ -273,14 +361,15 @@
       <div class="progress-bar-track">
         <div id="progress-fill" class="progress-bar-fill" style="width: 0%"></div>
       </div>
-      <div id="progress-eta" class="progress-eta"></div>
-    </div>
-
-    <div id="controls" class="controls">
-      <button id="btn-pause" class="btn-pause" onclick="sendControl('pause')">Pause</button>
-      <button id="btn-resume" class="btn-resume" onclick="sendControl('resume')" style="display:none">Resume</button>
-      <button id="btn-stop" class="btn-stop" onclick="sendControl('stop')">Stop</button>
-      <span id="control-status" class="control-status"></span>
+      <div class="progress-bottom">
+        <div id="progress-eta" class="progress-eta"></div>
+        <div id="controls" class="controls">
+          <span id="control-status" class="control-status"></span>
+          <button id="btn-pause" class="btn-pause" onclick="sendControl('pause')">Pause</button>
+          <button id="btn-resume" class="btn-resume" onclick="sendControl('resume')" style="display:none">Resume</button>
+          <button id="btn-stop" class="btn-stop" onclick="sendControl('stop')">Stop</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -291,10 +380,22 @@
         <ul id="steps" class="steps"></ul>
       </div>
     </div>
-    <div class="pane pane-events">
-      <div class="pane-header">Event Log</div>
-      <div class="pane-scroll" id="events-scroll">
-        <div id="events"></div>
+    <div class="pane pane-right">
+      <div id="right-panels" class="right-panels" style="display:none">
+        <div class="right-panel">
+          <div class="right-panel-header">Issues</div>
+          <div id="issues"></div>
+        </div>
+        <div class="right-panel">
+          <div class="right-panel-header">Pull Requests</div>
+          <div id="prs"></div>
+        </div>
+      </div>
+      <div class="events-section">
+        <div class="pane-header">Event Log</div>
+        <div class="pane-scroll" id="events-scroll">
+          <div id="events"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -463,9 +564,84 @@ function calcEta(steps) {
   };
 }
 
+var envRendered = false;
+
+function renderEnv(env) {
+  if (!env || envRendered) return;
+  envRendered = true;
+
+  var container = document.getElementById('env-info');
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  function addItem(label, text, url) {
+    if (!text) return;
+    var span = document.createElement('span');
+    var labelEl = document.createElement('span');
+    labelEl.className = 'env-label';
+    labelEl.textContent = label;
+    span.appendChild(labelEl);
+    if (url) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.textContent = text;
+      a.target = '_blank';
+      span.appendChild(a);
+    } else {
+      span.appendChild(document.createTextNode(text));
+    }
+    container.appendChild(span);
+  }
+
+  addItem('machine ', env.machine);
+  addItem('repo ', env.repo, env.repo_url);
+  if (env.worktree) {
+    addItem('worktree ', env.worktree);
+  }
+  if (env.branch) {
+    var branchUrl = env.repo_url ? env.repo_url + '/tree/' + env.branch : null;
+    addItem('branch ', env.branch, branchUrl);
+  }
+}
+
+function renderTickets(container, items, type) {
+  while (container.firstChild) container.removeChild(container.firstChild);
+  if (items.length === 0) {
+    var empty = document.createElement('div');
+    empty.className = 'right-panel-empty';
+    empty.textContent = 'Nothing yet, stay tuned...';
+    container.appendChild(empty);
+    return;
+  }
+  items.forEach(function(item) {
+    var row = document.createElement('div');
+    row.className = 'ticket';
+
+    var dot = document.createElement('span');
+    dot.className = 'ticket-dot ticket-dot-' + (item.status || 'open');
+    row.appendChild(dot);
+
+    var prefix = type === 'pr' ? 'PR' : '';
+    var link = document.createElement('a');
+    link.href = item.url || '#';
+    link.target = '_blank';
+    link.textContent = (prefix ? prefix + ' ' : '') + '#' + item.number + ' ' + (item.title || '');
+    row.appendChild(link);
+
+    var status = document.createElement('span');
+    status.className = 'ticket-status';
+    status.textContent = item.status || 'open';
+    row.appendChild(status);
+
+    container.appendChild(row);
+  });
+}
+
 function render(data) {
   document.getElementById('title').textContent = data.title || data.feature || 'Progress';
   document.title = 'Progress \u2014 ' + (data.title || data.feature || '');
+
+  // Render environment info (once)
+  if (data.environment) renderEnv(data.environment);
 
   var badge = document.getElementById('status-badge');
   badge.textContent = data.status || 'running';
@@ -540,6 +716,13 @@ function render(data) {
       activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }
+
+  // Render issues & PRs
+  var issues = data.issues || [];
+  var prs = data.prs || [];
+  document.getElementById('right-panels').style.display = '';
+  renderTickets(document.getElementById('issues'), issues, 'issue');
+  renderTickets(document.getElementById('prs'), prs, 'pr');
 
   // Render events
   var events = data.events || [];

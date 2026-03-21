@@ -31,6 +31,7 @@ $TMPDIR/progress-dashboard-active (or /tmp/progress-dashboard-active).
 
 import json
 import os
+import platform
 import shutil
 import signal
 import socket
@@ -119,6 +120,63 @@ def find_free_port():
         return s.getsockname()[1]
 
 
+def detect_environment():
+    """Auto-detect machine, repo, and worktree info."""
+    env = {}
+
+    # Machine name
+    env["machine"] = platform.node() or os.environ.get("HOSTNAME", "unknown")
+
+    # Git repo
+    try:
+        remote = subprocess.check_output(
+            ["git", "remote", "get-url", "origin"],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+        # Extract org/repo from URL
+        # Handles: git@github.com:org/repo.git, https://github.com/org/repo.git
+        if ":" in remote and "@" in remote:
+            repo = remote.split(":")[-1]
+        else:
+            repo = "/".join(remote.rstrip("/").split("/")[-2:])
+        env["repo"] = repo.removesuffix(".git")
+        env["repo_url"] = remote.removesuffix(".git")
+        if env["repo_url"].startswith("git@"):
+            # Convert git@github.com:org/repo to https://github.com/org/repo
+            env["repo_url"] = "https://" + env["repo_url"][4:].replace(":", "/", 1)
+    except (subprocess.CalledProcessError, OSError):
+        env["repo"] = os.path.basename(os.getcwd())
+        env["repo_url"] = None
+
+    # Branch
+    try:
+        env["branch"] = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except (subprocess.CalledProcessError, OSError):
+        env["branch"] = None
+
+    # Worktree — detect if we're in one
+    try:
+        git_dir = subprocess.check_output(
+            ["git", "rev-parse", "--git-dir"],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+        toplevel = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+        if "/worktrees/" in git_dir:
+            env["worktree"] = os.path.basename(toplevel)
+        else:
+            env["worktree"] = None
+    except (subprocess.CalledProcessError, OSError):
+        env["worktree"] = None
+
+    return env
+
+
 def cmd_init(args):
     if len(args) < 2:
         print("Usage: dash init <title> <step1> [step2 ...]", file=sys.stderr)
@@ -150,10 +208,16 @@ def cmd_init(args):
     shutil.copy2(refs / "dashboard.html", dash_dir / "index.html")
     shutil.copy2(refs / "server.py", dash_dir / "server.py")
 
+    # Auto-detect environment
+    env = detect_environment()
+
     # Write initial progress.json
     data = {
         "title": title,
         "status": "running",
+        "environment": env,
+        "issues": [],
+        "prs": [],
         "steps": [
             {
                 "name": name,
@@ -380,6 +444,107 @@ def cmd_dir(args):
     print(state["dash_dir"])
 
 
+def cmd_add_issue(args):
+    if len(args) < 3:
+        print("Usage: dash add-issue <number> <title> <url>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    number = int(args[0])
+    title = args[1]
+    url = args[2]
+    if "issues" not in data:
+        data["issues"] = []
+    # Update if exists, otherwise add
+    for issue in data["issues"]:
+        if issue["number"] == number:
+            issue["title"] = title
+            issue["url"] = url
+            write_progress(dash_dir, data)
+            return
+    data["issues"].append({
+        "number": number,
+        "title": title,
+        "url": url,
+        "status": "open",
+    })
+    write_progress(dash_dir, data)
+
+
+def cmd_update_issue(args):
+    if len(args) < 2:
+        print("Usage: dash update-issue <number> <open|in_progress|closed>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    number = int(args[0])
+    status = args[1]
+    for issue in data.get("issues", []):
+        if issue["number"] == number:
+            issue["status"] = status
+            write_progress(dash_dir, data)
+            return
+    print(f"WARNING: Issue #{number} not found", file=sys.stderr)
+
+
+def cmd_add_pr(args):
+    if len(args) < 3:
+        print("Usage: dash add-pr <number> <title> <url>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    number = int(args[0])
+    title = args[1]
+    url = args[2]
+    if "prs" not in data:
+        data["prs"] = []
+    # Update if exists, otherwise add
+    for pr in data["prs"]:
+        if pr["number"] == number:
+            pr["title"] = title
+            pr["url"] = url
+            write_progress(dash_dir, data)
+            return
+    data["prs"].append({
+        "number": number,
+        "title": title,
+        "url": url,
+        "status": "open",
+    })
+    add_event(data, f"PR #{number} opened: {title}")
+    write_progress(dash_dir, data)
+
+
+def cmd_update_pr(args):
+    if len(args) < 2:
+        print("Usage: dash update-pr <number> <open|merged|closed>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    number = int(args[0])
+    status = args[1]
+    for pr in data.get("prs", []):
+        if pr["number"] == number:
+            pr["status"] = status
+            if status == "merged":
+                add_event(data, f"PR #{number} merged: {pr['title']}")
+            write_progress(dash_dir, data)
+            return
+    print(f"WARNING: PR #{number} not found", file=sys.stderr)
+
+
 COMMANDS = {
     "init": cmd_init,
     "step-start": cmd_step_start,
@@ -388,6 +553,10 @@ COMMANDS = {
     "step-complete": cmd_step_complete,
     "step-error": cmd_step_error,
     "event": cmd_event,
+    "add-issue": cmd_add_issue,
+    "update-issue": cmd_update_issue,
+    "add-pr": cmd_add_pr,
+    "update-pr": cmd_update_pr,
     "check-control": cmd_check_control,
     "complete": cmd_complete,
     "error": cmd_error,
