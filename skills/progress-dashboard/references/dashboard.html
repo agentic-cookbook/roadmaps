@@ -856,7 +856,7 @@ function render(data) {
   if (activeIndex >= 0) {
     var activeEl = document.getElementById('step-' + activeIndex);
     if (activeEl) {
-      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
