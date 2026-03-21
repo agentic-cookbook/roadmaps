@@ -1,16 +1,16 @@
 ---
-name: implement-feature
-description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-feature has created a Roadmap."
+name: implement-roadmap
+description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
 
-# Implement Feature
+# Implement Roadmap
 
-Implementation workflow for features that have been planned with `/plan-feature`. Picks up a Roadmap from `Active-Roadmaps/` and works through each step with proper isolation, testing, and review.
+Implementation workflow for features that have been planned with `/plan-roadmap`. Picks up a Roadmap from `Active-Roadmaps/` and works through each step with proper isolation, testing, and review.
 
 ## CRITICAL RULES
 
-1. **NEVER implement a feature without a Roadmap.** If no Roadmap exists, tell the user to run `/plan-feature` first.
+1. **NEVER implement a feature without a Roadmap.** If no Roadmap exists, tell the user to run `/plan-roadmap` first.
 2. **NEVER combine steps.** Each Roadmap step gets its own worktree, its own PR, its own review cycle, and its own merge. No exceptions.
 3. **NEVER skip reviews.** Every PR gets at minimum a code review and security review before merge.
 4. **NEVER implement a feature that is already being implemented.** If the Roadmap's `Implementing` field is `Yes`, another session is working on it — refuse and tell the user.
@@ -38,14 +38,14 @@ Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadma
 Categorize each roadmap:
 
 - **Available**: `Implementing` is `No` AND `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
-- **Not Ready (Still Planning)**: `Phase` is `Planning` — this feature is still being defined by `/plan-feature` and is not available for implementation
+- **Not Ready (Still Planning)**: `Phase` is `Planning` — this feature is still being defined by `/plan-roadmap` and is not available for implementation
 - **Locked**: `Implementing` is `Yes` (another session is working on it)
 - **Complete**: `Status` is `Complete` (nothing left to do)
 
 If no features are available:
-- If there are "Not Ready" features, list them and explain: "The following features are still in the planning phase and not yet available for implementation. Run `/plan-feature` to complete their planning."
+- If there are "Not Ready" features, list them and explain: "The following features are still in the planning phase and not yet available for implementation. Run `/plan-roadmap` to complete their planning."
 - If there are locked features, tell the user which features are currently being implemented and suggest waiting or checking on the other session
-- If there are no roadmaps at all, tell the user to run `/plan-feature` first
+- If there are no roadmaps at all, tell the user to run `/plan-roadmap` first
 - **STOP** — do not proceed
 
 ### Step 3: Present Choices
@@ -59,7 +59,7 @@ Available features to implement:
 2. FeatureB — 3/7 steps complete (In Progress)
 
 Still in planning phase (not yet available):
-- FeatureD — planning in progress, run /plan-feature to complete
+- FeatureD — planning in progress, run /plan-roadmap to complete
 
 Currently locked (being implemented by another session):
 - FeatureC — 2/4 steps complete
@@ -342,15 +342,15 @@ The `**Implementing**:` field in the Roadmap serves as a concurrency lock:
 ### Lock Rules
 
 - **Acquire** at startup (Step 4) after user selects a feature
-- **Release** at completion (Step 6) or if the user aborts (`/implement-feature abort`)
+- **Release** at completion (Step 6) or if the user aborts (`/implement-roadmap abort`)
 - **Never break** another session's lock without explicit user confirmation
-- If a lock appears stale (e.g., user says the other session crashed), the user can manually edit the Roadmap to set `Implementing` to `No`, then re-run `/implement-feature`
+- If a lock appears stale (e.g., user says the other session crashed), the user can manually edit the Roadmap to set `Implementing` to `No`, then re-run `/implement-roadmap`
 
 ### Abnormal Termination
 
 If the session ends without reaching Completion (crash, user closes terminal, etc.):
 - The lock remains in the Roadmap (`Implementing: Yes`)
-- The next session that runs `/implement-feature` will see the feature as locked
+- The next session that runs `/implement-roadmap` will see the feature as locked
 - The user can manually release the lock by editing the Roadmap file
 - Partially completed steps should be visible from the Roadmap's step statuses
 
@@ -360,7 +360,7 @@ If the session ends without reaching Completion (crash, user closes terminal, et
 
 - **Batching steps into one PR** — even if steps seem small or related
 - **Skipping reviews** — every PR gets reviewed, every finding gets addressed
-- **Implementing without a Roadmap** — always run `/plan-feature` first
+- **Implementing without a Roadmap** — always run `/plan-roadmap` first
 - **Ignoring the lock** — if `Implementing` is `Yes`, do not proceed
 - **Proceeding past a CHECKPOINT GATE without user acknowledgment**
 - **Forgetting to release the lock** — always update `Implementing` to `No` on completion

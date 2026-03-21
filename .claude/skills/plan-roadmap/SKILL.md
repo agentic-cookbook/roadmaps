@@ -1,10 +1,10 @@
 ---
-name: plan-feature
+name: plan-roadmap
 description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
 
-# Plan Feature
+# Plan Roadmap
 
 Two-phase collaborative planning workflow for new features.
 
@@ -17,7 +17,7 @@ Produces exactly **three deliverables** (all in Phase 2):
 2. A **Feature Roadmap** file (written to disk, committed)
 3. **GitHub issues** (one per roadmap step, confirmed via `gh issue view`)
 
-When planning is complete, tell the user to run `/implement-feature` to begin implementation.
+When planning is complete, tell the user to run `/implement-roadmap` to begin implementation.
 
 ---
 
@@ -269,9 +269,9 @@ For each step, fill in:
 - Acceptance criteria
 - Testing/verification approach
 
-**Set the `Implementing` field to `No`.** This field is managed exclusively by `/implement-feature`.
+**Set the `Implementing` field to `No`.** This field is managed exclusively by `/implement-roadmap`.
 
-**Set the `Phase` field to `Planning`.** This field will be updated to `Ready` only after all planning artifacts (including GitHub issues) are complete. While `Phase` is `Planning`, `/implement-feature` will refuse to pick up this feature.
+**Set the `Phase` field to `Planning`.** This field will be updated to `Ready` only after all planning artifacts (including GitHub issues) are complete. While `Phase` is `Planning`, `/implement-roadmap` will refuse to pick up this feature.
 
 ### 6c: Present the complete draft to the user
 
@@ -402,7 +402,7 @@ Read the Roadmap file back. Confirm that every step has a real issue number (not
 
 ### 7e: Update Phase to Ready
 
-All planning artifacts are now complete. Update the Roadmap's `Phase` field from `Planning` to `Ready`. This signals to `/implement-feature` that this feature is available for implementation.
+All planning artifacts are now complete. Update the Roadmap's `Phase` field from `Planning` to `Ready`. This signals to `/implement-roadmap` that this feature is available for implementation.
 
 ### 7f: Commit the updated Roadmap
 
@@ -493,7 +493,7 @@ GitHub Issues:
 
 All artifacts verified. All commits saved.
 
-To begin implementation, run: /implement-feature
+To begin implementation, run: /implement-roadmap
 ```
 
 

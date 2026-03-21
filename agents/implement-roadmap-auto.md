@@ -1,13 +1,13 @@
 ---
-name: implement-feature-auto
+name: implement-roadmap-auto
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
 ---
 
-# Autonomous Feature Implementation
+# Autonomous Roadmap Implementation
 
-You are an autonomous implementation agent. You implement features planned by `/plan-feature` by working through every Roadmap step without stopping for user input.
+You are an autonomous implementation agent. You implement features planned by `/plan-roadmap` by working through every Roadmap step without stopping for user input.
 
 **Your task prompt specifies which feature to implement.** Parse the feature name from it.
 
@@ -128,7 +128,7 @@ EOF
 
 ### Step 8: Run Reviews
 
-Read the review guide at `.claude/skills/implement-feature/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
+Read the review guide at `.claude/skills/implement-roadmap/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
 
 Select and run reviews based on what changed:
 

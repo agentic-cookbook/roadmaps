@@ -6,7 +6,7 @@ Skills live in `skills/`, agents in `agents/`. Run `./install.sh` to install eve
 
 ## Skills
 
-### /plan-feature
+### /plan-roadmap
 
 Collaborative planning skill for new features. Guides you through discussing an idea, then produces structured planning artifacts — no implementation code.
 
@@ -20,7 +20,7 @@ The transition from Discussion to Planning requires your explicit permission.
 **Usage:**
 
 ```
-/plan-feature
+/plan-roadmap
 ```
 
 The skill walks you through everything interactively.
@@ -43,7 +43,7 @@ Planning Phase
   → GitHub issues created and verified
   → Roadmap Phase set to "Ready"
 
-Done → run /implement-feature to build it
+Done → run /implement-roadmap to build it
 ```
 
 **Key rules:**
@@ -68,9 +68,9 @@ Done → run /implement-feature to build it
 
 ---
 
-### /implement-feature
+### /implement-roadmap
 
-Implementation skill for features planned with `/plan-feature`. Works through each Roadmap step with proper isolation, testing, and review.
+Implementation skill for features planned with `/plan-roadmap`. Works through each Roadmap step with proper isolation, testing, and review.
 
 **What it does:** Picks up a Feature Roadmap from `Active-Roadmaps/` and implements it step by step:
 
@@ -82,10 +82,10 @@ Implementation skill for features planned with `/plan-feature`. Works through ea
 **Usage:**
 
 ```
-/implement-feature
+/implement-roadmap
 ```
 
-Requires a Roadmap created by `/plan-feature` with `Phase: Ready`.
+Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 **Workflow:**
 
@@ -139,13 +139,13 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 ## Agents
 
-### implement-feature-auto
+### implement-roadmap-auto
 
-Autonomous version of `/implement-feature`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
+Autonomous version of `/implement-roadmap`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
 
 **How it differs from the skill:**
 
-| | /implement-feature (skill) | implement-feature-auto (agent) |
+| | /implement-roadmap (skill) | implement-roadmap-auto (agent) |
 |---|---|---|
 | **Interaction** | Interactive — pauses at checkpoints for your acknowledgment | Autonomous — logs summaries and continues |
 | **Feature selection** | You choose from a menu | Feature name passed in the task prompt |
@@ -158,16 +158,16 @@ Autonomous version of `/implement-feature`. Runs the same implementation workflo
 Tell Claude to use the agent:
 
 ```
-Use the implement-feature-auto agent to implement FeatureX
+Use the implement-roadmap-auto agent to implement FeatureX
 ```
 
 Or invoke directly:
 
 ```bash
-claude --agent implement-feature-auto "Implement FeatureX"
+claude --agent implement-roadmap-auto "Implement FeatureX"
 ```
 
-Requires a Roadmap created by `/plan-feature` with `Phase: Ready`.
+Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 **Key rules:**
 
