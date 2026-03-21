@@ -50,12 +50,12 @@ def slugify(name):
 
 def dash_dir_for(title):
     """Deterministic dashboard directory based on feature name."""
-    tmpdir = Path(os.environ.get("TMPDIR", "/tmp"))
+    tmpdir = Path(os.environ.get("TMPDIR", "/tmp")).resolve()
     return tmpdir / f"progress-dashboard-{slugify(title)}"
 
 
 def state_file():
-    return Path(os.environ.get("TMPDIR", "/tmp")) / "progress-dashboard-active"
+    return Path(os.environ.get("TMPDIR", "/tmp")).resolve() / "progress-dashboard-active"
 
 
 def save_state(dash_dir, pid, port):
@@ -236,7 +236,8 @@ def cmd_init(args):
         data = read_progress(dash_dir)
         data["status"] = "running"
         data["title"] = title
-        add_event(data, "Dashboard restarted (reusing existing state)")
+        data.pop("control_state", None)
+        data["events"] = [{"time": now_iso(), "message": "Dashboard restarted"}]
         write_progress(dash_dir, data)
         print(f"Reusing existing dashboard for {title}", file=sys.stderr)
     else:

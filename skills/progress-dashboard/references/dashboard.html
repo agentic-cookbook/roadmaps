@@ -526,7 +526,7 @@
 
   <div id="poll-status" class="footer">
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v14</span>
+    <span class="footer-version">v15</span>
   </div>
 
   <div id="completion-overlay" class="completion-overlay">
@@ -938,10 +938,11 @@ function render(data) {
         document.getElementById('pause-overlay').classList.add('visible');
       }
       document.getElementById('btn-resume').disabled = false;
-    } else if (data.control_state === 'resume' || !data.control_state) {
-      if (currentControl !== 'pause') {
-        document.getElementById('pause-overlay').classList.remove('visible');
-      }
+    } else {
+      // No active control — clear all overlays
+      document.getElementById('stop-overlay').classList.remove('visible');
+      document.getElementById('completion-overlay').classList.remove('visible');
+      document.getElementById('pause-overlay').classList.remove('visible');
     }
   }
 }

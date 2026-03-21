@@ -263,6 +263,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v10 | 2026-03-21 | Fix overlay + port: clear `control_state` and events on restart; resolve macOS `/var` vs `/private/var` symlink; clear all overlays when no active control |
 | v9 | 2026-03-21 | Fix port stability: wait for old server to die before reusing port; remove bind test |
 | v8 | 2026-03-21 | Stop polling on complete/error, but keep heartbeat that triggers full page reload on restart |
 | v7 | 2026-03-21 | Fix: poll forever with simple setInterval — previous arguments.callee approach was broken |
