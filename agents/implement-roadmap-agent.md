@@ -58,15 +58,16 @@ If the task prompt does not specify a feature, or if no matching roadmap exists,
 Read the roadmap file and check:
 
 - `**Phase**:` must be `Ready` (or absent for backward compatibility)
-- `**Implementing**:` must be `No`
 - `**Status**:` must not be `Complete`
 
-If any check fails, report why (and update dashboard with error + shutdown if running) and **STOP**.
+If either check fails, report why (and update dashboard with error + shutdown if running) and **STOP**.
 
 ### 4. Acquire Lock
 
-1. Set `**Implementing**:` to `Yes` in the roadmap
-2. Commit and push: `chore: acquire implementation lock for <FeatureName>`
+Check `**Implementing**:` in the roadmap:
+
+- If `No`: Set it to `Yes`, commit and push: `chore: acquire implementation lock for <FeatureName>`
+- If `Yes`: The lock is stale from a previous crashed session. **Force-unlock and re-acquire**: the user explicitly asked this agent to run, so proceed. Log a warning event and commit: `chore: force-acquire implementation lock for <FeatureName> (stale lock)`
 
 **Dashboard**: `python3 "$DASH_CLI" event "Implementation lock acquired"`
 

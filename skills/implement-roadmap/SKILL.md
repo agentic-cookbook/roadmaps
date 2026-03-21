@@ -84,8 +84,24 @@ Wait for the user to choose.
 Once the user selects a feature:
 
 1. **Re-read the roadmap file** to check `Implementing` is still `No` (race condition guard)
-2. If it's now `Yes`, tell the user another session grabbed it and return to Step 2
-3. If still `No`, update the roadmap:
+2. If it's `Yes`, the feature is locked by another session. Ask the user:
+
+```
+Feature <FeatureName> is currently locked (Implementing: Yes).
+This usually means another session is working on it, or a previous session crashed without releasing the lock.
+
+  [u] Unlock and continue — release the stale lock and start implementing
+  [q] Quit — leave the lock in place and exit
+
+(u/q)
+```
+
+**Wait for the user to respond.**
+
+- If `u`: continue to step 3 below (set `Implementing: Yes` is already set, just proceed)
+- If `q`: **STOP**
+
+3. If `Implementing` is `No` (or user chose to unlock), update the roadmap:
    - Set `**Implementing**:` to `Yes`
    - Commit and push this change: `chore: acquire implementation lock for <FeatureName>`
 
