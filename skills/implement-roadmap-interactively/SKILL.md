@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "1.2.0"
+version: "1.3.0"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v1.2.0
+> implement-roadmap-interactively v1.3.0
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -25,6 +25,42 @@ Implementation workflow for features that have been planned with `/plan-roadmap`
 2. **NEVER combine steps.** Each Roadmap step gets its own worktree, its own PR, its own review cycle, and its own merge. No exceptions.
 3. **NEVER skip reviews.** Every PR gets at minimum a code review and security review before merge.
 4. **At every step completion, print a checkpoint summary** to the user showing what was completed and what comes next. Do not proceed without user acknowledgment.
+5. **CHECK CONTROL FREQUENTLY.** Run the control check at every sub-step boundary — not just between major steps. See Control Check Protocol below.
+
+---
+
+## CONTROL CHECK PROTOCOL
+
+**When the dashboard is running**, run a control check before every significant operation. This makes stop/pause responsive — the user should never have to wait more than one sub-step for the agent to react.
+
+**How to check:**
+
+```bash
+python3 "$DASH_CLI" check-control
+```
+
+**How to respond:**
+
+- `none` or `resume` — continue normally.
+- `pause` — tell the user the dashboard pause button was pressed and wait for them to say to continue (or re-run `check-control` until it returns `resume` or `stop`).
+- `stop` — immediately stop. Run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
+
+**When to check** — run a control check before ALL of the following:
+
+- Before starting a new roadmap step (before `begin-step`)
+- Before planning the step
+- Before creating the worktree
+- Before starting implementation
+- Before running the build
+- Before running tests
+- Before creating the PR
+- Before starting reviews
+- Before addressing review findings
+- Before merging the PR
+- Before updating the roadmap
+- Before closing the GitHub issue
+
+This means **12 control checks per step**, not just 1.
 
 ---
 
@@ -112,35 +148,27 @@ If init fails, skip the dashboard and continue without it — it is not required
 
 ## IMPLEMENTATION LOOP
 
-Loop for each step in the Roadmap.
-
-**Before each step**, if the dashboard is running, check for user controls:
-
-```bash
-python3 "$DASH_CLI" check-control
-```
-
-- If output is `pause` — tell the user the dashboard pause button was pressed and wait for them to say to continue (or re-run `check-control` until it returns `resume` or `stop`).
-- If output is `stop` — finish the current atomic operation, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
-- If output is `none` or `resume` — continue normally.
+Loop for each step in the Roadmap. **Run a control check before every sub-step** (see Control Check Protocol).
 
 ### Step 1: Pick Next Step
 
-Read the Roadmap file. Find the **lowest-numbered** step with status "Not Started". **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.** If all steps are complete, proceed to the Completion phase.
+**Control check.** Read the Roadmap file. Find the **lowest-numbered** step with status "Not Started". **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.** If all steps are complete, proceed to the Completion phase.
 
 **If the step's Type is `Manual`**: Skip it — print a message telling the user that step N is a manual step assigned to them, and move to the next "Not Started" step. Do not attempt to implement manual steps.
 
 ### Step 2: Update Status
 
-Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
+**Control check.** Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
 
 **Dashboard**: `python3 "$DASH_CLI" begin-step <N>`
 
 ### Step 3: Plan the Step
 
-Brief implementation plan for this specific step. Use plan mode if the step is complex (M or L complexity).
+**Control check.** Brief implementation plan for this specific step. Use plan mode if the step is complex (M or L complexity).
 
 ### Step 4: Create Worktree
+
+**Control check.** Then:
 
 **If `superpowers:using-git-worktrees` skill is available**: Invoke it to create the worktree.
 
@@ -153,7 +181,7 @@ Work inside the worktree for all implementation.
 
 ### Step 5: Implement
 
-Write the code following project conventions:
+**Control check.** Write the code following project conventions:
 
 - Read `CLAUDE.md` files for project-specific guidance
 - Make discrete, reasonable commits as work progresses
@@ -162,11 +190,11 @@ Write the code following project conventions:
 
 ### Step 6: Build and Verify
 
-Run the build command from the Feature Definition's verification strategy. Fix errors until the build is clean.
+**Control check.** Run the build command from the Feature Definition's verification strategy. Fix errors until the build is clean.
 
 ### Step 7: Test
 
-Run the test suite from the Feature Definition's verification strategy:
+**Control check.** Run the test suite from the Feature Definition's verification strategy:
 
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass
@@ -174,7 +202,7 @@ Run the test suite from the Feature Definition's verification strategy:
 
 ### Step 8: Create PR
 
-Create a PR with a comprehensive description:
+**Control check.** Create a PR with a comprehensive description:
 
 Write the PR body to a temp file, then create the PR:
 
@@ -210,7 +238,7 @@ gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
 
 ### Step 9: Run Reviews
 
-Read the review guide at `${CLAUDE_SKILL_DIR}/references/review-guide.md`.
+**Control check.** Read the review guide at `${CLAUDE_SKILL_DIR}/references/review-guide.md`.
 
 Select and run reviews based on what changed in this step:
 
@@ -221,9 +249,11 @@ Delegate to available review skills (`pre-review`, `pr-review-toolkit`, `code-re
 
 ### Step 10: Address Review Findings
 
-Fix high and critical issues found by reviews. Re-run relevant reviews to confirm resolution.
+**Control check.** Fix high and critical issues found by reviews. Re-run relevant reviews to confirm resolution.
 
 ### Step 11: Merge PR
+
+**Control check.** Then:
 
 **If `superpowers:finishing-a-development-branch` skill is available**: Invoke it to handle the merge.
 
@@ -234,7 +264,7 @@ gh pr merge --squash
 
 ### Step 12: Update Roadmap
 
-In the Roadmap file:
+**Control check.** In the Roadmap file:
 - Mark the step as "Complete"
 - Add the PR link
 - Update the progress table
@@ -242,7 +272,7 @@ In the Roadmap file:
 
 ### Step 13: Close GitHub Issue
 
-Add a summary comment to the GitHub issue and close it:
+**Control check.** Add a summary comment to the GitHub issue and close it:
 
 ```bash
 gh issue comment <number> --body "Completed in PR #<pr_number>. <Brief summary of what was done.>"

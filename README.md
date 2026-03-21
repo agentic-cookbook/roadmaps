@@ -202,6 +202,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.3.0 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
 | v1.2.0 | 2026-03-21 | Strengthen sequential step enforcement — never work on two steps at once |
 | v1.1.0 | 2026-03-21 | Enforce sequential step ordering — always pick lowest-numbered Not Started step |
 | v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
@@ -361,6 +362,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.4.0 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
 | v1.3.0 | 2026-03-21 | Strengthen sequential step enforcement — CRITICAL rule block requiring full step completion before starting next |
 | v1.2.0 | 2026-03-21 | Print stopped summary with progress when user stops the agent, showing completed vs remaining steps |
 | v1.1.0 | 2026-03-21 | Enforce sequential step ordering — always pick lowest-numbered Not Started step |

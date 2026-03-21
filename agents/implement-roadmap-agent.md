@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "1.3.0"
+version: "1.4.0"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v1.3.0
+> implement-roadmap-agent v1.4.0
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -31,6 +31,42 @@ You are an autonomous implementation agent. You implement features planned by `/
 3. **NEVER skip reviews.** Every PR gets code review and security review before merge.
 4. **Print a checkpoint summary after each step** showing what was completed and what comes next. Then continue immediately — do not wait.
 5. **On failure, log the error with full context and stop.** Do not retry silently.
+6. **CHECK CONTROL FREQUENTLY.** Run the control check at every sub-step boundary within a step — not just between steps. See the Control Check Protocol below.
+
+---
+
+## CONTROL CHECK PROTOCOL
+
+**When the dashboard is running**, run a control check before every significant operation. This makes stop/pause responsive — the user should never have to wait more than one sub-step for the agent to react.
+
+**How to check:**
+
+```bash
+python3 "$DASH_CLI" check-control
+```
+
+**How to respond:**
+
+- `none` or `resume` — continue normally.
+- `pause` — re-run `check-control` every 5 seconds until it returns `resume` or `stop`.
+- `stop` — immediately stop. Do not start the next operation. Print the **Stopped Summary** and exit.
+
+**When to check** — run a control check before ALL of the following:
+
+- Before starting a new roadmap step (before `begin-step`)
+- Before planning the step
+- Before creating the worktree
+- Before starting implementation
+- Before running the build
+- Before running tests
+- Before creating the PR
+- Before starting reviews
+- Before addressing review findings
+- Before merging the PR
+- Before updating the roadmap
+- Before closing the GitHub issue
+
+This means **12 control checks per step**, not just 1. If the user clicks Stop, the agent will halt within one sub-step operation instead of running to the end of the entire step.
 
 ---
 
@@ -105,27 +141,21 @@ Pick the **lowest-numbered** step with status "Not Started" and implement it. Re
 
 **If the step's Type is `Manual`**: Skip it — log that step N is a manual step assigned to the developer, update the dashboard if running (`python3 "$DASH_CLI" log "Step N is manual — skipping"`), and continue to the next step. Do not attempt to implement manual steps.
 
-**Before each step**, if the dashboard is running, check for user controls:
-
-```bash
-python3 "$DASH_CLI" check-control
-```
-
-- If output is `pause` — wait. Re-run `check-control` every 5 seconds until it returns `resume` or `stop`.
-- If output is `stop` — finish the current atomic operation, then print a stopped summary and exit. See **Stopped Summary** below.
-- If output is `none` or `resume` — continue normally.
+**Before each step**, run a **control check** (see Control Check Protocol above).
 
 ### Step 1: Update Status
 
-Set the step's status to "In Progress" in the Roadmap. Commit and push this change.
+**Control check.** Then set the step's status to "In Progress" in the Roadmap. Commit and push this change.
 
 **Dashboard**: `python3 "$DASH_CLI" begin-step <N>`
 
 ### Step 2: Plan
 
-Brief implementation plan for this step. Use plan mode for M or L complexity steps.
+**Control check.** Brief implementation plan for this step. Use plan mode for M or L complexity steps.
 
 ### Step 3: Create Worktree
+
+**Control check.** Then:
 
 ```bash
 git worktree add ../<repo>-wt/<feature>-step-<N> -b feature/<feature>-step-<N>
@@ -135,7 +165,7 @@ Work inside the worktree for all implementation.
 
 ### Step 4: Implement
 
-Write the code following project conventions:
+**Control check.** Write the code following project conventions:
 
 - Read `CLAUDE.md` files for project-specific guidance
 - Make discrete, reasonable commits as work progresses
@@ -144,18 +174,18 @@ Write the code following project conventions:
 
 ### Step 5: Build and Verify
 
-Run the build command from the Feature Definition's verification strategy. Fix errors until the build is clean.
+**Control check.** Run the build command from the Feature Definition's verification strategy. Fix errors until the build is clean.
 
 ### Step 6: Test
 
-Run the test suite from the Feature Definition's verification strategy:
+**Control check.** Run the test suite from the Feature Definition's verification strategy:
 
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass
 
 ### Step 7: Create PR
 
-Write the PR body to a temp file, then create the PR:
+**Control check.** Write the PR body to a temp file, then create the PR:
 
 ```bash
 cat > /tmp/gh-pr-body.md <<'EOF'
@@ -191,7 +221,7 @@ gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
 
 ### Step 8: Run Reviews
 
-Read the review guide at `.claude/skills/implement-roadmap-interactively/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
+**Control check.** Read the review guide at `.claude/skills/implement-roadmap-interactively/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
 
 Select and run reviews based on what changed:
 
@@ -202,9 +232,11 @@ Delegate to available review agents (`pr-review-toolkit:code-reviewer`, `pr-revi
 
 ### Step 9: Address Findings
 
-Fix high and critical issues. Re-run relevant reviews to confirm resolution.
+**Control check.** Fix high and critical issues. Re-run relevant reviews to confirm resolution.
 
 ### Step 10: Merge PR
+
+**Control check.** Then:
 
 ```bash
 gh pr merge --squash
@@ -212,12 +244,16 @@ gh pr merge --squash
 
 ### Step 11: Update Roadmap
 
+**Control check.** Then:
+
 - Mark the step as "Complete"
 - Add the PR link
 - Update the progress table
 - Commit and push the Roadmap update
 
 ### Step 12: Close GitHub Issue
+
+**Control check.** Then:
 
 ```bash
 gh issue comment <number> --body "Completed in PR #<pr_number>. <Brief summary of what was done.>"
