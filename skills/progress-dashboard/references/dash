@@ -38,10 +38,20 @@ import signal
 import socket
 import subprocess
 import sys
-import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+def slugify(name):
+    """Convert a feature name to a filesystem-safe slug."""
+    return re.sub(r"[^a-zA-Z0-9_-]", "-", name).strip("-").lower()
+
+
+def dash_dir_for(title):
+    """Deterministic dashboard directory based on feature name."""
+    tmpdir = Path(os.environ.get("TMPDIR", "/tmp"))
+    return tmpdir / f"progress-dashboard-{slugify(title)}"
 
 
 def state_file():
@@ -186,11 +196,9 @@ def cmd_init(args):
     title = args[0]
     step_names = args[1:] if len(args) > 1 else []
 
-    # Check for existing dashboard
+    # Kill any existing dashboard server (same or different feature)
     existing = load_state()
-    if existing and Path(existing["dash_dir"]).exists():
-        print(f"WARNING: Dashboard already active at {existing['dash_dir']}", file=sys.stderr)
-        print("Run 'dash shutdown' first, or it will be replaced.", file=sys.stderr)
+    if existing:
         try:
             os.kill(existing["pid"], signal.SIGTERM)
         except (OSError, ProcessLookupError):
@@ -202,42 +210,62 @@ def cmd_init(args):
         print("ERROR: Cannot find progress-dashboard references (dashboard.html, server.py)", file=sys.stderr)
         sys.exit(1)
 
-    # Create temp directory
-    dash_dir = Path(tempfile.mkdtemp(prefix="progress-dashboard-"))
+    # Use deterministic directory based on feature name
+    dash_dir = dash_dir_for(title)
+    reusing = dash_dir.exists() and (dash_dir / "progress.json").exists()
+    dash_dir.mkdir(parents=True, exist_ok=True)
 
-    # Copy assets
+    # Always copy latest assets (they may have been updated)
     shutil.copy2(refs / "dashboard.html", dash_dir / "index.html")
     shutil.copy2(refs / "server.py", dash_dir / "server.py")
 
-    # Auto-detect environment
-    env = detect_environment()
+    # Reuse existing progress.json or create fresh
+    if reusing:
+        data = read_progress(dash_dir)
+        data["status"] = "running"
+        data["title"] = title
+        add_event(data, "Dashboard restarted (reusing existing state)")
+        write_progress(dash_dir, data)
+        print(f"Reusing existing dashboard for {title}", file=sys.stderr)
+    else:
+        env = detect_environment()
+        data = {
+            "title": title,
+            "status": "running",
+            "environment": env,
+            "issues": [],
+            "prs": [],
+            "steps": [
+                {
+                    "name": name,
+                    "status": "not_started",
+                    "detail": None,
+                    "links": [],
+                    "started_at": None,
+                    "completed_at": None,
+                    "updated_at": None,
+                }
+                for name in step_names
+            ],
+            "events": [{"time": now_iso(), "message": "Dashboard started"}],
+            "updated_at": now_iso(),
+        }
+        write_progress(dash_dir, data)
 
-    # Write initial progress.json
-    data = {
-        "title": title,
-        "status": "running",
-        "environment": env,
-        "issues": [],
-        "prs": [],
-        "steps": [
-            {
-                "name": name,
-                "status": "not_started",
-                "detail": None,
-                "links": [],
-                "started_at": None,
-                "completed_at": None,
-                "updated_at": None,
-            }
-            for name in step_names
-        ],
-        "events": [{"time": now_iso(), "message": "Dashboard started"}],
-        "updated_at": now_iso(),
-    }
-    write_progress(dash_dir, data)
+    # Clear stale control state from previous run
+    (dash_dir / "control.json").unlink(missing_ok=True)
 
-    # Start server and open browser immediately — don't wait for verification
-    port = find_free_port()
+    # Reuse previous port if available, otherwise find a free one
+    port = existing.get("port") if existing and str(dash_dir) == existing.get("dash_dir") else None
+    if port:
+        # Check if the old port is actually free now
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("", port))
+        except OSError:
+            port = None
+    if not port:
+        port = find_free_port()
     proc = subprocess.Popen(
         [sys.executable, str(dash_dir / "server.py"), str(port), str(dash_dir)],
         stdout=subprocess.DEVNULL,
