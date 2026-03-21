@@ -44,7 +44,7 @@ If any check fails, report why and **STOP**.
 ### 3. Acquire Lock
 
 1. Set `**Implementing**:` to `Yes` in the roadmap
-2. Commit: `chore: acquire implementation lock for <FeatureName>`
+2. Commit and push: `chore: acquire implementation lock for <FeatureName>`
 
 The lock is now held. **All work below runs under this lock.**
 
@@ -63,7 +63,7 @@ Repeat for each step in the Roadmap with status "Not Started":
 
 ### Step 1: Update Status
 
-Set the step's status to "In Progress" in the Roadmap. Commit this change.
+Set the step's status to "In Progress" in the Roadmap. Commit and push this change.
 
 ### Step 2: Plan
 
@@ -152,7 +152,7 @@ gh pr merge --squash
 - Mark the step as "Complete"
 - Add the PR link
 - Update the progress table
-- Commit the Roadmap update
+- Commit and push the Roadmap update
 
 ### Step 12: Close GitHub Issue
 
@@ -252,10 +252,16 @@ Create `.claude/Features/Completed-Features/<FeatureName>-Summary.md`:
 git mv ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" ".claude/Features/Completed-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-### 7. Final Commit
+### 7. Final Commit and Push
+
+Commit all documentation updates and push:
 
 ```
 docs: complete feature <FeatureName> — add summary and archive roadmap
+```
+
+```bash
+git push
 ```
 
 ### 8. Final Report

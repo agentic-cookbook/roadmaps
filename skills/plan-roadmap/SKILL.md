@@ -77,7 +77,29 @@ If either fails, **STOP**. Tell the user the directory is not writable.
 
 ### 0e: Ensure `.claude/Features/` is tracked by git
 
-Check if `.gitignore` contains a rule that would exclude `.claude/Features/`. If so, add `!.claude/Features/` to `.gitignore`. If `.gitignore` doesn't exist or doesn't ignore `.claude`, no change is needed.
+Run the following to check if git would ignore the Features directory:
+
+```bash
+git check-ignore -q .claude/Features/FeatureDefinitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
+```
+
+If the output is `IGNORED`, the `.gitignore` (or a parent `.gitignore`) is excluding `.claude/Features/`. Fix this by appending negation rules to the repo-root `.gitignore`:
+
+```bash
+cat >> .gitignore <<'EOF'
+
+# Allow Claude Features planning files to be tracked
+!.claude/Features/
+!.claude/Features/**
+EOF
+git add .gitignore
+git commit -m "chore: allow .claude/Features/ in git"
+git push
+```
+
+After adding the rules, re-run the `git check-ignore` check to confirm the path is now tracked. If it still reports `IGNORED`, **STOP** and tell the user — a higher-level `.gitignore` rule may need manual attention.
+
+If the output is `TRACKED`, no changes are needed.
 
 ---
 
@@ -219,14 +241,15 @@ head -5 ".claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md"
 
 If the file does not exist, has 0 lines, or `head` returns nothing: **STOP. Something went wrong. Tell the user the file was not created and attempt to write it again.**
 
-### 5h: Commit the file
+### 5h: Commit and push the file
 
 ```bash
 git add ".claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md"
 git commit -m "docs: add Feature Definition for <FeatureName>"
+git push
 ```
 
-Verify the commit succeeded by checking the exit code. If it failed, tell the user.
+Verify the commit and push succeeded by checking exit codes. If either failed, tell the user.
 
 ---
 
@@ -320,11 +343,12 @@ head -5 ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 
 If the file does not exist or is empty: **STOP. Tell the user. Re-attempt the write.**
 
-### 6h: Commit the file
+### 6h: Commit and push the file
 
 ```bash
 git add ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 git commit -m "docs: add Feature Roadmap for <FeatureName>"
+git push
 ```
 
 ---
@@ -404,11 +428,12 @@ Read the Roadmap file back. Confirm that every step has a real issue number (not
 
 All planning artifacts are now complete. Update the Roadmap's `Phase` field from `Planning` to `Ready`. This signals to `/implement-roadmap` that this feature is available for implementation.
 
-### 7f: Commit the updated Roadmap
+### 7f: Commit and push the updated Roadmap
 
 ```bash
 git add ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 git commit -m "docs: add GitHub issue numbers to <FeatureName> Roadmap, set Phase to Ready"
+git push
 ```
 
 ---

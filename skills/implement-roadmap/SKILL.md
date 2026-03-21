@@ -77,7 +77,7 @@ Once the user selects a feature:
 2. If it's now `Yes`, tell the user another session grabbed it and return to Step 2
 3. If still `No`, update the roadmap:
    - Set `**Implementing**:` to `Yes`
-   - Commit this change: `chore: acquire implementation lock for <FeatureName>`
+   - Commit and push this change: `chore: acquire implementation lock for <FeatureName>`
 
 The lock is now held. **All code below runs under this lock.**
 
@@ -93,7 +93,7 @@ Read the Roadmap file. Find the next step with status "Not Started". If all step
 
 ### Step 2: Update Status
 
-Update the step's status to "In Progress" in the Roadmap file. Commit this change.
+Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
 
 ### Step 3: Plan the Step
 
@@ -192,7 +192,7 @@ In the Roadmap file:
 - Mark the step as "Complete"
 - Add the PR link
 - Update the progress table
-- Commit the Roadmap update
+- Commit and push the Roadmap update
 
 ### Step 13: Close GitHub Issue
 
@@ -318,9 +318,9 @@ Move the Roadmap from `Active-Roadmaps/` to `Completed-Roadmaps/`:
 git mv ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" ".claude/Features/Completed-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-### Step 7: Final Commit
+### Step 7: Final Commit and Push
 
-Commit all documentation updates:
+Commit and push all documentation updates:
 
 ```
 docs: complete feature <FeatureName> — add summary and archive roadmap
