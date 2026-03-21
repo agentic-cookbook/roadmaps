@@ -117,6 +117,8 @@ python3 "$DASH_CLI" check-control
 
 Read the Roadmap file. Find the next step with status "Not Started". If all steps are complete, proceed to the Completion phase.
 
+**If the step's Type is `Manual`**: Skip it — print a message telling the user that step N is a manual step assigned to them, and move to the next "Not Started" step. Do not attempt to implement manual steps.
+
 ### Step 2: Update Status
 
 Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.

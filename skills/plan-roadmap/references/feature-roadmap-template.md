@@ -22,6 +22,7 @@ _Brief summary of the platform, language, and key tools from the Feature Definit
 ### Step 1: {{DESCRIPTION}}
 
 - **GitHub Issue**: {{REPO}}#{{ISSUE_NUMBER}}
+- **Type**: Auto | Manual
 - **Status**: Not Started | In Progress | Complete | Blocked
 - **Complexity**: S | M | L
 - **Dependencies**: None | Step N
@@ -38,6 +39,7 @@ _Brief summary of the platform, language, and key tools from the Feature Definit
 ### Step 2: {{DESCRIPTION}}
 
 - **GitHub Issue**: {{REPO}}#{{ISSUE_NUMBER}}
+- **Type**: Auto | Manual
 - **Status**: Not Started
 - **Complexity**: S | M | L
 - **Dependencies**: None | Step N

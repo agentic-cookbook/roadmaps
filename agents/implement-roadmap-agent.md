@@ -90,6 +90,8 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 Repeat for each step in the Roadmap with status "Not Started".
 
+**If the step's Type is `Manual`**: Skip it — log that step N is a manual step assigned to the developer, update the dashboard if running (`python3 "$DASH_CLI" log "Step N is manual — skipping"`), and continue to the next step. Do not attempt to implement manual steps.
+
 **Before each step**, if the dashboard is running, check for user controls:
 
 ```bash

@@ -193,7 +193,11 @@ Read:
 - **Independently testable** with clear acceptance criteria
 - **Clear about what "done" means**
 
-For each step, fill in: Description, Complexity estimate (S/M/L), Dependencies, Acceptance criteria, Testing/verification approach.
+For each step, fill in: Description, Type (Auto or Manual), Complexity estimate (S/M/L), Dependencies, Acceptance criteria, Testing/verification approach.
+
+**Step types:**
+- **Auto** — Claude can implement this step autonomously (code changes, tests, PRs).
+- **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, UI/UX decisions that need human judgment, app store submissions). The GitHub issue for manual steps will be assigned to the user.
 
 **Set the `Implementing` field to `No`.** This field is managed exclusively by `/implement-roadmap`.
 
@@ -292,8 +296,14 @@ Roadmap: `.claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md`
 EOF
 ```
 
+For **Auto** steps:
 ```bash
 gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file /tmp/gh-issue-body.md
+```
+
+For **Manual** steps, assign to the current user:
+```bash
+gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription> [Manual]" --body-file /tmp/gh-issue-body.md --assignee @me
 ```
 
 ### 6b: Verify each issue was created
