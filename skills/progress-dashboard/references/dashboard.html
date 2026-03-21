@@ -526,7 +526,7 @@
 
   <div id="poll-status" class="footer">
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v10</span>
+    <span class="footer-version">v11</span>
   </div>
 
   <div id="completion-overlay" class="completion-overlay">
@@ -926,6 +926,10 @@ function render(data) {
   } else {
     statusEl.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
     footerEl.className = 'footer';
+
+    // Clear any stale overlays from a previous stopped/completed run
+    document.getElementById('completion-overlay').classList.remove('visible');
+    document.getElementById('stop-overlay').classList.remove('visible');
 
     if (data.control_state === 'stop') {
       hideControls();

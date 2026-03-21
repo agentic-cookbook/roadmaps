@@ -268,6 +268,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.3.0 | 2026-03-21 | Clear stale stop/completion overlays when dashboard restarts in running state |
 | v2.2.0 | 2026-03-21 | Persist port in dashboard directory for reliable reuse across restarts; `begin-step` auto-closes any other in-progress step to enforce single-active-step |
 | v2.1.0 | 2026-03-21 | Deterministic dashboard directory per feature name (no more duplicate sites); reuse existing state on restart; reuse previous port; clear stale control state |
 | v2.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
