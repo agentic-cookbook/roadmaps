@@ -1,10 +1,21 @@
 ---
 name: review-claude-extension
+version: "2.0.0"
 description: "Review a Claude Code skill or agent against Anthropic's official best practices. Use when you want to validate a skill/agent design, check for anti-patterns, or ensure compliance with the skills specification. Triggers on 'review this skill', 'check my agent', 'validate this extension', or /review-claude-extension."
 argument-hint: "<path-to-skill-or-agent>"
 disable-model-invocation: true
 allowed-tools: Read, Glob, Grep, WebFetch, Bash(wc *)
 context: fork
+---
+
+## Version Check
+
+If `$ARGUMENTS` is `--version`, respond with exactly:
+
+> review-claude-extension v2.0.0
+
+Then stop. Do not continue with the rest of the skill.
+
 ---
 
 # Review Claude Extension

@@ -1,8 +1,19 @@
 ---
 name: progress-dashboard
+version: "2.0.0"
 description: "Start a live progress dashboard in the browser. Use when an agent or skill wants to show real-time step-by-step progress to the user. Triggers on 'show progress', 'start dashboard', or /progress-dashboard."
 argument-hint: "<feature-name>"
 allowed-tools: Read, Bash(cp *), Bash(mkdir *), Bash(python3 *), Bash(open *), Bash(cat *), Bash(kill *), Bash(lsof *), Bash(chmod *), Write
+---
+
+## Version Check
+
+If `$ARGUMENTS` is `--version`, respond with exactly:
+
+> progress-dashboard v2.0.0
+
+Then stop. Do not continue with the rest of the skill.
+
 ---
 
 # Progress Dashboard

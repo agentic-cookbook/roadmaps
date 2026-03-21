@@ -74,6 +74,7 @@ Done → run /implement-roadmap-interactively to build it
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v2 | 2026-03-21 | Restructured into Discussion + Planning phases; added phase gate requiring user permission; added `Phase: Planning \| Ready` field to Roadmap; reinforced no-implementation-code guardrails; moved Active Guards to references/; added `disable-model-invocation: true`; shortened description for context budget; removed `version` from frontmatter |
 | v1 | 2026-03-20 | Initial release — single-phase workflow with checkpoint gates and no-implementation-code guardrails |
 
@@ -107,6 +108,7 @@ Pass issue numbers, or `all` to include every open issue.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — fetches issues from GitHub, groups by component, single-approval flow |
 
 ---
@@ -127,6 +129,7 @@ You can continue working in the current session while the agent runs. For intera
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — background launcher for implement-roadmap-agent |
 
 ---
@@ -196,6 +199,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — step-by-step implementation loop with worktrees, PRs, reviews, checkpoint gates; Phase guard for `Planning` features; concurrency lock via `Implementing` field |
 
 ---
@@ -218,6 +222,7 @@ No arguments, no prompts, no approvals. Just run it and it creates everything.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — 20-step cat-herding test roadmap generator |
 
 ---
@@ -257,6 +262,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v2 | 2026-03-21 | Added `dash` CLI helper script — single-command interface for init, step updates, control checks, and shutdown; eliminates manual JSON construction and shell variable tracking |
 | v1 | 2026-03-21 | Initial release — live HTML dashboard with progress polling, Pause/Resume/Stop controls, custom Python server for bidirectional communication |
 
@@ -299,6 +305,7 @@ If no path is given, the skill looks for a skill or agent in the current directo
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v2 | 2026-03-21 | Added `allowed-tools` restriction and `context: fork` for isolated execution |
 | v1 | 2026-03-21 | Initial release — comprehensive review checklist (S01–S12, C01–C10, B01–B12, A01–A08); fetches latest Anthropic docs; structured PASS/WARN/FAIL report |
 
@@ -347,4 +354,5 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — autonomous implementation agent with bypassPermissions, worktree isolation, and error-handling-with-lock-release |

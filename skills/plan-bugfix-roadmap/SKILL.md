@@ -1,8 +1,19 @@
 ---
 name: plan-bugfix-roadmap
+version: "1.0.0"
 description: "Create a bugfix roadmap from a list of GitHub issues. Lightweight alternative to /plan-roadmap — skips the discussion phase and generates a Feature Definition, Roadmap, and links existing issues directly. Use when you have a known list of bugs to fix."
 argument-hint: "<issue-numbers or 'all'>"
 disable-model-invocation: true
+---
+
+## Version Check
+
+If `$ARGUMENTS` is `--version`, respond with exactly:
+
+> plan-bugfix-roadmap v1.0.0
+
+Then stop. Do not continue with the rest of the skill.
+
 ---
 
 # Plan Bugfix Roadmap
