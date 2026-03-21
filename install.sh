@@ -241,6 +241,21 @@ install_skill() {
     fi
 }
 
+detect_current_method() {
+    for skill_dir in "$SCRIPT_DIR/skills"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name=$(basename "$skill_dir")
+        local method
+        method=$(detect_install_method "$SKILLS_DIR/$skill_name")
+        if [ "$method" != "none" ]; then
+            echo "$method"
+            return
+        fi
+    done
+    echo "none"
+}
+
 prompt_install_method() {
     local current="$1"
     if [ "$current" != "none" ]; then
@@ -347,17 +362,8 @@ main() {
     echo "--- Checking Tools ---"
     scan_and_install_tools
 
-    # Detect current install method from first installed skill
-    local current_method="none"
-    for skill_dir in "$SCRIPT_DIR/skills"/*/; do
-        [ -d "$skill_dir" ] || continue
-        local skill_name
-        skill_name=$(basename "$skill_dir")
-        current_method=$(detect_install_method "$SKILLS_DIR/$skill_name")
-        if [ "$current_method" != "none" ]; then
-            break
-        fi
-    done
+    local current_method
+    current_method=$(detect_current_method)
 
     local method
     method=$(prompt_install_method "$current_method")
