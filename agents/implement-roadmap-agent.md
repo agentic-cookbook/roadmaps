@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "1.1.0"
+version: "1.2.0"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v1.1.0
+> implement-roadmap-agent v1.2.0
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -110,7 +110,7 @@ python3 "$DASH_CLI" check-control
 ```
 
 - If output is `pause` — wait. Re-run `check-control` every 5 seconds until it returns `resume` or `stop`.
-- If output is `stop` — finish the current atomic operation, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
+- If output is `stop` — finish the current atomic operation, then print a stopped summary and exit. See **Stopped Summary** below.
 - If output is `none` or `resume` — continue normally.
 
 ### Step 1: Update Status
@@ -352,6 +352,33 @@ Issues closed:
 Feature Summary: .claude/Features/Completed-Features/<FeatureName>-Summary.md
 Roadmap archived to: .claude/Features/Completed-Roadmaps/
 ```
+
+---
+
+## STOPPED SUMMARY
+
+When the user stops the agent via the dashboard or any other mechanism, print a summary showing progress before exiting:
+
+```
+=== STOPPED: <FeatureName> ===
+
+Status: Stopped by user (not completed)
+Steps completed: <M>/<N>
+Steps remaining: <N-M>
+
+Completed:
+  - Step 1: <description> — PR #<number> merged, Issue #<number> closed
+  - Step 2: <description> — PR #<number> merged, Issue #<number> closed
+
+Not completed:
+  - Step 3: <description> — Not Started
+  - Step 4: <description> — Not Started
+  ...
+
+To resume, run: /implement-roadmap
+```
+
+**Dashboard**: `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`.
 
 ---
 
