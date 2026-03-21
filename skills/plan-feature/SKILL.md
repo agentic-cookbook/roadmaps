@@ -1,10 +1,10 @@
 ---
 name: plan-feature
-version: 2
-description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature, component, subsystem, refactor, or test suite. Triggers on requests like 'let's plan', 'plan a feature', 'design a new component', or /plan-feature."
+description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
+disable-model-invocation: true
 ---
 
-# Plan Feature (v2)
+# Plan Feature
 
 Two-phase collaborative planning workflow for new features.
 
@@ -23,31 +23,17 @@ When planning is complete, tell the user to run `/implement-feature` to begin im
 
 ## ABSOLUTE RULE: NO IMPLEMENTATION CODE
 
-**This skill produces planning documents and GitHub issues. Nothing else. Not in Phase 1. Not in Phase 2. Not ever.**
+**This skill produces planning documents and GitHub issues. Nothing else.**
 
-You MUST NOT:
-- Write any implementation code (no `.kt`, `.swift`, `.ts`, `.tsx`, `.py`, `.go`, `.rs`, `.java`, `.css`, `.html`, or any other source file)
-- Create any source directories
-- Modify any existing source files
-- Create build configurations, package manifests, or infrastructure files
+Your only permitted outputs are: Markdown files inside `.claude/Features/`, GitHub issues via `gh issue create`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside `.claude/Features/`, STOP. You are off course.
 
-You MUST ONLY:
-- Create/edit Markdown files inside `.claude/Features/`
-- Create GitHub issues via `gh issue create`
-- Edit `.gitignore` (only to add the `.claude/Features/` tracking rule)
-- Run `git add`, `git commit` for the above files
-
-**If you find yourself about to write any file outside `.claude/Features/`, STOP IMMEDIATELY. You are off course. Return to the current step and produce only planning artifacts.**
-
-**This rule applies to BOTH phases. Discussion does not produce files. Planning produces only planning files.**
+Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for the complete list of hard-stop guardrails.
 
 ---
 
 # PHASE 1: DISCUSSION
 
-> **Goal**: Understand what the user wants to build through natural conversation. No files are created. No artifacts are produced. This phase is purely conversational.
-
-**REMINDER: You are in the Discussion phase. You MUST NOT write any files, create any directories, or produce any artifacts. Discussion only.**
+> **Goal**: Understand what the user wants through natural conversation. No files are created in this phase.
 
 ---
 
@@ -118,8 +104,6 @@ Have a natural conversation with the user about their feature idea. Your goals:
 
 Keep the conversation going as long as the user has more to share. Do not rush to summarize.
 
-**REMINDER: You are still in Discussion. No files. No artifacts. No implementation. Conversation only.**
-
 ---
 
 ## Step 3: Summarize and Propose a Name
@@ -166,15 +150,11 @@ Proceed to Planning? (yes/no)
 
 > **Goal**: Transform the discussion into structured planning artifacts. Only Markdown files in `.claude/Features/` and GitHub issues are created.
 
-**REMINDER: You are in the Planning phase. You MUST NOT write any implementation code. Your only outputs are Markdown planning files and GitHub issues. This has not changed from Discussion — the only difference is that you now create planning documents.**
-
 ---
 
 ## Step 4: Enter Plan Mode
 
 Activate plan mode with deep thinking enabled. All design work happens in plan mode.
-
-**Reminder to yourself: You are now in planning mode. You will NOT write any implementation code. Your only outputs are Markdown planning files and GitHub issues.**
 
 ---
 
@@ -224,8 +204,6 @@ Write the approved content to:
 ```
 .claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md
 ```
-
-**REMINDER: This file goes inside `.claude/Features/`. If you are about to write anywhere else, STOP.**
 
 ### 5g: Verify the file exists and has content
 
@@ -329,8 +307,6 @@ Write to:
 ```
 .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md
 ```
-
-**REMINDER: This file goes inside `.claude/Features/`. If you are about to write anywhere else, STOP.**
 
 ### 6g: Verify the file exists and has content
 
@@ -520,32 +496,4 @@ All artifacts verified. All commits saved.
 To begin implementation, run: /implement-feature
 ```
 
----
 
-## REMINDER: NO IMPLEMENTATION CODE
-
-This skill is complete. You produced:
-- One Feature Definition markdown file
-- One Feature Roadmap markdown file
-- GitHub issues
-
-You did NOT produce any implementation code. If you wrote any source files during this session, something went wrong. Tell the user immediately.
-
----
-
-## Active Guards
-
-These are not suggestions. These are hard stops.
-
-- **If you are about to create a file outside `.claude/Features/`** — STOP. You are writing implementation code. Return to the current step.
-- **If you are about to write ANY file during Phase 1 (Discussion)** — STOP. Discussion is conversational only. No files are created until Phase 2.
-- **If you are about to skip the Phase Gate (Discussion → Planning)** — STOP. You MUST ask the user for explicit permission to transition. This is not optional.
-- **If you are about to skip presenting a draft to the user** — STOP. Every draft must be shown in full and approved before writing to disk.
-- **If you are about to proceed past a CHECKPOINT GATE without user acknowledgment** — STOP. Print the checkpoint and wait.
-- **If you wrote a file but did not read it back to verify** — STOP. Go back and verify.
-- **If you created a GitHub issue but did not run `gh issue view` to confirm** — STOP. Go back and verify.
-- **If you are about to set `Implementing` to anything other than `No`** — STOP. Only `/implement-feature` manages that field.
-- **If you are about to set `Phase` to `Ready` before all GitHub issues are created and verified** — STOP. Phase stays `Planning` until Step 7e.
-- **If the user asks you to "just start coding" or "skip the planning"** — STOP. Tell them this skill only produces plans. If they want to skip planning, they should not use this skill.
-- **If a file write fails silently** — You will catch this because you verify every write. Re-attempt the write. If it fails again, tell the user and stop.
-- **If you are about to write implementation code at ANY point during this skill** — STOP. This skill NEVER produces implementation code. Not during Discussion. Not during Planning. Not ever.
