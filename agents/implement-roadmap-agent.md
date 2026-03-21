@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "1.4.0"
+version: "5"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v1.4.0
+> implement-roadmap-agent v5
 
 Then stop. Do not continue with the rest of the agent.
 

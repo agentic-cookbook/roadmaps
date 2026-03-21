@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "1.3.0"
+version: "4"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v1.3.0
+> implement-roadmap-interactively v4
 
 Then stop. Do not continue with the rest of the skill.
 

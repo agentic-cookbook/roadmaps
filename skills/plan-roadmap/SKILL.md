@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "2.0.0"
+version: "2"
 description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v2.0.0
+> plan-roadmap v2
 
 Then stop. Do not continue with the rest of the skill.
 
