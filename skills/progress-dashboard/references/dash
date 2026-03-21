@@ -392,6 +392,7 @@ def cmd_check_control(args):
             if data:
                 labels = {"pause": "Pause", "resume": "Resume", "stop": "Stop"}
                 add_event(data, f"{labels.get(action, action)} received by agent")
+                data["control_state"] = action
                 write_progress(dash_dir, data)
         if action == "resume":
             control_file.unlink(missing_ok=True)

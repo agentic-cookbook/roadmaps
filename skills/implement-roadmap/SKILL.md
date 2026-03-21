@@ -81,27 +81,33 @@ python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
 
 This creates the temp directory, starts the server, and opens the browser. The `dash` CLI manages all state internally — no shell variables to track between calls.
 
-After init, populate the Issues panel from the Roadmap:
+After init, populate the dashboard immediately. For every step in the Roadmap:
 
+1. Add its GitHub issue:
 ```bash
-python3 "$DASH_CLI" add-issue <number> "<Step title>" "https://github.com/<owner>/<repo>/issues/<number>"
+python3 "$DASH_CLI" add-issue <issue_number> "<Step N: description>" "https://github.com/<owner>/<repo>/issues/<issue_number>"
 ```
 
-Do this for every step's GitHub issue so the Issues panel is populated from the start.
+2. Set the step's detail to its description and acceptance criteria:
+```bash
+python3 "$DASH_CLI" step-detail <N> "<description> — Acceptance: <criteria>"
+```
 
-Use `dash` commands throughout implementation to update the dashboard. Key commands for issues and PRs:
+Use `dash` commands throughout implementation:
 
 ```bash
 # When a step starts
 python3 "$DASH_CLI" update-issue <issue_number> in_progress
 
-# When a PR is created
+# When a PR is created — add to PRs panel and link on the step
 python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>"
+python3 "$DASH_CLI" step-link <N> "PR #<pr_number>" "<pr_url>"
 
 # When a PR is merged
 python3 "$DASH_CLI" update-pr <pr_number> merged
 
-# When an issue is closed
+# When an issue is closed — link on the step
+python3 "$DASH_CLI" step-link <N> "Issue #<issue_number>" "<issue_url>"
 python3 "$DASH_CLI" update-issue <issue_number> closed
 ```
 

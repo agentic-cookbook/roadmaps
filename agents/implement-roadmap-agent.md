@@ -88,26 +88,32 @@ python3 "$DASH_CLI" shutdown                                # kill the server
 
 | Moment | Command |
 |--------|---------|
-| After init | `add-issue <number> "<title>" "<url>"` for each GitHub issue from the Roadmap |
+| After init | `add-issue` for each issue, `step-detail` for each step (see 5a) |
 | Before each step | `check-control` — handle pause/stop if returned |
 | Step starts | `step-start <N>` then `update-issue <issue_number> in_progress` |
-| PR created | `add-pr <number> "<title>" "<url>"` then `step-detail <N> "PR #X created"` then `step-link <N> "PR #X" "<url>"` |
-| Reviews done | `step-detail <N> "Reviews passed"` |
-| PR merged | `update-pr <number> merged` then `step-complete <N>` then `update-issue <issue_number> closed` |
+| PR created | `add-pr <number> "<title>" "<url>"` then `step-link <N> "PR #<number>" "<url>"` |
+| Reviews done | `step-detail <N> "Reviews: <summary of findings>"` |
+| PR merged | `update-pr <number> merged` then `step-link <N> "Issue #<number>" "<url>"` then `step-complete <N>` then `update-issue <issue_number> closed` |
 | Error occurs | `step-error <N> "<message>"` then `shutdown` |
 | All steps done | `complete` then `shutdown` |
 
-### 5a. Populate Dashboard with Issues
+### 5a. Populate Dashboard
 
-After initializing the dashboard, read each step in the Roadmap and add its GitHub issue:
+**Do this immediately after init.** For every step in the Roadmap:
 
+1. Add its GitHub issue to the Issues panel:
 ```bash
-python3 "$DASH_CLI" add-issue <number> "<Step title>" "https://github.com/<owner>/<repo>/issues/<number>"
+python3 "$DASH_CLI" add-issue <issue_number> "<Step N: description>" "https://github.com/<owner>/<repo>/issues/<issue_number>"
 ```
 
-Do this for every step's issue so the Issues panel is populated from the start.
+2. Set the step's detail to its description and acceptance criteria from the Roadmap:
+```bash
+python3 "$DASH_CLI" step-detail <N> "<description> — Acceptance: <criteria>"
+```
 
-### 5. Read Feature Definition
+This ensures the Issues panel and step details are populated from the start, before any implementation begins.
+
+### 5b. Read Feature Definition
 
 Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to understand:
 - The feature's goal and acceptance criteria
@@ -204,7 +210,6 @@ EOF
 **Dashboard**: After the PR is created, capture its number and URL:
 ```bash
 python3 "$DASH_CLI" add-pr <pr_number> "<Step description>" "<pr_url>"
-python3 "$DASH_CLI" step-detail <N> "PR #<pr_number> created"
 python3 "$DASH_CLI" step-link <N> "PR #<pr_number>" "<pr_url>"
 ```
 

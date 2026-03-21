@@ -868,7 +868,13 @@ function render(data) {
   renderTickets(document.getElementById('prs'), prs, 'pr');
 
   // Render events — merge server events with local events by timestamp
-  var serverEvents = (data.events || []).map(function(e) { return { time: e.time, message: e.message, colorClass: '' }; });
+  var serverEvents = (data.events || []).map(function(e) {
+    var cls = '';
+    if (e.message && e.message.indexOf('Stop received') >= 0) cls = 'event-msg-error';
+    else if (e.message && e.message.indexOf('Pause received') >= 0) cls = 'event-msg-warn';
+    else if (e.message && e.message.indexOf('Resume received') >= 0) cls = 'event-msg-success';
+    return { time: e.time, message: e.message, colorClass: cls };
+  });
   var allEvents = serverEvents.concat(localEvents);
   allEvents.sort(function(a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
 
@@ -913,10 +919,25 @@ function render(data) {
   } else {
     pollStatus.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
     pollStatus.className = 'footer';
-    // If agent is running and we had pause, but agent hasn't paused yet — keep overlay
-    // If agent resumed (currentControl was reset), hide pause overlay
-    if (data.status === 'running' && currentControl !== 'pause') {
+
+    // Check control_state from the agent
+    if (data.control_state === 'stop') {
+      hideControls();
       document.getElementById('pause-overlay').classList.remove('visible');
+      pollStatus.textContent = 'Stopping... agent is shutting down gracefully.';
+      pollStatus.className = 'footer error';
+      showStopOverlay();
+    } else if (data.control_state === 'pause') {
+      // Agent has acknowledged the pause
+      if (!document.getElementById('pause-overlay').classList.contains('visible')) {
+        document.getElementById('pause-overlay').classList.add('visible');
+      }
+      document.getElementById('btn-resume').disabled = false;
+    } else if (data.control_state === 'resume' || !data.control_state) {
+      // Agent resumed or no control state
+      if (currentControl !== 'pause') {
+        document.getElementById('pause-overlay').classList.remove('visible');
+      }
     }
   }
 }
