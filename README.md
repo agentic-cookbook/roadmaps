@@ -2,7 +2,7 @@
 
 Shared repository of reusable Claude Code skills and agents.
 
-Skills in this repo are developed in the top-level `skills/` directory. To use them, copy or symlink the skill directory into `.claude/skills/` (project-level) or `~/.claude/skills/` (personal).
+Skills live in `skills/`, agents in `agents/`. Run `./install.sh` to install everything, or manually copy/symlink into `~/.claude/skills/` and `~/.claude/agents/`.
 
 ## Skills
 
@@ -134,3 +134,50 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 | Version | Date | Changes |
 |---------|------|---------|
 | v1 | 2026-03-21 | Initial release — step-by-step implementation loop with worktrees, PRs, reviews, checkpoint gates; Phase guard for `Planning` features; concurrency lock via `Implementing` field |
+
+---
+
+## Agents
+
+### implement-feature-auto
+
+Autonomous version of `/implement-feature`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
+
+**How it differs from the skill:**
+
+| | /implement-feature (skill) | implement-feature-auto (agent) |
+|---|---|---|
+| **Interaction** | Interactive — pauses at checkpoints for your acknowledgment | Autonomous — logs summaries and continues |
+| **Feature selection** | You choose from a menu | Feature name passed in the task prompt |
+| **Permissions** | Inherits session permissions | `bypassPermissions` — no prompts |
+| **Isolation** | Runs in your session | Runs in its own git worktree |
+| **Use case** | You want to supervise each step | Fire and forget |
+
+**Usage:**
+
+Tell Claude to use the agent:
+
+```
+Use the implement-feature-auto agent to implement FeatureX
+```
+
+Or invoke directly:
+
+```bash
+claude --agent implement-feature-auto "Implement FeatureX"
+```
+
+Requires a Roadmap created by `/plan-feature` with `Phase: Ready`.
+
+**Key rules:**
+
+- Same one-step-one-PR discipline as the interactive skill
+- Same review requirements — every PR gets code review and security review
+- Same concurrency lock — acquires on start, releases on completion or error
+- On failure: logs the error, releases the lock, and stops (never retries silently)
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-21 | Initial release — autonomous implementation agent with bypassPermissions, worktree isolation, and error-handling-with-lock-release |

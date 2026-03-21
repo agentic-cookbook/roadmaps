@@ -1,11 +1,12 @@
 #!/bin/bash
-# Machine bootstrap for cat-herding shared Claude Code skills.
+# Machine bootstrap for cat-herding shared Claude Code skills and agents.
 # Run once on each new machine: ./install.sh
 #
 # What it does:
 #   1. Installs Claude Code and GitHub CLI if missing
 #   2. Installs shared skills into ~/.claude/skills/ (symlink or copy)
-#   3. Installs shared skills into OpenClaw if present
+#   3. Installs shared agents into ~/.claude/agents/ (symlink or copy)
+#   4. Installs shared skills into OpenClaw if present
 
 VERSION="1.0.0"
 
@@ -14,6 +15,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 SKILLS_DIR="$CLAUDE_DIR/skills"
+AGENTS_DIR="$CLAUDE_DIR/agents"
 
 # --- Platform Detection ---
 
@@ -305,6 +307,71 @@ install_claude_skills() {
     done
 }
 
+# --- Agent Install Helpers ---
+
+detect_agent_install_method() {
+    local target="$1"
+    if [ -L "$target" ]; then
+        echo "symlink"
+    elif [ -f "$target" ]; then
+        echo "copy"
+    else
+        echo "none"
+    fi
+}
+
+install_agent() {
+    local agent_file="$1"
+    local target_dir="$2"
+    local method="$3"
+    local agent_name
+    agent_name=$(basename "$agent_file")
+    local target="$target_dir/$agent_name"
+
+    if [ "$method" = "symlink" ]; then
+        ln -s "$agent_file" "$target"
+        echo "  [symlinked] $agent_name"
+    else
+        cp "$agent_file" "$target"
+        echo "  [copied] $agent_name"
+    fi
+}
+
+# --- Claude Agents Installation ---
+
+install_claude_agents() {
+    local method="$1"
+
+    echo ""
+    echo "--- Agents Installation ---"
+
+    if [ ! -d "$SCRIPT_DIR/agents" ] || [ -z "$(ls "$SCRIPT_DIR/agents"/*.md 2>/dev/null)" ]; then
+        echo "  [skip] No agents found in repo"
+        return
+    fi
+
+    mkdir -p "$AGENTS_DIR"
+
+    for agent_file in "$SCRIPT_DIR/agents"/*.md; do
+        [ -f "$agent_file" ] || continue
+        local agent_name
+        agent_name=$(basename "$agent_file")
+        local target="$AGENTS_DIR/$agent_name"
+        local existing
+        existing=$(detect_agent_install_method "$target")
+
+        if [ "$existing" = "$method" ]; then
+            echo "  [ok] $agent_name (already ${method}ed)"
+        else
+            if [ "$existing" != "none" ]; then
+                echo "  [reinstall] $agent_name ($existing -> $method)"
+                rm -f "$target"
+            fi
+            install_agent "$agent_file" "$AGENTS_DIR" "$method"
+        fi
+    done
+}
+
 # --- OpenClaw Skills Installation ---
 
 install_openclaw_skills() {
@@ -369,11 +436,12 @@ main() {
     method=$(prompt_install_method "$current_method")
 
     install_claude_skills "$method"
+    install_claude_agents "$method"
     install_openclaw_skills "$method"
 
     echo ""
     echo "=== Done ==="
-    echo "Shared skills are now available in Claude Code."
+    echo "Shared skills and agents are now available in Claude Code."
 }
 
 main

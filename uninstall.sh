@@ -1,10 +1,11 @@
 #!/bin/bash
-# Remove cat-herding shared skills from this machine.
+# Remove cat-herding shared skills and agents from this machine.
 # Run: ./uninstall.sh
 #
 # What it does:
 #   1. Removes shared skills from ~/.claude/skills/
-#   2. Removes shared skills from OpenClaw if present
+#   2. Removes shared agents from ~/.claude/agents/
+#   3. Removes shared skills from OpenClaw if present
 #   Does NOT uninstall Claude Code or GitHub CLI.
 
 set -e
@@ -12,6 +13,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="$HOME/.claude"
 SKILLS_DIR="$CLAUDE_DIR/skills"
+AGENTS_DIR="$CLAUDE_DIR/agents"
 
 # --- Helpers ---
 
@@ -95,6 +97,68 @@ remove_skills() {
     done <<< "$installed"
 }
 
+# --- Agent Removal ---
+
+find_installed_agents() {
+    local target_dir="$1"
+    local found=()
+    for agent_file in "$SCRIPT_DIR/agents"/*.md; do
+        [ -f "$agent_file" ] || continue
+        local agent_name
+        agent_name=$(basename "$agent_file")
+        local target="$target_dir/$agent_name"
+        if [ -L "$target" ]; then
+            found+=("$agent_name|symlink")
+        elif [ -f "$target" ]; then
+            found+=("$agent_name|copy")
+        fi
+    done
+    printf '%s\n' "${found[@]}"
+}
+
+remove_agents() {
+    local target_dir="$1"
+    local label="$2"
+
+    echo ""
+    echo "--- $label ---"
+
+    if [ ! -d "$target_dir" ]; then
+        echo "  [skip] $target_dir does not exist"
+        return
+    fi
+
+    if [ ! -d "$SCRIPT_DIR/agents" ]; then
+        echo "  No agents directory in repo"
+        return
+    fi
+
+    local installed
+    installed=$(find_installed_agents "$target_dir")
+
+    if [ -z "$installed" ]; then
+        echo "  No cat-herding agents found in $target_dir"
+        return
+    fi
+
+    echo "  Found in $target_dir:"
+    while IFS='|' read -r name method; do
+        echo "    $name ($method)"
+    done <<< "$installed"
+
+    echo ""
+    if ! prompt_yn "Remove these agents?"; then
+        echo "  [skip] kept all agents"
+        return
+    fi
+
+    while IFS='|' read -r name method; do
+        local target="$target_dir/$name"
+        rm -f "$target"
+        echo "  [removed] $name ($method)"
+    done <<< "$installed"
+}
+
 find_openclaw_skills_dir() {
     for candidate in \
         "$(npm root -g 2>/dev/null)/openclaw/skills" \
@@ -116,6 +180,7 @@ main() {
     echo "Repo: $SCRIPT_DIR"
 
     remove_skills "$SKILLS_DIR" "Claude Skills"
+    remove_agents "$AGENTS_DIR" "Claude Agents"
 
     local openclaw_dir
     openclaw_dir=$(find_openclaw_skills_dir)
