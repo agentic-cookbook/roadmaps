@@ -200,6 +200,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.1.0 | 2026-03-21 | Enforce sequential step ordering — always pick lowest-numbered Not Started step |
 | v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — step-by-step implementation loop with worktrees, PRs, reviews, checkpoint gates; Phase guard for `Planning` features; concurrency lock via `Implementing` field |
 
@@ -356,5 +357,6 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.1.0 | 2026-03-21 | Enforce sequential step ordering — always pick lowest-numbered Not Started step |
 | v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — autonomous implementation agent with bypassPermissions, worktree isolation, and error-handling-with-lock-release |
