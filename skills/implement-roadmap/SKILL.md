@@ -13,9 +13,7 @@ Implementation workflow for features that have been planned with `/plan-roadmap`
 1. **NEVER implement a feature without a Roadmap.** If no Roadmap exists, tell the user to run `/plan-roadmap` first.
 2. **NEVER combine steps.** Each Roadmap step gets its own worktree, its own PR, its own review cycle, and its own merge. No exceptions.
 3. **NEVER skip reviews.** Every PR gets at minimum a code review and security review before merge.
-4. **NEVER implement a feature that is already being implemented.** If the Roadmap's `Implementing` field is `Yes`, another session is working on it — refuse and tell the user.
-5. **At every step completion, print a checkpoint summary** to the user showing what was completed and what comes next. Do not proceed without user acknowledgment.
-6. **ALWAYS acquire the lock before writing code and release it when done.** The `Implementing` field is the concurrency lock.
+4. **At every step completion, print a checkpoint summary** to the user showing what was completed and what comes next. Do not proceed without user acknowledgment.
 
 ---
 
@@ -39,7 +37,6 @@ Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadma
 
 - The feature name (from `# Feature Roadmap: <name>`)
 - The `**Status**:` field
-- The `**Implementing**:` field
 - The `**Phase**:` field (if present — `Planning` or `Ready`)
 - The progress table (how many steps complete vs total)
 
@@ -47,14 +44,12 @@ Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadma
 
 Categorize each roadmap:
 
-- **Available**: `Implementing` is `No` AND `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
+- **Available**: `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
 - **Not Ready (Still Planning)**: `Phase` is `Planning` — this feature is still being defined by `/plan-roadmap` and is not available for implementation
-- **Locked**: `Implementing` is `Yes` (another session is working on it)
 - **Complete**: `Status` is `Complete` (nothing left to do)
 
 If no features are available:
 - If there are "Not Ready" features, list them and explain: "The following features are still in the planning phase and not yet available for implementation. Run `/plan-roadmap` to complete their planning."
-- If there are locked features, tell the user which features are currently being implemented and suggest waiting or checking on the other session
 - If there are no roadmaps at all, tell the user to run `/plan-roadmap` first
 - **STOP** — do not proceed
 
@@ -71,41 +66,10 @@ Available features to implement:
 Still in planning phase (not yet available):
 - FeatureD — planning in progress, run /plan-roadmap to complete
 
-Currently locked (being implemented by another session):
-- FeatureC — 2/4 steps complete
-
 Which feature would you like to implement? (enter number)
 ```
 
 Wait for the user to choose.
-
-### Step 4: Acquire Lock
-
-Once the user selects a feature:
-
-1. **Re-read the roadmap file** to check `Implementing` is still `No` (race condition guard)
-2. If it's `Yes`, the feature is locked by another session. Ask the user:
-
-```
-Feature <FeatureName> is currently locked (Implementing: Yes).
-This usually means another session is working on it, or a previous session crashed without releasing the lock.
-
-  [u] Unlock and continue — release the stale lock and start implementing
-  [q] Quit — leave the lock in place and exit
-
-(u/q)
-```
-
-**Wait for the user to respond.**
-
-- If `u`: continue to step 3 below (set `Implementing: Yes` is already set, just proceed)
-- If `q`: **STOP**
-
-3. If `Implementing` is `No` (or user chose to unlock), update the roadmap:
-   - Set `**Implementing**:` to `Yes`
-   - Commit and push this change: `chore: acquire implementation lock for <FeatureName>`
-
-The lock is now held. **All code below runs under this lock.**
 
 ### Step 5: Initialize Progress Dashboard
 
@@ -124,8 +88,6 @@ python3 "$DASH_CLI" add-issue <number> "<Step title>" "https://github.com/<owner
 ```
 
 Do this for every step's GitHub issue so the Issues panel is populated from the start.
-
-**Dashboard**: `python3 "$DASH_CLI" event "Implementation lock acquired"`
 
 Use `dash` commands throughout implementation to update the dashboard. Key commands for issues and PRs:
 
@@ -158,7 +120,7 @@ python3 "$DASH_CLI" check-control
 ```
 
 - If output is `pause` — tell the user the dashboard pause button was pressed and wait for them to say to continue (or re-run `check-control` until it returns `resume` or `stop`).
-- If output is `stop` — finish the current atomic operation, release the lock, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
+- If output is `stop` — finish the current atomic operation, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
 - If output is `none` or `resume` — continue normally.
 
 ### Step 1: Pick Next Step
@@ -389,10 +351,9 @@ Create `.claude/Features/Completed-Features/<FeatureName>-Summary.md`:
 <What changed from the original Feature Definition and why>
 ```
 
-### Step 6: Release Lock and Archive Roadmap
+### Step 6: Archive Roadmap
 
 Update the Roadmap:
-- Set `**Implementing**:` to `No`
 - Set `**Status**:` to `Complete`
 
 Move the Roadmap from `Active-Roadmaps/` to `Completed-Roadmaps/`:
@@ -420,37 +381,9 @@ Report the final status to the user with links to all PRs, issues, and the Featu
 
 ---
 
-## LOCK MANAGEMENT
-
-The `**Implementing**:` field in the Roadmap serves as a concurrency lock:
-
-| State | Meaning |
-|-------|---------|
-| `No` | Available for implementation |
-| `Yes` | Another session is actively implementing this feature |
-
-### Lock Rules
-
-- **Acquire** at startup (Step 4) after user selects a feature
-- **Release** at completion (Step 6) or if the user aborts (`/implement-roadmap abort`)
-- **Never break** another session's lock without explicit user confirmation
-- If a lock appears stale (e.g., user says the other session crashed), the user can manually edit the Roadmap to set `Implementing` to `No`, then re-run `/implement-roadmap`
-
-### Abnormal Termination
-
-If the session ends without reaching Completion (crash, user closes terminal, etc.):
-- The lock remains in the Roadmap (`Implementing: Yes`)
-- The next session that runs `/implement-roadmap` will see the feature as locked
-- The user can manually release the lock by editing the Roadmap file
-- Partially completed steps should be visible from the Roadmap's step statuses
-
----
-
 ## Anti-Patterns
 
 - **Batching steps into one PR** — even if steps seem small or related
 - **Skipping reviews** — every PR gets reviewed, every finding gets addressed
 - **Implementing without a Roadmap** — always run `/plan-roadmap` first
-- **Ignoring the lock** — if `Implementing` is `Yes`, do not proceed
 - **Proceeding past a CHECKPOINT GATE without user acknowledgment**
-- **Forgetting to release the lock** — always update `Implementing` to `No` on completion

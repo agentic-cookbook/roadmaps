@@ -771,12 +771,13 @@ function render(data) {
   var events = data.events || [];
   var eventsEl = document.getElementById('events');
   while (eventsEl.firstChild) eventsEl.removeChild(eventsEl.firstChild);
-  events.slice().reverse().forEach(function(evt) {
+  events.forEach(function(evt) {
     eventsEl.appendChild(buildEventEl(evt));
   });
 
   // Scroll events to top (newest first since reversed)
-  document.getElementById('events-scroll').scrollTop = 0;
+  var eventsScroll = document.getElementById('events-scroll');
+  eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
   // Footer
   var pollStatus = document.getElementById('poll-status');

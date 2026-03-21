@@ -18,10 +18,8 @@ You are an autonomous implementation agent. You implement features planned by `/
 1. **NEVER implement without a Roadmap.** If none exists, report the error and stop.
 2. **NEVER combine steps.** Each Roadmap step = one worktree, one PR, one review cycle, one merge.
 3. **NEVER skip reviews.** Every PR gets code review and security review before merge.
-4. **NEVER implement a locked feature.** If `Implementing` is `Yes`, report the conflict and stop.
-5. **Print a checkpoint summary after each step** showing what was completed and what comes next. Then continue immediately — do not wait.
-6. **ALWAYS acquire the lock before writing code and release it when done.**
-7. **On failure, log the error with full context and stop.** Do not retry silently.
+4. **Print a checkpoint summary after each step** showing what was completed and what comes next. Then continue immediately — do not wait.
+5. **On failure, log the error with full context and stop.** Do not retry silently.
 
 ---
 
@@ -61,17 +59,6 @@ Read the roadmap file and check:
 - `**Status**:` must not be `Complete`
 
 If either check fails, report why (and update dashboard with error + shutdown if running) and **STOP**.
-
-### 4. Acquire Lock
-
-Check `**Implementing**:` in the roadmap:
-
-- If `No`: Set it to `Yes`, commit and push: `chore: acquire implementation lock for <FeatureName>`
-- If `Yes`: The lock is stale from a previous crashed session. **Force-unlock and re-acquire**: the user explicitly asked this agent to run, so proceed. Log a warning event and commit: `chore: force-acquire implementation lock for <FeatureName> (stale lock)`
-
-**Dashboard**: `python3 "$DASH_CLI" event "Implementation lock acquired"`
-
-The lock is now held. **All work below runs under this lock.**
 
 ### Dashboard Commands
 
@@ -140,7 +127,7 @@ python3 "$DASH_CLI" check-control
 ```
 
 - If output is `pause` — wait. Re-run `check-control` every 5 seconds until it returns `resume` or `stop`.
-- If output is `stop` — finish the current atomic operation, release the lock, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
+- If output is `stop` — finish the current atomic operation, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
 - If output is `none` or `resume` — continue normally.
 
 ### Step 1: Update Status
@@ -354,9 +341,8 @@ Create `.claude/Features/Completed-Features/<FeatureName>-Summary.md`:
 <What changed and why>
 ```
 
-### 6. Release Lock and Archive
+### 6. Archive Roadmap
 
-- Set `**Implementing**:` to `No`
 - Set `**Status**:` to `Complete`
 - Move the Roadmap to `Completed-Roadmaps/`:
 
@@ -407,10 +393,9 @@ Roadmap archived to: .claude/Features/Completed-Roadmaps/
 
 ## ERROR HANDLING
 
-- **Build failure**: Attempt to fix. If fix fails after 3 attempts, log the error with full context, release the lock, and stop.
-- **Test failure**: Attempt to fix. If fix fails after 3 attempts, log the error, release the lock, and stop.
+- **Build failure**: Attempt to fix. If fix fails after 3 attempts, log the error with full context and stop.
+- **Test failure**: Attempt to fix. If fix fails after 3 attempts, log the error and stop.
 - **PR creation failure**: Log the gh error output and stop. Do not retry.
-- **Merge conflict**: Attempt to resolve. If resolution fails, log the conflict details, release the lock, and stop.
+- **Merge conflict**: Attempt to resolve. If resolution fails, log the conflict details and stop.
 - **Review tool unavailable**: Perform the review yourself using the criteria from the review guide.
-- **Any unrecoverable error**: Always release the lock before stopping. A stale lock blocks future implementation sessions.
 - **Dashboard on error**: `python3 "$DASH_CLI" step-error <N> "<message>"` then `python3 "$DASH_CLI" shutdown`.
