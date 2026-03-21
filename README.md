@@ -79,6 +79,38 @@ Done → run /implement-roadmap to build it
 
 ---
 
+### /plan-bugfix-roadmap
+
+Lightweight roadmap generator for batches of bugfixes. Takes a list of existing GitHub issue numbers and produces a Feature Definition and Feature Roadmap, ready for `/implement-roadmap`.
+
+**What it does:** Skips the discussion phase of `/plan-roadmap` — you already know the bugs. Fetches issue details from GitHub, groups and orders them by component, assigns complexity, and generates all planning artifacts with a single approval step.
+
+**Usage:**
+
+```
+/plan-bugfix-roadmap 3 4 5 6 7 8 9 10 11 12 13 14
+/plan-bugfix-roadmap all
+```
+
+Pass issue numbers, or `all` to include every open issue.
+
+**Key differences from /plan-roadmap:**
+
+| | /plan-roadmap | /plan-bugfix-roadmap |
+|---|---|---|
+| **Discussion** | Full back-and-forth exploration | None — bugs are already defined |
+| **Approval gates** | Multiple checkpoints | Single approval of the full plan |
+| **GitHub issues** | Creates new issues per step | Uses existing issues (creates only for new bugs) |
+| **Use case** | New features, design exploration | Known bugs, batch fixes |
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-21 | Initial release — fetches issues from GitHub, groups by component, single-approval flow |
+
+---
+
 ### /implement-roadmap
 
 Implementation skill for features planned with `/plan-roadmap`. Works through each Roadmap step with proper isolation, testing, and review.
