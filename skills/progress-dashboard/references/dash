@@ -196,11 +196,23 @@ def cmd_init(args):
     title = args[0]
     step_names = args[1:] if len(args) > 1 else []
 
-    # Kill any existing dashboard server (same or different feature)
+    # Kill any existing dashboard server and wait for it to die so the port is freed
     existing = load_state()
     if existing:
         try:
             os.kill(existing["pid"], signal.SIGTERM)
+            for _ in range(20):
+                time.sleep(0.1)
+                try:
+                    os.kill(existing["pid"], 0)
+                except ProcessLookupError:
+                    break
+            else:
+                try:
+                    os.kill(existing["pid"], signal.SIGKILL)
+                    time.sleep(0.1)
+                except (OSError, ProcessLookupError):
+                    pass
         except (OSError, ProcessLookupError):
             pass
 
@@ -255,8 +267,9 @@ def cmd_init(args):
     # Clear stale control state from previous run
     (dash_dir / "control.json").unlink(missing_ok=True)
 
-    # Reuse previous port: check the port file inside the dash dir first,
-    # then fall back to the global state file, then pick a new one.
+    # Reuse previous port from the port file, or fall back to the global
+    # state file. Only pick a new port on the very first run for this title.
+    # No bind test needed — we already waited for the old server to die.
     port = None
     port_file = dash_dir / "port"
     if port_file.exists():
@@ -266,13 +279,6 @@ def cmd_init(args):
             port = None
     if not port:
         port = existing.get("port") if existing and str(dash_dir) == existing.get("dash_dir") else None
-    if port:
-        # Check if the old port is actually free now
-        try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.bind(("", port))
-        except OSError:
-            port = None
     if not port:
         port = find_free_port()
     # Persist port inside the dashboard directory for future runs
