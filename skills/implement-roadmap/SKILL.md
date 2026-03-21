@@ -26,10 +26,11 @@ Implementation workflow for features that have been planned with `/plan-roadmap`
 Locate the `dash` CLI:
 
 ```bash
-DASH_CLI="$(find -L ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
+DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash"
+test -f "$DASH_CLI" && echo "Dashboard available" || echo "NO_DASH"
 ```
 
-You will initialize the dashboard after the user selects a feature (since you need the feature name and step names). For now, just confirm `DASH_CLI` is available. If not found, log it and continue without the dashboard.
+You will initialize the dashboard after the user selects a feature (since you need the feature name). For now, just confirm `DASH_CLI` exists. If not found, continue without the dashboard.
 
 ### Step 1: Scan Active Roadmaps
 
@@ -81,29 +82,30 @@ python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
 
 This creates the temp directory, starts the server, and opens the browser. The `dash` CLI manages all state internally — no shell variables to track between calls.
 
-After init, populate the dashboard immediately. For every step in the Roadmap:
+After init, populate the dashboard. **Batch into a single bash command** (chain with `&&`):
 
-1. Add its GitHub issue:
-```bash
-python3 "$DASH_CLI" add-issue <issue_number> "<Step N: description>" "https://github.com/<owner>/<repo>/issues/<issue_number>"
-```
+**CRITICAL RULES:**
+- Include **ALL** steps — both completed and not-started. `set-steps` replaces the full list.
+- **Never** append "(DONE)" or status text to step names — the dashboard shows status via icons.
+- **Never** use `step-detail` to say "PR #X created" — use `step-link` for links.
+- Step names should be just the description, e.g. `"Setup project"` not `"Step 1: Setup project (DONE)"`.
 
-2. Set the step's detail to its description and acceptance criteria:
 ```bash
-python3 "$DASH_CLI" step-detail <N> "<description> — Acceptance: <criteria>"
+# Load ALL steps
+python3 "$DASH_CLI" set-steps "<step 1 name>" "<step 2 name>" ... && \
+# Add all issues
+python3 "$DASH_CLI" add-issue <N> "<title>" "<url>" && \
+# Set step details
+python3 "$DASH_CLI" step-detail 1 "<description> — Acceptance: <criteria>" && \
+# For completed steps, add links and mark done:
+python3 "$DASH_CLI" step-start 1 && \
+python3 "$DASH_CLI" step-link 1 "Issue #<N>" "<url>" && \
+python3 "$DASH_CLI" step-link 1 "PR #<N>" "<url>" && \
+python3 "$DASH_CLI" step-complete 1 && \
+python3 "$DASH_CLI" update-issue <N> closed && \
+python3 "$DASH_CLI" add-pr <N> "<title>" "<url>" && \
+python3 "$DASH_CLI" update-pr <N> merged
 ```
-
-3. If the step is already **Complete** (from a previous run), populate its PR/issue links:
-```bash
-python3 "$DASH_CLI" step-start <N>
-python3 "$DASH_CLI" step-link <N> "PR #<number>" "<pr_url>"
-python3 "$DASH_CLI" step-link <N> "Issue #<number>" "<issue_url>"
-python3 "$DASH_CLI" step-complete <N>
-python3 "$DASH_CLI" update-issue <issue_number> closed
-python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>"
-python3 "$DASH_CLI" update-pr <pr_number> merged
-```
-Read the PR info from the step's `**PR**:` field in the Roadmap.
 
 Use `dash` commands throughout implementation:
 
@@ -149,7 +151,12 @@ Read the Roadmap file. Find the next step with status "Not Started". If all step
 
 Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
 
-**Dashboard**: `python3 "$DASH_CLI" step-start <N>`
+**Dashboard**:
+```bash
+python3 "$DASH_CLI" step-start <N>
+python3 "$DASH_CLI" update-issue <issue_number> in_progress
+python3 "$DASH_CLI" step-link <N> "Issue #<issue_number>" "<issue_url>"
+```
 
 ### Step 3: Plan the Step
 
@@ -263,10 +270,10 @@ gh issue close <number>
 
 **Dashboard**:
 ```bash
-python3 "$DASH_CLI" step-link <N> "PR #<number>" "<pr_url>"
-python3 "$DASH_CLI" step-link <N> "Issue #<number>" "<issue_url>"
 python3 "$DASH_CLI" step-complete <N>
 ```
+
+Links for PR and Issue should already be on the step from earlier dashboard calls.
 
 Print the following to the user before starting the next step:
 

@@ -27,23 +27,17 @@ You are an autonomous implementation agent. You implement features planned by `/
 
 ### 1. Start Progress Dashboard
 
-**This is the very first thing you do.** Before anything else, start the dashboard so the user can see progress from the beginning.
-
-Locate the `dash` CLI:
+**This is the very first thing you do — in your very first tool call.** Open the dashboard immediately so the user sees it while you read the roadmap.
 
 ```bash
-DASH_CLI="$(find -L ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
+DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash" && test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<FeatureName>" || echo "NO_DASH"
 ```
 
-If found, resolve the feature name and step names from the Roadmap first (read `.claude/Features/Active-Roadmaps/` to find the matching roadmap file, parse step names from it), then initialize:
+Replace `<FeatureName>` with the feature name from your task prompt. **Do not read the roadmap first** — init with just the title and no steps. The browser opens immediately.
 
-```bash
-python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
-```
+If `dash` is not found (`NO_DASH`), continue without the dashboard — it is not required.
 
-This creates the temp directory, starts the server, opens the browser, and writes the initial `progress.json`. The `dash` CLI manages all state internally — no shell variables to track.
-
-If `dash` is not found or `init` fails, log the error and continue without the dashboard — it is not required for implementation.
+Steps and details will be populated later in step 5a after reading the roadmap.
 
 ### 2. Resolve Feature Name
 
@@ -88,43 +82,48 @@ python3 "$DASH_CLI" shutdown                                # kill the server
 
 | Moment | Command |
 |--------|---------|
-| After init | `add-issue` for each issue, `step-detail` for each step (see 5a) |
+| After reading roadmap | `set-steps`, `add-issue`, `step-detail`, mark completed steps (see 5a) |
 | Before each step | `check-control` — handle pause/stop if returned |
-| Step starts | `step-start <N>` then `update-issue <issue_number> in_progress` |
+| Step starts | `step-start <N>` then `update-issue <issue_number> in_progress` then `step-link <N> "Issue #<number>" "<url>"` |
 | PR created | `add-pr <number> "<title>" "<url>"` then `step-link <N> "PR #<number>" "<url>"` |
-| Reviews done | `step-detail <N> "Reviews: <summary of findings>"` |
-| PR merged | `update-pr <number> merged` then `step-link <N> "Issue #<number>" "<url>"` then `step-complete <N>` then `update-issue <issue_number> closed` |
+| Reviews done | `event "Step <N>: reviews passed"` |
+| PR merged | `update-pr <number> merged` then `step-complete <N>` then `update-issue <issue_number> closed` |
 | Error occurs | `step-error <N> "<message>"` then `shutdown` |
 | All steps done | `complete` then `shutdown` |
 
 ### 5a. Populate Dashboard
 
-**Do this immediately after init.** For every step in the Roadmap:
+Now that you've read the Roadmap, populate the dashboard. **Batch all of these into a single bash command** (chain with `&&`) to minimize round trips.
 
-1. Add its GitHub issue to the Issues panel:
-```bash
-python3 "$DASH_CLI" add-issue <issue_number> "<Step N: description>" "https://github.com/<owner>/<repo>/issues/<issue_number>"
-```
+**CRITICAL RULES for dashboard population:**
+- Include **ALL** steps from the Roadmap — both completed and not-started. `set-steps` replaces the full list.
+- **Never** append "(DONE)" or any status text to step names — the dashboard shows status via icons.
+- **Never** use `step-detail` to say "PR #X created" — use `step-link` for links, `step-detail` for descriptions.
+- Step names should be just the description from the Roadmap, e.g. `"Setup project scaffolding"` not `"Step 1: Setup project scaffolding (DONE)"`.
 
-2. Set the step's detail to its description and acceptance criteria from the Roadmap:
 ```bash
-python3 "$DASH_CLI" step-detail <N> "<description> — Acceptance: <criteria>"
-```
-
-3. If the step is already **Complete** (from a previous run), populate its links and status:
-```bash
-python3 "$DASH_CLI" step-start <N>
-python3 "$DASH_CLI" step-link <N> "PR #<number>" "<pr_url>"
-python3 "$DASH_CLI" step-link <N> "Issue #<number>" "<issue_url>"
-python3 "$DASH_CLI" step-complete <N>
-python3 "$DASH_CLI" update-issue <issue_number> closed
-python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>"
+# Load ALL steps from the Roadmap (completed + remaining)
+python3 "$DASH_CLI" set-steps "<step 1 name>" "<step 2 name>" ... "<step N name>" && \
+# Add all GitHub issues
+python3 "$DASH_CLI" add-issue <issue1> "<title>" "<url>" && \
+python3 "$DASH_CLI" add-issue <issue2> "<title>" "<url>" && \
+# ... for all issues
+# Set details for each step
+python3 "$DASH_CLI" step-detail 1 "<description> — Acceptance: <criteria>" && \
+python3 "$DASH_CLI" step-detail 2 "<description> — Acceptance: <criteria>" && \
+# ... for all steps
+# For steps already Complete (from a previous run), add their links and mark done:
+python3 "$DASH_CLI" step-start 1 && \
+python3 "$DASH_CLI" step-link 1 "Issue #<N>" "<issue_url>" && \
+python3 "$DASH_CLI" step-link 1 "PR #<N>" "<pr_url>" && \
+python3 "$DASH_CLI" step-complete 1 && \
+python3 "$DASH_CLI" update-issue <issue_number> closed && \
+python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>" && \
 python3 "$DASH_CLI" update-pr <pr_number> merged
+# ... repeat for each completed step
 ```
 
-Read the PR number and URL from the step's `**PR**:` field in the Roadmap. This ensures the dashboard shows the full history even on subsequent runs.
-
-This ensures the Issues panel, PRs panel, and step details are populated from the start, before any new implementation begins.
+Read PR info from each step's `**PR**:` field in the Roadmap.
 
 ### 5b. Read Feature Definition
 
@@ -157,6 +156,7 @@ Set the step's status to "In Progress" in the Roadmap. Commit and push this chan
 ```bash
 python3 "$DASH_CLI" step-start <N>
 python3 "$DASH_CLI" update-issue <issue_number> in_progress
+python3 "$DASH_CLI" step-link <N> "Issue #<issue_number>" "<issue_url>"
 ```
 
 ### Step 2: Plan
@@ -275,10 +275,10 @@ python3 "$DASH_CLI" update-issue <issue_number> closed
 
 **Dashboard**:
 ```bash
-python3 "$DASH_CLI" step-link <N> "PR #<number>" "<pr_url>"
-python3 "$DASH_CLI" step-link <N> "Issue #<number>" "<issue_url>"
 python3 "$DASH_CLI" step-complete <N>
 ```
+
+Links for PR and Issue should already be on the step from earlier dashboard calls.
 
 Print:
 
