@@ -5,6 +5,16 @@ Shared repository of reusable Claude Code skills and agents.
 
 Skills live in `skills/`, agents in `agents/`. Run `./install.sh` to install everything, or manually copy/symlink into `~/.claude/skills/` and `~/.claude/agents/`.
 
+## Compatibility
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| macOS | Supported | Symlink and copy both work |
+| Linux | Supported | Symlink and copy both work |
+| Windows (WSL) | Supported | Choose **copy** when prompted. Symlinks can fail across the WSL/Windows filesystem boundary (e.g., repo cloned to `/mnt/c/...`, skills installed to `~/.claude/`). If you keep the repo on the Linux filesystem (`~/...`), symlinks work fine. |
+
+Both scripts require `bash`. The install script auto-detects WSL and uses `apt` for tool installation.
+
 ## Skills
 
 ### /plan-roadmap
