@@ -526,7 +526,7 @@
 
   <div id="poll-status" class="footer">
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v13</span>
+    <span class="footer-version">v14</span>
   </div>
 
   <div id="completion-overlay" class="completion-overlay">
@@ -927,10 +927,6 @@ function render(data) {
     statusEl.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
     footerEl.className = 'footer';
 
-    // Clear any stale overlays from a previous stopped/completed run
-    document.getElementById('completion-overlay').classList.remove('visible');
-    document.getElementById('stop-overlay').classList.remove('visible');
-
     if (data.control_state === 'stop') {
       hideControls();
       document.getElementById('pause-overlay').classList.remove('visible');
@@ -1070,7 +1066,29 @@ async function poll() {
 }
 
 poll();
-setInterval(function() { poll(); }, POLL_INTERVAL);
+var mainInterval = setInterval(function() { poll(); }, POLL_INTERVAL);
+var terminated = false;
+
+// Watch for terminal status. Once complete/error, stop main polling
+// but keep a slow heartbeat. If the dashboard restarts (status goes
+// back to running), do a full page reload to get a clean slate.
+setInterval(function() {
+  if (!lastJson) return;
+  try {
+    var data = JSON.parse(lastJson);
+    var done = data.status === 'complete' || data.status === 'error';
+    if (done && !terminated) {
+      terminated = true;
+      clearInterval(mainInterval);
+    }
+    if (terminated && !done) {
+      // Dashboard restarted — reload for clean state
+      location.reload();
+    }
+  } catch(e) {}
+  // If terminated, keep fetching so we detect restarts
+  if (terminated) poll();
+}, 3000);
 </script>
 </body>
 </html>
