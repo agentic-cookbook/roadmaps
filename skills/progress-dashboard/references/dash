@@ -255,8 +255,17 @@ def cmd_init(args):
     # Clear stale control state from previous run
     (dash_dir / "control.json").unlink(missing_ok=True)
 
-    # Reuse previous port if available, otherwise find a free one
-    port = existing.get("port") if existing and str(dash_dir) == existing.get("dash_dir") else None
+    # Reuse previous port: check the port file inside the dash dir first,
+    # then fall back to the global state file, then pick a new one.
+    port = None
+    port_file = dash_dir / "port"
+    if port_file.exists():
+        try:
+            port = int(port_file.read_text().strip())
+        except (ValueError, OSError):
+            port = None
+    if not port:
+        port = existing.get("port") if existing and str(dash_dir) == existing.get("dash_dir") else None
     if port:
         # Check if the old port is actually free now
         try:
@@ -266,6 +275,8 @@ def cmd_init(args):
             port = None
     if not port:
         port = find_free_port()
+    # Persist port inside the dashboard directory for future runs
+    port_file.write_text(str(port))
     proc = subprocess.Popen(
         [sys.executable, str(dash_dir / "server.py"), str(port), str(dash_dir)],
         stdout=subprocess.DEVNULL,
@@ -768,6 +779,15 @@ def cmd_begin_step(args):
 
     step_num = int(args[0])
     step, _ = get_step(data, step_num)
+
+    # Enforce single active step: if any other step is in_progress, warn and
+    # auto-close it so the dashboard never shows two active steps at once.
+    for i, s in enumerate(data.get("steps", []), start=1):
+        if i != step_num and s["status"] == "in_progress":
+            s["status"] = "complete"
+            s["completed_at"] = now_iso()
+            s["updated_at"] = now_iso()
+            add_event(data, f"Step {i} auto-completed (step {step_num} starting)")
 
     step["status"] = "in_progress"
     step["started_at"] = now_iso()

@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "1.1.0"
+version: "1.2.0"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v1.1.0
+> implement-roadmap-interactively v1.2.0
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -126,7 +126,7 @@ python3 "$DASH_CLI" check-control
 
 ### Step 1: Pick Next Step
 
-Read the Roadmap file. Find the **lowest-numbered** step with status "Not Started". Always process steps in order — Step 1 before Step 2, etc. If all steps are complete, proceed to the Completion phase.
+Read the Roadmap file. Find the **lowest-numbered** step with status "Not Started". **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.** If all steps are complete, proceed to the Completion phase.
 
 **If the step's Type is `Manual`**: Skip it — print a message telling the user that step N is a manual step assigned to them, and move to the next "Not Started" step. Do not attempt to implement manual steps.
 

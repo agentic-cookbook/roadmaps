@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "1.2.0"
+version: "1.3.0"
 description: "Implement a planned feature from its Roadmap autonomously in the background. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v1.2.0
+   > implement-roadmap v1.3.0
 
 2. Print the agent version by running:
    ```bash

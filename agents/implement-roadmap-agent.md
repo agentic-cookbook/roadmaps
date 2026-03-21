@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "1.2.0"
+version: "1.3.0"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v1.2.0
+> implement-roadmap-agent v1.3.0
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -99,7 +99,9 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 ## IMPLEMENTATION LOOP
 
-Pick the **lowest-numbered** step with status "Not Started" and implement it. Repeat until all steps are complete. **Always process steps in order — Step 1 before Step 2, Step 2 before Step 3, etc.**
+**CRITICAL: STRICTLY SEQUENTIAL EXECUTION.** You MUST complete each step fully (PR merged, issue closed, `finish-step` called) before beginning the next one. Never start Step N+1 until Step N is finished. Never run steps in parallel. Never begin implementation of a later step while an earlier step is in progress.
+
+Pick the **lowest-numbered** step with status "Not Started" and implement it. Repeat until all steps are complete.
 
 **If the step's Type is `Manual`**: Skip it — log that step N is a manual step assigned to the developer, update the dashboard if running (`python3 "$DASH_CLI" log "Step N is manual — skipping"`), and continue to the next step. Do not attempt to implement manual steps.
 
