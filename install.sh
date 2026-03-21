@@ -259,14 +259,14 @@ detect_current_method() {
 prompt_install_method() {
     local current="$1"
     if [ "$current" != "none" ]; then
-        echo "  Current install method: $current"
+        echo "  Current install method: $current" > /dev/tty
     fi
-    echo ""
-    echo -n "  Install skills as [s]ymlink or [c]opy? [s/c/q] "
+    echo "" > /dev/tty
+    echo -n "  Install skills as [s]ymlink or [c]opy? [s/c/q] " > /dev/tty
     local choice
     read -r choice < /dev/tty
     if [[ "$choice" =~ ^[qQ]$ ]]; then
-        echo "  EXIT"
+        echo "  EXIT" > /dev/tty
         exit 0
     elif [[ "$choice" =~ ^[cC]$ ]]; then
         echo "copy"
