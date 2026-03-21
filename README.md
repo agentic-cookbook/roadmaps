@@ -148,6 +148,28 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 ---
 
+### /generate-test-roadmap
+
+Generates a complete test roadmap for exercising `/implement-roadmap` and `implement-roadmap-agent`. Creates all planning artifacts (Feature Definition, Feature Roadmap, 20 GitHub issues) in one shot with no user interaction.
+
+**What it does:** Creates a silly cat-herding themed feature with 20 trivial steps that each append a line to `roadmap-test.md`. The output is structurally identical to what `/plan-roadmap` produces, so the implementation agent can pick it up.
+
+**Usage:**
+
+```
+/generate-test-roadmap
+```
+
+No arguments, no prompts, no approvals. Just run it and it creates everything.
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-21 | Initial release — 20-step cat-herding test roadmap generator |
+
+---
+
 ### /progress-dashboard
 
 Reusable live progress dashboard that any agent or skill can use to show real-time step-by-step progress in the browser. Opens a local web page that polls a JSON file for updates.
