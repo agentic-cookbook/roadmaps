@@ -417,6 +417,54 @@ install_openclaw_skills() {
     done
 }
 
+# --- Remove Renamed Extensions ---
+# Clean up old names from prior installs so they don't coexist with the new names.
+
+RENAMED_SKILLS=(plan-feature implement-feature)
+RENAMED_AGENTS=(implement-feature-auto.md)
+
+remove_renamed_extensions() {
+    echo ""
+    echo "--- Cleaning Up Old Names ---"
+
+    local found=0
+
+    for name in "${RENAMED_SKILLS[@]}"; do
+        for dir in "$SKILLS_DIR"; do
+            local target="$dir/$name"
+            if [ -L "$target" ] || [ -d "$target" ]; then
+                rm -rf "$target"
+                echo "  [removed] skill $name from $dir"
+                found=1
+            fi
+        done
+        local openclaw_dir
+        for candidate in \
+            "$(npm root -g 2>/dev/null)/openclaw/skills" \
+            "/opt/homebrew/lib/node_modules/openclaw/skills" \
+            "/usr/local/lib/node_modules/openclaw/skills"; do
+            if [ -d "$candidate/$name" ] || [ -L "$candidate/$name" ]; then
+                rm -rf "$candidate/$name"
+                echo "  [removed] skill $name from $candidate"
+                found=1
+            fi
+        done
+    done
+
+    for name in "${RENAMED_AGENTS[@]}"; do
+        local target="$AGENTS_DIR/$name"
+        if [ -L "$target" ] || [ -f "$target" ]; then
+            rm -f "$target"
+            echo "  [removed] agent $name from $AGENTS_DIR"
+            found=1
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
+        echo "  No old names found"
+    fi
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -435,6 +483,7 @@ main() {
     local method
     method=$(prompt_install_method "$current_method")
 
+    remove_renamed_extensions
     install_claude_skills "$method"
     install_claude_agents "$method"
     install_openclaw_skills "$method"

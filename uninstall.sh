@@ -171,6 +171,52 @@ find_openclaw_skills_dir() {
     done
 }
 
+# --- Remove Renamed Extensions ---
+
+RENAMED_SKILLS=(plan-feature implement-feature)
+RENAMED_AGENTS=(implement-feature-auto.md)
+
+remove_renamed_extensions() {
+    echo ""
+    echo "--- Cleaning Up Old Names ---"
+
+    local found=0
+
+    for name in "${RENAMED_SKILLS[@]}"; do
+        for dir in "$SKILLS_DIR"; do
+            local target="$dir/$name"
+            if [ -L "$target" ] || [ -d "$target" ]; then
+                rm -rf "$target"
+                echo "  [removed] skill $name from $dir"
+                found=1
+            fi
+        done
+        local openclaw_dir
+        openclaw_dir=$(find_openclaw_skills_dir)
+        if [ -n "$openclaw_dir" ]; then
+            local target="$openclaw_dir/$name"
+            if [ -L "$target" ] || [ -d "$target" ]; then
+                rm -rf "$target"
+                echo "  [removed] skill $name from $openclaw_dir"
+                found=1
+            fi
+        fi
+    done
+
+    for name in "${RENAMED_AGENTS[@]}"; do
+        local target="$AGENTS_DIR/$name"
+        if [ -L "$target" ] || [ -f "$target" ]; then
+            rm -f "$target"
+            echo "  [removed] agent $name from $AGENTS_DIR"
+            found=1
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
+        echo "  No old names found"
+    fi
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -179,6 +225,7 @@ main() {
     echo "=== Cat Herding Uninstall ==="
     echo "Repo: $SCRIPT_DIR"
 
+    remove_renamed_extensions
     remove_skills "$SKILLS_DIR" "Claude Skills"
     remove_agents "$AGENTS_DIR" "Claude Agents"
 
