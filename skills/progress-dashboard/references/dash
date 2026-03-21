@@ -387,6 +387,12 @@ def cmd_check_control(args):
         control = json.loads(control_file.read_text())
         action = control.get("action", "none")
         print(action)
+        if action != "none":
+            data = read_progress(dash_dir)
+            if data:
+                labels = {"pause": "Pause", "resume": "Resume", "stop": "Stop"}
+                add_event(data, f"{labels.get(action, action)} received by agent")
+                write_progress(dash_dir, data)
         if action == "resume":
             control_file.unlink(missing_ok=True)
     except (json.JSONDecodeError, OSError):
