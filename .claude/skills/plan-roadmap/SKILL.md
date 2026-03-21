@@ -85,16 +85,14 @@ git check-ignore -q .claude/Features/FeatureDefinitions/test 2>/dev/null && echo
 
 If the output is `IGNORED`, the `.gitignore` (or a parent `.gitignore`) is excluding `.claude/Features/`. Fix this by appending negation rules to the repo-root `.gitignore`:
 
-```bash
-cat >> .gitignore <<'EOF'
+Append the negation rules to `.gitignore` (use `printf` to avoid heredoc permission warnings):
 
-# Allow Claude Features planning files to be tracked
-!.claude/Features/
-!.claude/Features/**
-EOF
-git add .gitignore
-git commit -m "chore: allow .claude/Features/ in git"
-git push
+```bash
+printf '\n!.claude/Features/\n!.claude/Features/**\n' >> .gitignore
+```
+
+```bash
+git add .gitignore && git commit -m "chore: allow .claude/Features/ in git" && git push
 ```
 
 After adding the rules, re-run the `git check-ignore` check to confirm the path is now tracked. If it still reports `IGNORED`, **STOP** and tell the user — a higher-level `.gitignore` rule may need manual attention.

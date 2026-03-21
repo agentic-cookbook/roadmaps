@@ -44,15 +44,11 @@ git check-ignore -q .claude/Features/FeatureDefinitions/test 2>/dev/null && echo
 ```
 If `IGNORED`, append negation rules to `.gitignore`:
 ```bash
-cat >> .gitignore <<'EOF'
+printf '\n!.claude/Features/\n!.claude/Features/**\n' >> .gitignore
+```
 
-# Allow Claude Features planning files to be tracked
-!.claude/Features/
-!.claude/Features/**
-EOF
-git add .gitignore
-git commit -m "chore: allow .claude/Features/ in git"
-git push
+```bash
+git add .gitignore && git commit -m "chore: allow .claude/Features/ in git" && git push
 ```
 
 ---
