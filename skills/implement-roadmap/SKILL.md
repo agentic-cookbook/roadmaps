@@ -117,9 +117,31 @@ python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
 
 This creates the temp directory, starts the server, and opens the browser. The `dash` CLI manages all state internally — no shell variables to track between calls.
 
+After init, populate the Issues panel from the Roadmap:
+
+```bash
+python3 "$DASH_CLI" add-issue <number> "<Step title>" "https://github.com/<owner>/<repo>/issues/<number>"
+```
+
+Do this for every step's GitHub issue so the Issues panel is populated from the start.
+
 **Dashboard**: `python3 "$DASH_CLI" event "Implementation lock acquired"`
 
-Use `dash` commands throughout implementation to update the dashboard (see the Dashboard Commands table in the progress-dashboard skill for the full list).
+Use `dash` commands throughout implementation to update the dashboard. Key commands for issues and PRs:
+
+```bash
+# When a step starts
+python3 "$DASH_CLI" update-issue <issue_number> in_progress
+
+# When a PR is created
+python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>"
+
+# When a PR is merged
+python3 "$DASH_CLI" update-pr <pr_number> merged
+
+# When an issue is closed
+python3 "$DASH_CLI" update-issue <issue_number> closed
+```
 
 If init fails, skip the dashboard and continue without it — it is not required for implementation.
 

@@ -101,13 +101,24 @@ python3 "$DASH_CLI" shutdown                                # kill the server
 
 | Moment | Command |
 |--------|---------|
+| After init | `add-issue <number> "<title>" "<url>"` for each GitHub issue from the Roadmap |
 | Before each step | `check-control` — handle pause/stop if returned |
-| Step starts | `step-start <N>` |
-| PR created | `step-detail <N> "PR #X created"` then `step-link <N> "PR #X" "<url>"` |
+| Step starts | `step-start <N>` then `update-issue <issue_number> in_progress` |
+| PR created | `add-pr <number> "<title>" "<url>"` then `step-detail <N> "PR #X created"` then `step-link <N> "PR #X" "<url>"` |
 | Reviews done | `step-detail <N> "Reviews passed"` |
-| PR merged | `step-complete <N>` |
+| PR merged | `update-pr <number> merged` then `step-complete <N>` then `update-issue <issue_number> closed` |
 | Error occurs | `step-error <N> "<message>"` then `shutdown` |
 | All steps done | `complete` then `shutdown` |
+
+### 5a. Populate Dashboard with Issues
+
+After initializing the dashboard, read each step in the Roadmap and add its GitHub issue:
+
+```bash
+python3 "$DASH_CLI" add-issue <number> "<Step title>" "https://github.com/<owner>/<repo>/issues/<number>"
+```
+
+Do this for every step's issue so the Issues panel is populated from the start.
 
 ### 5. Read Feature Definition
 
@@ -136,7 +147,11 @@ python3 "$DASH_CLI" check-control
 
 Set the step's status to "In Progress" in the Roadmap. Commit and push this change.
 
-**Dashboard**: `python3 "$DASH_CLI" step-start <N>`
+**Dashboard**:
+```bash
+python3 "$DASH_CLI" step-start <N>
+python3 "$DASH_CLI" update-issue <issue_number> in_progress
+```
 
 ### Step 2: Plan
 
@@ -199,6 +214,13 @@ EOF
 )"
 ```
 
+**Dashboard**: After the PR is created, capture its number and URL:
+```bash
+python3 "$DASH_CLI" add-pr <pr_number> "<Step description>" "<pr_url>"
+python3 "$DASH_CLI" step-detail <N> "PR #<pr_number> created"
+python3 "$DASH_CLI" step-link <N> "PR #<pr_number>" "<pr_url>"
+```
+
 ### Step 8: Run Reviews
 
 Read the review guide at `.claude/skills/implement-roadmap/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
@@ -220,6 +242,11 @@ Fix high and critical issues. Re-run relevant reviews to confirm resolution.
 gh pr merge --squash
 ```
 
+**Dashboard**:
+```bash
+python3 "$DASH_CLI" update-pr <pr_number> merged
+```
+
 ### Step 11: Update Roadmap
 
 - Mark the step as "Complete"
@@ -232,6 +259,11 @@ gh pr merge --squash
 ```bash
 gh issue comment <number> --body "Completed in PR #<pr_number>. <Brief summary of what was done.>"
 gh issue close <number>
+```
+
+**Dashboard**:
+```bash
+python3 "$DASH_CLI" update-issue <issue_number> closed
 ```
 
 ### Checkpoint (log and continue)
