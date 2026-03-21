@@ -1,6 +1,7 @@
 ---
 name: implement-feature
-description: "Implement a planned feature from its Roadmap — step by step with worktrees, PRs, and reviews. Use after /plan-feature has created a Feature Definition and Roadmap. Triggers on requests like 'implement the feature', 'start implementing', 'build the feature', or /implement-feature."
+description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-feature has created a Roadmap."
+disable-model-invocation: true
 ---
 
 # Implement Feature
@@ -29,17 +30,20 @@ Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadma
 - The feature name (from `# Feature Roadmap: <name>`)
 - The `**Status**:` field
 - The `**Implementing**:` field
+- The `**Phase**:` field (if present — `Planning` or `Ready`)
 - The progress table (how many steps complete vs total)
 
 ### Step 2: Build Available Features List
 
 Categorize each roadmap:
 
-- **Available**: `Implementing` is `No` AND `Status` is not `Complete`
+- **Available**: `Implementing` is `No` AND `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
+- **Not Ready (Still Planning)**: `Phase` is `Planning` — this feature is still being defined by `/plan-feature` and is not available for implementation
 - **Locked**: `Implementing` is `Yes` (another session is working on it)
 - **Complete**: `Status` is `Complete` (nothing left to do)
 
 If no features are available:
+- If there are "Not Ready" features, list them and explain: "The following features are still in the planning phase and not yet available for implementation. Run `/plan-feature` to complete their planning."
 - If there are locked features, tell the user which features are currently being implemented and suggest waiting or checking on the other session
 - If there are no roadmaps at all, tell the user to run `/plan-feature` first
 - **STOP** — do not proceed
@@ -53,6 +57,9 @@ Available features to implement:
 
 1. FeatureA — 0/5 steps complete (Not Started)
 2. FeatureB — 3/7 steps complete (In Progress)
+
+Still in planning phase (not yet available):
+- FeatureD — planning in progress, run /plan-feature to complete
 
 Currently locked (being implemented by another session):
 - FeatureC — 2/4 steps complete

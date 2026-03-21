@@ -1,7 +1,7 @@
 ---
 name: implement-feature
-version: 1
-description: "Implement a planned feature from its Roadmap — step by step with worktrees, PRs, and reviews. Use after /plan-feature has created a Feature Definition and Roadmap. Triggers on requests like 'implement the feature', 'start implementing', 'build the feature', or /implement-feature."
+description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-feature has created a Roadmap."
+disable-model-invocation: true
 ---
 
 # Implement Feature
