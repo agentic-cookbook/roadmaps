@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progress</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 1.5rem; font-weight: 600; }
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge-running { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge-complete { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-error { background: rgba(248,81,73,0.15); color: var(--red); }
+  .badge-waiting { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+
+  .progress-bar-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+  }
+  .progress-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+  .progress-bar-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .steps { list-style: none; }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .step-icon {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-top: 0.1rem;
+  }
+  .step-body { flex: 1; min-width: 0; }
+  .step-title { font-weight: 600; font-size: 0.95rem; }
+  .step-detail {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+  .step-detail a { color: var(--accent); text-decoration: none; }
+  .step-detail a:hover { text-decoration: underline; }
+  .step-time {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  .events {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .events h2 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-muted); }
+  .event {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 0.25rem 0;
+    display: flex;
+    gap: 0.75rem;
+  }
+  .event-time { flex-shrink: 0; font-family: monospace; }
+  .event-msg { color: var(--text); }
+
+  .poll-status {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .poll-status.error { color: var(--red); }
+
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .controls button {
+    padding: 0.4rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .controls button:hover { border-color: var(--text-muted); }
+  .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .controls button.btn-pause { border-color: var(--yellow); color: var(--yellow); }
+  .controls button.btn-pause:hover { background: rgba(210,153,34,0.1); }
+  .controls button.btn-resume { border-color: var(--green); color: var(--green); }
+  .controls button.btn-resume:hover { background: rgba(63,185,80,0.1); }
+  .controls button.btn-stop { border-color: var(--red); color: var(--red); }
+  .controls button.btn-stop:hover { background: rgba(248,81,73,0.1); }
+  .control-status {
+    font-size: 0.75rem;
+    color: var(--yellow);
+    align-self: center;
+    margin-left: 0.5rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--border);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1 id="title">Loading...</h1>
+    <span id="status-badge" class="badge badge-waiting">waiting</span>
+  </header>
+
+  <div id="controls" class="controls">
+    <button id="btn-pause" class="btn-pause" onclick="sendControl('pause')">Pause</button>
+    <button id="btn-resume" class="btn-resume" onclick="sendControl('resume')" style="display:none">Resume</button>
+    <button id="btn-stop" class="btn-stop" onclick="sendControl('stop')">Stop</button>
+    <span id="control-status" class="control-status"></span>
+  </div>
+
+  <div class="progress-bar-container">
+    <div class="progress-bar-label">
+      <span id="progress-label">0 / 0 steps</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-bar-track">
+      <div id="progress-fill" class="progress-bar-fill" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <ul id="steps" class="steps"></ul>
+
+  <div id="events-section" class="events" style="display:none">
+    <h2>Event Log</h2>
+    <div id="events"></div>
+  </div>
+
+  <div id="poll-status" class="poll-status">Connecting...</div>
+
+<script>
+const POLL_INTERVAL = 3000;
+const STATUS_ICONS = {
+  not_started: '\u25CB',
+  in_progress: null,
+  complete: '\u2713',
+  error: '\u2717',
+  skipped: '\u2014'
+};
+const STATUS_COLORS = {
+  not_started: 'var(--text-muted)',
+  in_progress: 'var(--yellow)',
+  complete: 'var(--green)',
+  error: 'var(--red)',
+  skipped: 'var(--text-muted)'
+};
+
+let lastJson = '';
+
+function formatTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === 'style' && typeof v === 'object') {
+        Object.assign(e.style, v);
+      } else if (k === 'className') {
+        e.className = v;
+      } else if (k === 'textContent') {
+        e.textContent = v;
+      } else {
+        e.setAttribute(k, v);
+      }
+    }
+  }
+  if (children) {
+    for (const c of children) {
+      if (c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+  }
+  return e;
+}
+
+function buildStepEl(step, index) {
+  const iconEl = el('span', { className: 'step-icon', style: { color: STATUS_COLORS[step.status] || 'var(--text-muted)' } });
+  if (step.status === 'in_progress') {
+    iconEl.appendChild(el('span', { className: 'spinner' }));
+  } else {
+    iconEl.textContent = STATUS_ICONS[step.status] || '\u25CB';
+  }
+
+  const bodyChildren = [
+    el('div', { className: 'step-title', textContent: 'Step ' + (index + 1) + ': ' + (step.name || '') })
+  ];
+
+  if (step.detail) {
+    bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
+  }
+
+  if (step.links && step.links.length > 0) {
+    const linksDiv = el('div', { className: 'step-detail' });
+    step.links.forEach(function(link, li) {
+      if (li > 0) linksDiv.appendChild(document.createTextNode(' \u00B7 '));
+      linksDiv.appendChild(el('a', { href: link.url, textContent: link.label }));
+    });
+    bodyChildren.push(linksDiv);
+  }
+
+  const stepChildren = [iconEl, el('div', { className: 'step-body' }, bodyChildren)];
+
+  if (step.updated_at) {
+    stepChildren.push(el('span', { className: 'step-time', textContent: formatTime(step.updated_at) }));
+  }
+
+  return el('li', { className: 'step' }, stepChildren);
+}
+
+function buildEventEl(evt) {
+  return el('div', { className: 'event' }, [
+    el('span', { className: 'event-time', textContent: formatTime(evt.time) }),
+    el('span', { className: 'event-msg', textContent: evt.message })
+  ]);
+}
+
+function render(data) {
+  document.getElementById('title').textContent = data.title || data.feature || 'Progress';
+  document.title = 'Progress \u2014 ' + (data.title || data.feature || '');
+
+  var badge = document.getElementById('status-badge');
+  badge.textContent = data.status || 'running';
+  badge.className = 'badge badge-' + (data.status === 'complete' ? 'complete' : data.status === 'error' ? 'error' : 'running');
+
+  var steps = data.steps || [];
+  var done = steps.filter(function(s) { return s.status === 'complete'; }).length;
+  var total = steps.length;
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('progress-label').textContent = done + ' / ' + total + ' steps';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  var stepsEl = document.getElementById('steps');
+  while (stepsEl.firstChild) stepsEl.removeChild(stepsEl.firstChild);
+  steps.forEach(function(step, i) {
+    stepsEl.appendChild(buildStepEl(step, i));
+  });
+
+  var events = data.events || [];
+  var eventsSection = document.getElementById('events-section');
+  var eventsEl = document.getElementById('events');
+  if (events.length > 0) {
+    eventsSection.style.display = '';
+    while (eventsEl.firstChild) eventsEl.removeChild(eventsEl.firstChild);
+    events.slice().reverse().forEach(function(evt) {
+      eventsEl.appendChild(buildEventEl(evt));
+    });
+  }
+
+  var pollStatus = document.getElementById('poll-status');
+  if (data.status === 'complete') {
+    pollStatus.textContent = 'Done. You can close this window.';
+    pollStatus.className = 'poll-status';
+    hideControls();
+  } else if (data.status === 'error') {
+    pollStatus.textContent = 'Agent stopped with an error. Check the terminal for details.';
+    pollStatus.className = 'poll-status error';
+    hideControls();
+  } else {
+    pollStatus.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
+    pollStatus.className = 'poll-status';
+  }
+
+  if (data.status === 'running' && currentControl === 'pause') {
+    var controlStatus = document.getElementById('control-status');
+    controlStatus.textContent = 'Paused — agent will pause after current operation';
+  }
+}
+
+async function poll() {
+  try {
+    var resp = await fetch('progress.json?t=' + Date.now());
+    if (!resp.ok) {
+      document.getElementById('poll-status').textContent = 'Waiting for progress data...';
+      return;
+    }
+    var text = await resp.text();
+    if (text === lastJson) return;
+    lastJson = text;
+    render(JSON.parse(text));
+  } catch (e) {
+    document.getElementById('poll-status').textContent = 'Waiting for progress data...';
+  }
+}
+
+var currentControl = null;
+
+async function sendControl(action) {
+  var payload = JSON.stringify({ action: action, time: new Date().toISOString() });
+  try {
+    await fetch('control.json', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: payload });
+    currentControl = action;
+    updateControlButtons();
+  } catch (e) {
+    document.getElementById('control-status').textContent = 'Failed to send — server may be down';
+  }
+}
+
+function updateControlButtons() {
+  var btnPause = document.getElementById('btn-pause');
+  var btnResume = document.getElementById('btn-resume');
+  var btnStop = document.getElementById('btn-stop');
+  var controlStatus = document.getElementById('control-status');
+
+  if (currentControl === 'pause') {
+    btnPause.style.display = 'none';
+    btnResume.style.display = '';
+    btnStop.disabled = false;
+    controlStatus.textContent = 'Paused — waiting for current operation to finish';
+  } else if (currentControl === 'stop') {
+    btnPause.style.display = 'none';
+    btnResume.style.display = 'none';
+    btnStop.disabled = true;
+    controlStatus.textContent = 'Stop requested — waiting for graceful shutdown';
+  } else {
+    btnPause.style.display = '';
+    btnResume.style.display = 'none';
+    btnStop.disabled = false;
+    controlStatus.textContent = '';
+  }
+}
+
+function hideControls() {
+  document.getElementById('controls').style.display = 'none';
+}
+
+poll();
+var intervalId = setInterval(async function() {
+  await poll();
+  if (lastJson) {
+    try {
+      var data = JSON.parse(lastJson);
+      if (data.status === 'complete' || data.status === 'error') clearInterval(intervalId);
+    } catch(e) {}
+  }
+}, POLL_INTERVAL);
+</script>
+</body>
+</html>

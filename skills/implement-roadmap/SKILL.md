@@ -81,11 +81,31 @@ Once the user selects a feature:
 
 The lock is now held. **All code below runs under this lock.**
 
+### Step 5: Start Progress Dashboard
+
+If the `/progress-dashboard` skill is available, invoke it with the feature name. This opens a live browser dashboard that shows step-by-step progress.
+
+Save the `DASH_DIR` and `DASH_PID` values returned by the skill. You will update `$DASH_DIR/progress.json` throughout implementation.
+
+Build the initial steps array from the Roadmap — one entry per step, all set to `not_started`.
+
+If the skill is not available, skip the dashboard and continue without it.
+
 ---
 
 ## IMPLEMENTATION LOOP
 
-Loop for each step in the Roadmap:
+Loop for each step in the Roadmap.
+
+**Before each step**, if the dashboard is running, check for user controls:
+
+```bash
+cat "$DASH_DIR/control.json" 2>/dev/null
+```
+
+- If `"action": "pause"` — tell the user the dashboard pause button was pressed and wait for them to say to continue (or check `control.json` for `resume`).
+- If `"action": "stop"` — finish the current atomic operation, release the lock, update the dashboard to `"status": "error"` with detail "Stopped by user", kill the server, and **STOP**.
+- If `"action": "resume"` or file doesn't exist — delete `control.json` if present and continue normally.
 
 ### Step 1: Pick Next Step
 
@@ -94,6 +114,8 @@ Read the Roadmap file. Find the next step with status "Not Started". If all step
 ### Step 2: Update Status
 
 Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
+
+**Dashboard**: If the dashboard is running, update `$DASH_DIR/progress.json` — set this step to `in_progress`, add an event entry.
 
 ### Step 3: Plan the Step
 
@@ -204,6 +226,8 @@ gh issue close <number>
 ```
 
 ### CHECKPOINT GATE — Step Complete
+
+**Dashboard**: If the dashboard is running, update `$DASH_DIR/progress.json` — set this step to `complete`, add PR/issue links to the step's `links` array, add an event entry.
 
 Print the following to the user before starting the next step:
 
@@ -318,7 +342,15 @@ Move the Roadmap from `Active-Roadmaps/` to `Completed-Roadmaps/`:
 git mv ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" ".claude/Features/Completed-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-### Step 7: Final Commit and Push
+### Step 7: Stop Dashboard
+
+If the dashboard is running, write a final `progress.json` with `"status": "complete"` and all steps marked `complete`. Then kill the server:
+
+```bash
+kill "$DASH_PID" 2>/dev/null
+```
+
+### Step 8: Final Commit and Push
 
 Commit and push all documentation updates:
 

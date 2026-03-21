@@ -148,6 +148,45 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 ---
 
+### /progress-dashboard
+
+Reusable live progress dashboard that any agent or skill can use to show real-time step-by-step progress in the browser. Opens a local web page that polls a JSON file for updates.
+
+**What it does:**
+
+1. Creates a temp directory with an HTML dashboard and a tiny Python HTTP server
+2. Starts the server on a random port and opens the browser
+3. The calling agent/skill writes `progress.json` to update the dashboard in real time
+4. Dashboard auto-polls every 3 seconds and renders steps with status icons, progress bar, links, and event log
+
+**Usage:**
+
+```
+/progress-dashboard MyFeature
+```
+
+Or invoke programmatically from another skill/agent — the skill returns the `DASH_DIR`, `DASH_PID`, and `DASH_PORT` for the caller to use.
+
+**User controls:**
+
+The dashboard has **Pause**, **Resume**, and **Stop** buttons. When clicked, they write a `control.json` file that the agent checks between steps:
+
+- **Pause** — agent finishes current operation and waits
+- **Resume** — agent continues where it left off
+- **Stop** — agent finishes current operation, releases locks, and shuts down gracefully
+
+**Integration:**
+
+Both `/implement-roadmap` and `implement-roadmap-agent` automatically start the dashboard if the skill is available.
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-21 | Initial release — live HTML dashboard with progress polling, Pause/Resume/Stop controls, custom Python server for bidirectional communication |
+
+---
+
 ### /review-claude-extension
 
 Review skill for validating Claude Code skills and agents against Anthropic's official best practices. Produces a structured report with PASS/WARN/FAIL ratings and actionable recommendations.

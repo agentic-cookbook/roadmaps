@@ -48,7 +48,17 @@ If any check fails, report why and **STOP**.
 
 The lock is now held. **All work below runs under this lock.**
 
-### 4. Read Feature Definition
+### 4. Start Progress Dashboard
+
+If the `/progress-dashboard` skill is available, invoke it with the feature name. This opens a live browser dashboard that shows step-by-step progress.
+
+Save the `DASH_DIR` and `DASH_PID` values returned by the skill. You will update `$DASH_DIR/progress.json` throughout implementation.
+
+Build the initial steps array from the Roadmap — one entry per step, all set to `not_started`.
+
+If the skill is not available, skip the dashboard and continue without it.
+
+### 5. Read Feature Definition
 
 Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to understand:
 - The feature's goal and acceptance criteria
@@ -59,11 +69,23 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 ## IMPLEMENTATION LOOP
 
-Repeat for each step in the Roadmap with status "Not Started":
+Repeat for each step in the Roadmap with status "Not Started".
+
+**Before each step**, if the dashboard is running, check for user controls:
+
+```bash
+cat "$DASH_DIR/control.json" 2>/dev/null
+```
+
+- If `"action": "pause"` — wait. Poll `control.json` every 5 seconds until it changes to `resume` or `stop`.
+- If `"action": "stop"` — finish the current atomic operation, release the lock, update the dashboard to `"status": "error"` with detail "Stopped by user", kill the server, and **STOP**.
+- If `"action": "resume"` or file doesn't exist — delete `control.json` if present and continue normally.
 
 ### Step 1: Update Status
 
 Set the step's status to "In Progress" in the Roadmap. Commit and push this change.
+
+**Dashboard**: If the dashboard is running, update `$DASH_DIR/progress.json` — set this step to `in_progress`, add an event entry.
 
 ### Step 2: Plan
 
@@ -162,6 +184,8 @@ gh issue close <number>
 ```
 
 ### Checkpoint (log and continue)
+
+**Dashboard**: If the dashboard is running, update `$DASH_DIR/progress.json` — set this step to `complete`, add PR/issue links to the step's `links` array, add an event entry. Set the next step to `in_progress` if applicable.
 
 Print:
 
@@ -264,7 +288,15 @@ docs: complete feature <FeatureName> — add summary and archive roadmap
 git push
 ```
 
-### 8. Final Report
+### 8. Stop Dashboard
+
+If the dashboard is running, write a final `progress.json` with `"status": "complete"` and all steps marked `complete`. Then kill the server:
+
+```bash
+kill "$DASH_PID" 2>/dev/null
+```
+
+### 9. Final Report
 
 Print:
 
@@ -294,3 +326,4 @@ Roadmap archived to: .claude/Features/Completed-Roadmaps/
 - **Merge conflict**: Attempt to resolve. If resolution fails, log the conflict details, release the lock, and stop.
 - **Review tool unavailable**: Perform the review yourself using the criteria from the review guide.
 - **Any unrecoverable error**: Always release the lock before stopping. A stale lock blocks future implementation sessions.
+- **Dashboard on error**: If the dashboard is running, write a final `progress.json` with `"status": "error"` and the failing step marked `error` with the error message in `detail`. Then kill the server.
