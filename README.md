@@ -263,6 +263,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v7 | 2026-03-21 | Fix: poll forever with simple setInterval — previous arguments.callee approach was broken |
 | v6 | 2026-03-21 | Never stop polling — slow down when done so overlays clear when dashboard restarts |
 | v5 | 2026-03-21 | Clear stale stop/completion overlays when dashboard restarts in running state |
 | v4 | 2026-03-21 | Persist port in dashboard directory for reliable reuse across restarts; `begin-step` auto-closes any other in-progress step to enforce single-active-step |
