@@ -55,7 +55,7 @@ The lock is now held. **All work below runs under this lock.**
 Locate the `dash` CLI from the progress-dashboard skill:
 
 ```bash
-DASH_CLI="$(find ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
+DASH_CLI="$(find -L ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
 ```
 
 If found, initialize the dashboard with the feature name and all step names from the Roadmap:
