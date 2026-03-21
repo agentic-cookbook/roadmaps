@@ -140,8 +140,10 @@ Run the test suite from the Feature Definition's verification strategy:
 
 ### Step 7: Create PR
 
+Write the PR body to a temp file, then create the PR:
+
 ```bash
-gh pr create --title "<Step description>" --body "$(cat <<'EOF'
+cat > /tmp/gh-pr-body.md <<'EOF'
 ## Summary
 
 <What this PR does>
@@ -164,7 +166,10 @@ Closes #<issue_number>
 - [ ] Tests pass
 - [ ] Follows project conventions
 EOF
-)"
+```
+
+```bash
+gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
 ```
 
 **Dashboard**: `python3 "$DASH_CLI" pr-created <N> <pr_number> <pr_url>`

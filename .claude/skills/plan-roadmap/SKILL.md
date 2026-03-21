@@ -266,8 +266,10 @@ The user already approved the Roadmap content. Issues are a mechanical translati
 
 For each step in the Roadmap, create a GitHub issue:
 
+Write the issue body to a temp file, then create the issue using `--body-file` to avoid quoted-newline permission warnings:
+
 ```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body "$(cat <<'EOF'
+cat > /tmp/gh-issue-body.md <<'EOF'
 ## Context
 
 Part of the <FeatureName> feature.
@@ -290,7 +292,10 @@ Roadmap: `.claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md`
 
 <Dependencies from the roadmap>
 EOF
-)"
+```
+
+```bash
+gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file /tmp/gh-issue-body.md
 ```
 
 ### 6b: Verify each issue was created

@@ -13,15 +13,24 @@ Implementation workflow for features that have been planned with `/plan-roadmap`
 1. **NEVER implement a feature without a Roadmap.** If no Roadmap exists, tell the user to run `/plan-roadmap` first.
 2. **NEVER combine steps.** Each Roadmap step gets its own worktree, its own PR, its own review cycle, and its own merge. No exceptions.
 3. **NEVER skip reviews.** Every PR gets at minimum a code review and security review before merge.
-4. **NEVER implement a feature that is already being implemented.** If the Roadmap's `Implementing` field is `Yes`, another session is working on it — refuse and tell the user.
-5. **At every step completion, print a checkpoint summary** to the user showing what was completed and what comes next. Do not proceed without user acknowledgment.
-6. **ALWAYS acquire the lock before writing code and release it when done.** The `Implementing` field is the concurrency lock.
+4. **At every step completion, print a checkpoint summary** to the user showing what was completed and what comes next. Do not proceed without user acknowledgment.
 
 ---
 
 ## STARTUP: Select a Feature to Implement
 
-Before doing anything else, scan for available features and let the user choose.
+### Step 0: Start Progress Dashboard
+
+**This is the very first thing you do.** Before scanning roadmaps or prompting the user, start the dashboard so progress is visible from the beginning.
+
+Locate the `dash` CLI:
+
+```bash
+DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash"
+test -f "$DASH_CLI" && echo "Dashboard available" || echo "NO_DASH"
+```
+
+You will initialize the dashboard after the user selects a feature (since you need the feature name). For now, just confirm `DASH_CLI` exists. If not found, continue without the dashboard.
 
 ### Step 1: Scan Active Roadmaps
 
@@ -29,7 +38,6 @@ Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadma
 
 - The feature name (from `# Feature Roadmap: <name>`)
 - The `**Status**:` field
-- The `**Implementing**:` field
 - The `**Phase**:` field (if present — `Planning` or `Ready`)
 - The progress table (how many steps complete vs total)
 
@@ -37,14 +45,12 @@ Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadma
 
 Categorize each roadmap:
 
-- **Available**: `Implementing` is `No` AND `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
+- **Available**: `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
 - **Not Ready (Still Planning)**: `Phase` is `Planning` — this feature is still being defined by `/plan-roadmap` and is not available for implementation
-- **Locked**: `Implementing` is `Yes` (another session is working on it)
 - **Complete**: `Status` is `Complete` (nothing left to do)
 
 If no features are available:
 - If there are "Not Ready" features, list them and explain: "The following features are still in the planning phase and not yet available for implementation. Run `/plan-roadmap` to complete their planning."
-- If there are locked features, tell the user which features are currently being implemented and suggest waiting or checking on the other session
 - If there are no roadmaps at all, tell the user to run `/plan-roadmap` first
 - **STOP** — do not proceed
 
@@ -61,31 +67,51 @@ Available features to implement:
 Still in planning phase (not yet available):
 - FeatureD — planning in progress, run /plan-roadmap to complete
 
-Currently locked (being implemented by another session):
-- FeatureC — 2/4 steps complete
-
 Which feature would you like to implement? (enter number)
 ```
 
 Wait for the user to choose.
 
-### Step 4: Acquire Lock
+### Step 5: Initialize Progress Dashboard
 
-Once the user selects a feature:
+If `DASH_CLI` was found in Step 0, initialize and load the roadmap:
 
-1. **Re-read the roadmap file** to check `Implementing` is still `No` (race condition guard)
-2. If it's now `Yes`, tell the user another session grabbed it and return to Step 2
-3. If still `No`, update the roadmap:
-   - Set `**Implementing**:` to `Yes`
-   - Commit this change: `chore: acquire implementation lock for <FeatureName>`
+```bash
+python3 "$DASH_CLI" init "<FeatureName>"
+python3 "$DASH_CLI" load-roadmap ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+```
 
-The lock is now held. **All code below runs under this lock.**
+The `init` command opens the browser immediately. The `load-roadmap` command reads the roadmap markdown file and automatically populates all step names, GitHub issues, PRs, and completion status. You do NOT manually add steps, issues, or PRs — `load-roadmap` does it all.
+
+Use these commands during implementation — each is a single atomic call:
+
+| Moment | Command |
+|--------|---------|
+| Before each step | `python3 "$DASH_CLI" check-control` |
+| Step starts | `python3 "$DASH_CLI" begin-step <N>` |
+| PR created | `python3 "$DASH_CLI" pr-created <N> <pr_number> <pr_url>` |
+| Step done | `python3 "$DASH_CLI" finish-step <N>` |
+| Log a message | `python3 "$DASH_CLI" log "<message>"` |
+| Error | `python3 "$DASH_CLI" step-error <N> "<message>"` then `shutdown` |
+| All done | `python3 "$DASH_CLI" complete` then `shutdown` |
+
+If init fails, skip the dashboard and continue without it — it is not required for implementation.
 
 ---
 
 ## IMPLEMENTATION LOOP
 
-Loop for each step in the Roadmap:
+Loop for each step in the Roadmap.
+
+**Before each step**, if the dashboard is running, check for user controls:
+
+```bash
+python3 "$DASH_CLI" check-control
+```
+
+- If output is `pause` — tell the user the dashboard pause button was pressed and wait for them to say to continue (or re-run `check-control` until it returns `resume` or `stop`).
+- If output is `stop` — finish the current atomic operation, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
+- If output is `none` or `resume` — continue normally.
 
 ### Step 1: Pick Next Step
 
@@ -93,7 +119,9 @@ Read the Roadmap file. Find the next step with status "Not Started". If all step
 
 ### Step 2: Update Status
 
-Update the step's status to "In Progress" in the Roadmap file. Commit this change.
+Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
+
+**Dashboard**: `python3 "$DASH_CLI" begin-step <N>`
 
 ### Step 3: Plan the Step
 
@@ -135,8 +163,10 @@ Run the test suite from the Feature Definition's verification strategy:
 
 Create a PR with a comprehensive description:
 
+Write the PR body to a temp file, then create the PR:
+
 ```bash
-gh pr create --title "<Step description>" --body "$(cat <<'EOF'
+cat > /tmp/gh-pr-body.md <<'EOF'
 ## Summary
 
 <What this PR does>
@@ -159,7 +189,10 @@ Closes #<issue_number>
 - [ ] Tests pass
 - [ ] Follows project conventions
 EOF
-)"
+```
+
+```bash
+gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
 ```
 
 ### Step 9: Run Reviews
@@ -192,7 +225,7 @@ In the Roadmap file:
 - Mark the step as "Complete"
 - Add the PR link
 - Update the progress table
-- Commit the Roadmap update
+- Commit and push the Roadmap update
 
 ### Step 13: Close GitHub Issue
 
@@ -204,6 +237,8 @@ gh issue close <number>
 ```
 
 ### CHECKPOINT GATE — Step Complete
+
+**Dashboard**: `python3 "$DASH_CLI" finish-step <N>` — atomically marks step complete, PR merged, issue closed.
 
 Print the following to the user before starting the next step:
 
@@ -306,10 +341,9 @@ Create `.claude/Features/Completed-Features/<FeatureName>-Summary.md`:
 <What changed from the original Feature Definition and why>
 ```
 
-### Step 6: Release Lock and Archive Roadmap
+### Step 6: Archive Roadmap
 
 Update the Roadmap:
-- Set `**Implementing**:` to `No`
 - Set `**Status**:` to `Complete`
 
 Move the Roadmap from `Active-Roadmaps/` to `Completed-Roadmaps/`:
@@ -318,9 +352,16 @@ Move the Roadmap from `Active-Roadmaps/` to `Completed-Roadmaps/`:
 git mv ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" ".claude/Features/Completed-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-### Step 7: Final Commit
+### Step 7: Stop Dashboard
 
-Commit all documentation updates:
+```bash
+python3 "$DASH_CLI" complete
+python3 "$DASH_CLI" shutdown
+```
+
+### Step 8: Final Commit and Push
+
+Commit and push all documentation updates:
 
 ```
 docs: complete feature <FeatureName> — add summary and archive roadmap
@@ -330,37 +371,9 @@ Report the final status to the user with links to all PRs, issues, and the Featu
 
 ---
 
-## LOCK MANAGEMENT
-
-The `**Implementing**:` field in the Roadmap serves as a concurrency lock:
-
-| State | Meaning |
-|-------|---------|
-| `No` | Available for implementation |
-| `Yes` | Another session is actively implementing this feature |
-
-### Lock Rules
-
-- **Acquire** at startup (Step 4) after user selects a feature
-- **Release** at completion (Step 6) or if the user aborts (`/implement-roadmap abort`)
-- **Never break** another session's lock without explicit user confirmation
-- If a lock appears stale (e.g., user says the other session crashed), the user can manually edit the Roadmap to set `Implementing` to `No`, then re-run `/implement-roadmap`
-
-### Abnormal Termination
-
-If the session ends without reaching Completion (crash, user closes terminal, etc.):
-- The lock remains in the Roadmap (`Implementing: Yes`)
-- The next session that runs `/implement-roadmap` will see the feature as locked
-- The user can manually release the lock by editing the Roadmap file
-- Partially completed steps should be visible from the Roadmap's step statuses
-
----
-
 ## Anti-Patterns
 
 - **Batching steps into one PR** — even if steps seem small or related
 - **Skipping reviews** — every PR gets reviewed, every finding gets addressed
 - **Implementing without a Roadmap** — always run `/plan-roadmap` first
-- **Ignoring the lock** — if `Implementing` is `Yes`, do not proceed
 - **Proceeding past a CHECKPOINT GATE without user acknowledgment**
-- **Forgetting to release the lock** — always update `Implementing` to `No` on completion

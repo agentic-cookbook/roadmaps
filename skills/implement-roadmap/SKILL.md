@@ -163,8 +163,10 @@ Run the test suite from the Feature Definition's verification strategy:
 
 Create a PR with a comprehensive description:
 
+Write the PR body to a temp file, then create the PR:
+
 ```bash
-gh pr create --title "<Step description>" --body "$(cat <<'EOF'
+cat > /tmp/gh-pr-body.md <<'EOF'
 ## Summary
 
 <What this PR does>
@@ -187,7 +189,10 @@ Closes #<issue_number>
 - [ ] Tests pass
 - [ ] Follows project conventions
 EOF
-)"
+```
+
+```bash
+gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
 ```
 
 ### Step 9: Run Reviews
