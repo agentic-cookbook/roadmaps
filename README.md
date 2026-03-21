@@ -148,6 +148,48 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 ---
 
+### /review-claude-extension
+
+Review skill for validating Claude Code skills and agents against Anthropic's official best practices. Produces a structured report with PASS/WARN/FAIL ratings and actionable recommendations.
+
+**What it does:** Takes a skill or agent path and runs a comprehensive review:
+
+1. **Resolves** the target — detects whether it's a skill (has `SKILL.md`) or an agent (`.md` with agent frontmatter)
+2. **Reads** all target files and parses frontmatter
+3. **Fetches** the latest Anthropic guidance from official docs
+4. **Reviews** against a bundled checklist covering structure, content quality, best practices, and agent-specific criteria
+5. **Prints** a console report with per-check ratings and a prioritized recommendations list
+
+**Usage:**
+
+```
+/review-claude-extension path/to/skill-or-agent
+```
+
+If no path is given, the skill looks for a skill or agent in the current directory.
+
+**Review categories:**
+
+- **Structure & Format** (S01–S12) — frontmatter fields, file layout, naming conventions
+- **Content Quality** (C01–C10) — single responsibility, step-by-step instructions, error handling
+- **Best Practices** (B01–B12) — verification methods, anti-patterns, context budget
+- **Agent-Specific** (A01–A08) — tool access, permission modes, turn limits (only for agents)
+
+**Key rules:**
+
+- **Read-only** — never modifies the reviewed skill or agent.
+- **Console output only** — no files are created.
+- **Fetches latest docs** — supplements the bundled checklist with current Anthropic guidance (continues with bundled checklist alone if fetch fails).
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v2 | 2026-03-21 | Added `allowed-tools` restriction and `context: fork` for isolated execution |
+| v1 | 2026-03-21 | Initial release — comprehensive review checklist (S01–S12, C01–C10, B01–B12, A01–A08); fetches latest Anthropic docs; structured PASS/WARN/FAIL report |
+
+---
+
 ## Agents
 
 ### implement-roadmap-agent
