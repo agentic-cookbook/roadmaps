@@ -357,6 +357,87 @@
     color: var(--text-muted);
   }
 
+  /* --- Stop overlay --- */
+  .stop-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 17, 23, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .stop-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .stop-icon {
+    font-size: 8rem;
+    line-height: 1;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 40px rgba(248, 81, 73, 0.4));
+  }
+  .stop-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--red);
+    margin-bottom: 0.5rem;
+  }
+  .stop-subtext {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  /* --- Pause overlay --- */
+  .pause-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 17, 23, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .pause-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pause-icon {
+    font-size: 8rem;
+    color: var(--yellow);
+    line-height: 1;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 40px rgba(210, 153, 34, 0.4));
+  }
+  .pause-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--yellow);
+    margin-bottom: 1.5rem;
+  }
+  .pause-resume-btn {
+    padding: 0.75rem 2.5rem;
+    border-radius: 0.5rem;
+    border: 2px solid var(--green);
+    background: rgba(63, 185, 80, 0.1);
+    color: var(--green);
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .pause-resume-btn:hover {
+    background: rgba(63, 185, 80, 0.25);
+  }
+
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
     display: inline-block;
@@ -442,6 +523,18 @@
     <div class="completion-check">&check;</div>
     <div class="completion-text" id="completion-text">Complete</div>
     <div class="completion-subtext" id="completion-subtext"></div>
+  </div>
+
+  <div id="stop-overlay" class="stop-overlay">
+    <div class="stop-icon">&#x1F6D1;</div>
+    <div class="stop-text">Stopped</div>
+    <div class="stop-subtext" id="stop-subtext">Agent has been stopped</div>
+  </div>
+
+  <div id="pause-overlay" class="pause-overlay">
+    <div class="pause-icon">&#x23F8;</div>
+    <div class="pause-text">Paused</div>
+    <button class="pause-resume-btn" onclick="sendControl('resume')">Resume</button>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -779,24 +872,38 @@ function render(data) {
   var eventsScroll = document.getElementById('events-scroll');
   eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
-  // Footer
+  // Footer and overlays
   var pollStatus = document.getElementById('poll-status');
   if (data.status === 'complete') {
     pollStatus.textContent = 'Done. You can close this window.';
     pollStatus.className = 'footer';
     hideControls();
+    document.getElementById('pause-overlay').classList.remove('visible');
     showCompletionOverlay(steps);
   } else if (data.status === 'error') {
-    pollStatus.textContent = 'Agent stopped with an error. Check the terminal for details.';
-    pollStatus.className = 'footer error';
     hideControls();
+    document.getElementById('pause-overlay').classList.remove('visible');
+    // Check if this was a user-initiated stop
+    var wasUserStop = false;
+    (data.events || []).forEach(function(e) {
+      if (e.message && e.message.indexOf('Stopped by user') >= 0) wasUserStop = true;
+    });
+    if (wasUserStop || currentControl === 'stop') {
+      pollStatus.textContent = 'Stopped. You can close this window.';
+      pollStatus.className = 'footer';
+      showStopOverlay();
+    } else {
+      pollStatus.textContent = 'Agent stopped with an error. Check the terminal for details.';
+      pollStatus.className = 'footer error';
+    }
   } else {
     pollStatus.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
     pollStatus.className = 'footer';
-  }
-
-  if (data.status === 'running' && currentControl === 'pause') {
-    document.getElementById('control-status').textContent = 'Paused \u2014 agent will pause after current operation';
+    // If agent is running and we had pause, but agent hasn't paused yet — keep overlay
+    // If agent resumed (currentControl was reset), hide pause overlay
+    if (data.status === 'running' && currentControl !== 'pause') {
+      document.getElementById('pause-overlay').classList.remove('visible');
+    }
   }
 }
 
@@ -832,12 +939,38 @@ function showCompletionOverlay(steps) {
   }, 500);
 }
 
+function showStopOverlay() {
+  var overlay = document.getElementById('stop-overlay');
+  if (overlay.classList.contains('visible')) return;
+  setTimeout(function() {
+    overlay.classList.add('visible');
+  }, 300);
+}
+
+function addLocalEvent(message) {
+  var eventsEl = document.getElementById('events');
+  var evt = buildEventEl({ time: new Date().toISOString(), message: message });
+  eventsEl.appendChild(evt);
+  var eventsScroll = document.getElementById('events-scroll');
+  eventsScroll.scrollTop = eventsScroll.scrollHeight;
+}
+
 async function sendControl(action) {
   var payload = JSON.stringify({ action: action, time: new Date().toISOString() });
   try {
     await fetch('control.json', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: payload });
     currentControl = action;
     updateControlButtons();
+
+    if (action === 'pause') {
+      addLocalEvent('User pressed Pause \u2014 waiting for agent to pause');
+      document.getElementById('pause-overlay').classList.add('visible');
+    } else if (action === 'resume') {
+      addLocalEvent('User pressed Resume');
+      document.getElementById('pause-overlay').classList.remove('visible');
+    } else if (action === 'stop') {
+      addLocalEvent('User pressed Stop \u2014 waiting for graceful shutdown');
+    }
   } catch (e) {
     document.getElementById('control-status').textContent = 'Failed to send \u2014 server may be down';
   }
@@ -853,12 +986,12 @@ function updateControlButtons() {
     btnPause.style.display = 'none';
     btnResume.style.display = '';
     btnStop.disabled = false;
-    controlStatus.textContent = 'Paused \u2014 waiting for current operation to finish';
+    controlStatus.textContent = '';
   } else if (currentControl === 'stop') {
     btnPause.style.display = 'none';
     btnResume.style.display = 'none';
     btnStop.disabled = true;
-    controlStatus.textContent = 'Stop requested \u2014 waiting for graceful shutdown';
+    controlStatus.textContent = '';
   } else {
     btnPause.style.display = '';
     btnResume.style.display = 'none';
