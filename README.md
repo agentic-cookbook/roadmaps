@@ -139,13 +139,13 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 ## Agents
 
-### implement-roadmap-auto
+### implement-roadmap-agent
 
 Autonomous version of `/implement-roadmap`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
 
 **How it differs from the skill:**
 
-| | /implement-roadmap (skill) | implement-roadmap-auto (agent) |
+| | /implement-roadmap (skill) | implement-roadmap-agent (agent) |
 |---|---|---|
 | **Interaction** | Interactive — pauses at checkpoints for your acknowledgment | Autonomous — logs summaries and continues |
 | **Feature selection** | You choose from a menu | Feature name passed in the task prompt |
@@ -158,13 +158,13 @@ Autonomous version of `/implement-roadmap`. Runs the same implementation workflo
 Tell Claude to use the agent:
 
 ```
-Use the implement-roadmap-auto agent to implement FeatureX
+Use the implement-roadmap-agent agent to implement FeatureX
 ```
 
 Or invoke directly:
 
 ```bash
-claude --agent implement-roadmap-auto "Implement FeatureX"
+claude --agent implement-roadmap-agent "Implement FeatureX"
 ```
 
 Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.

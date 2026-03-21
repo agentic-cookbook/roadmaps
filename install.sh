@@ -268,8 +268,8 @@ prompt_install_method() {
     local choice
     read -r choice < /dev/tty
     if [[ "$choice" =~ ^[qQ]$ ]]; then
-        echo "  EXIT" > /dev/tty
-        exit 0
+        echo "quit"
+        return
     elif [[ "$choice" =~ ^[cC]$ ]]; then
         echo "copy"
     else
@@ -421,7 +421,7 @@ install_openclaw_skills() {
 # Clean up old names from prior installs so they don't coexist with the new names.
 
 RENAMED_SKILLS=(plan-feature implement-feature)
-RENAMED_AGENTS=(implement-feature-auto.md)
+RENAMED_AGENTS=(implement-feature-auto.md implement-roadmap-auto.md)
 
 remove_renamed_extensions() {
     echo ""
@@ -482,6 +482,10 @@ main() {
 
     local method
     method=$(prompt_install_method "$current_method")
+    if [ "$method" = "quit" ]; then
+        echo "  EXIT"
+        return
+    fi
 
     remove_renamed_extensions
     install_claude_skills "$method"

@@ -1,5 +1,5 @@
 ---
-name: implement-roadmap-auto
+name: implement-roadmap-agent
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
