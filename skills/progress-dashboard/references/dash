@@ -160,6 +160,8 @@ def cmd_init(args):
                 "status": "not_started",
                 "detail": None,
                 "links": [],
+                "started_at": None,
+                "completed_at": None,
                 "updated_at": None,
             }
             for name in step_names
@@ -218,6 +220,7 @@ def cmd_step_start(args):
     step_num = int(args[0])
     step, _ = get_step(data, step_num)
     step["status"] = "in_progress"
+    step["started_at"] = now_iso()
     step["updated_at"] = now_iso()
     add_event(data, f"Step {step_num} started: {step['name']}")
     write_progress(dash_dir, data)
@@ -271,6 +274,7 @@ def cmd_step_complete(args):
     step_num = int(args[0])
     step, _ = get_step(data, step_num)
     step["status"] = "complete"
+    step["completed_at"] = now_iso()
     step["updated_at"] = now_iso()
     add_event(data, f"Step {step_num} complete: {step['name']}")
     write_progress(dash_dir, data)
