@@ -310,6 +310,8 @@
   }
   .event-time { flex-shrink: 0; font-family: monospace; font-size: 0.7rem; }
   .event-msg { color: var(--text); }
+  .event-msg-warn { color: var(--yellow); }
+  .event-msg-error { color: var(--red); }
 
   /* --- Footer --- */
   .footer {
@@ -947,10 +949,14 @@ function showStopOverlay() {
   }, 300);
 }
 
-function addLocalEvent(message) {
+function addLocalEvent(message, colorClass) {
   var eventsEl = document.getElementById('events');
-  var evt = buildEventEl({ time: new Date().toISOString(), message: message });
-  eventsEl.appendChild(evt);
+  var msgEl = el('span', { className: 'event-msg' + (colorClass ? ' ' + colorClass : ''), textContent: message });
+  var row = el('div', { className: 'event' }, [
+    el('span', { className: 'event-time', textContent: formatTime(new Date().toISOString()) }),
+    msgEl
+  ]);
+  eventsEl.appendChild(row);
   var eventsScroll = document.getElementById('events-scroll');
   eventsScroll.scrollTop = eventsScroll.scrollHeight;
 }
@@ -963,13 +969,20 @@ async function sendControl(action) {
     updateControlButtons();
 
     if (action === 'pause') {
-      addLocalEvent('User pressed Pause \u2014 waiting for agent to pause');
-      document.getElementById('pause-overlay').classList.add('visible');
+      addLocalEvent('Pause requested \u2014 waiting for agent to pause after current operation', 'event-msg-warn');
+      // Show overlay after a short delay to let the agent finish its current operation
+      setTimeout(function() {
+        if (currentControl === 'pause') {
+          document.getElementById('pause-overlay').classList.add('visible');
+          // Enable resume button now that pause is in effect
+          document.getElementById('btn-resume').disabled = false;
+        }
+      }, 3000);
     } else if (action === 'resume') {
-      addLocalEvent('User pressed Resume');
+      addLocalEvent('Resume requested', '');
       document.getElementById('pause-overlay').classList.remove('visible');
     } else if (action === 'stop') {
-      addLocalEvent('User pressed Stop \u2014 waiting for graceful shutdown');
+      addLocalEvent('Stop requested \u2014 waiting for graceful shutdown', 'event-msg-error');
     }
   } catch (e) {
     document.getElementById('control-status').textContent = 'Failed to send \u2014 server may be down';
@@ -985,6 +998,7 @@ function updateControlButtons() {
   if (currentControl === 'pause') {
     btnPause.style.display = 'none';
     btnResume.style.display = '';
+    btnResume.disabled = true;
     btnStop.disabled = false;
     controlStatus.textContent = '';
   } else if (currentControl === 'stop') {
