@@ -17,7 +17,7 @@ Produces exactly **three deliverables** (all in Phase 2):
 2. A **Feature Roadmap** file (written to disk, committed)
 3. **GitHub issues** (one per roadmap step, confirmed via `gh issue view`)
 
-When planning is complete, tell the user to run `/implement-roadmap` to begin implementation.
+When planning is complete, tell the user to run `/implement-roadmap-interactively` to begin implementation.
 
 ---
 
@@ -199,7 +199,7 @@ For each step, fill in: Description, Type (Auto or Manual), Complexity estimate 
 - **Auto** — Claude can implement this step autonomously (code changes, tests, PRs).
 - **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, UI/UX decisions that need human judgment, app store submissions). The GitHub issue for manual steps will be assigned to the user.
 
-**Set the `Implementing` field to `No`.** This field is managed exclusively by `/implement-roadmap`.
+**Set the `Implementing` field to `No`.** This field is managed exclusively by `/implement-roadmap-interactively`.
 
 **Set the `Phase` field to `Planning`.** This field will be updated to `Ready` only after all planning artifacts (including GitHub issues) are complete.
 
@@ -328,7 +328,7 @@ Read the Roadmap file back. Confirm that every step has a real issue number (not
 
 ### 6e: Update Phase to Ready
 
-All planning artifacts are now complete. Update the Roadmap's `Phase` field from `Planning` to `Ready`. This signals to `/implement-roadmap` that this feature is available for implementation.
+All planning artifacts are now complete. Update the Roadmap's `Phase` field from `Planning` to `Ready`. This signals to `/implement-roadmap-interactively` that this feature is available for implementation.
 
 ### 6f: Commit and push the updated Roadmap
 
@@ -404,7 +404,7 @@ All artifacts verified. All commits saved.
 
 Would you like to start implementation now? (yes/no)
   yes — I'll launch the implement-roadmap agent to begin autonomous implementation.
-  no  — You can run /implement-roadmap later when you're ready.
+  no  — You can run /implement-roadmap-interactively later when you're ready.
 ```
 
 **STOP. Wait for the user's response.**
@@ -416,4 +416,4 @@ If the user says **yes**, launch the `implement-roadmap-agent` using the Agent t
 - **subagent_type**: `implement-roadmap-agent`
 - **prompt**: `Implement the <FeatureName> feature. Roadmap: .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md`
 
-If the user says **no**, end the skill. The user can run `/implement-roadmap` later.
+If the user says **no**, end the skill. The user can run `/implement-roadmap-interactively` later.

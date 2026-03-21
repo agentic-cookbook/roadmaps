@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # Plan Bugfix Roadmap
 
-Lightweight roadmap generator for bugfixes. Takes a list of existing GitHub issues and produces a Feature Definition and Feature Roadmap, ready for `/implement-roadmap` or the `implement-roadmap-agent`.
+Lightweight roadmap generator for bugfixes. Takes a list of existing GitHub issues and produces a Feature Definition and Feature Roadmap, ready for `/implement-roadmap-interactively` or the `implement-roadmap-agent`.
 
 Unlike `/plan-roadmap`, this skill:
 - **Skips the discussion phase** — you already know what the bugs are
@@ -202,6 +202,6 @@ Issues: #<first> through #<last>
 Phase: Ready
 
 To implement, run:
-  /implement-roadmap
+  /implement-roadmap-interactively
   or: claude --agent implement-roadmap-agent "Implement <FeatureName>"
 ```

@@ -1,5 +1,5 @@
 ---
-name: implement-roadmap
+name: implement-roadmap-interactively
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---

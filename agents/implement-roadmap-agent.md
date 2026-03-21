@@ -178,7 +178,7 @@ gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
 
 ### Step 8: Run Reviews
 
-Read the review guide at `.claude/skills/implement-roadmap/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
+Read the review guide at `.claude/skills/implement-roadmap-interactively/references/review-guide.md` (or search for `review-guide.md` under the skill directories if that path doesn't exist).
 
 Select and run reviews based on what changed:
 

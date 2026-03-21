@@ -5,7 +5,7 @@
 **Status**: Not Started | In Progress | Complete
 **Implementing**: No
 **Phase**: Planning | Ready
-<!-- Phase: "Planning" = still being defined by /plan-roadmap, not ready for implementation. "Ready" = planning complete, available for /implement-roadmap. -->
+<!-- Phase: "Planning" = still being defined by /plan-roadmap, not ready for implementation. "Ready" = planning complete, available for /implement-roadmap-interactively. -->
 
 ## Platform & Tools Summary
 

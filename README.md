@@ -54,7 +54,7 @@ Planning Phase
   → GitHub issues created and verified
   → Roadmap Phase set to "Ready"
 
-Done → run /implement-roadmap to build it
+Done → run /implement-roadmap-interactively to build it
 ```
 
 **Key rules:**
@@ -81,7 +81,7 @@ Done → run /implement-roadmap to build it
 
 ### /plan-bugfix-roadmap
 
-Lightweight roadmap generator for batches of bugfixes. Takes a list of existing GitHub issue numbers and produces a Feature Definition and Feature Roadmap, ready for `/implement-roadmap`.
+Lightweight roadmap generator for batches of bugfixes. Takes a list of existing GitHub issue numbers and produces a Feature Definition and Feature Roadmap, ready for `/implement-roadmap-interactively`.
 
 **What it does:** Skips the discussion phase of `/plan-roadmap` — you already know the bugs. Fetches issue details from GitHub, groups and orders them by component, assigns complexity, and generates all planning artifacts with a single approval step.
 
@@ -111,7 +111,7 @@ Pass issue numbers, or `all` to include every open issue.
 
 ---
 
-### /implement-roadmap
+### /implement-roadmap-interactively
 
 Implementation skill for features planned with `/plan-roadmap`. Works through each Roadmap step with proper isolation, testing, and review.
 
@@ -125,7 +125,7 @@ Implementation skill for features planned with `/plan-roadmap`. Works through ea
 **Usage:**
 
 ```
-/implement-roadmap
+/implement-roadmap-interactively
 ```
 
 Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
@@ -182,7 +182,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 ### /generate-test-roadmap
 
-Generates a complete test roadmap for exercising `/implement-roadmap` and `implement-roadmap-agent`. Creates all planning artifacts (Feature Definition, Feature Roadmap, 20 GitHub issues) in one shot with no user interaction.
+Generates a complete test roadmap for exercising `/implement-roadmap-interactively` and `implement-roadmap-agent`. Creates all planning artifacts (Feature Definition, Feature Roadmap, 20 GitHub issues) in one shot with no user interaction.
 
 **What it does:** Creates a silly cat-herding themed feature with 20 trivial steps that each append a line to `roadmap-test.md`. The output is structurally identical to what `/plan-roadmap` produces, so the implementation agent can pick it up.
 
@@ -231,7 +231,7 @@ The dashboard has **Pause**, **Resume**, and **Stop** buttons. When clicked, the
 
 **Integration:**
 
-Both `/implement-roadmap` and `implement-roadmap-agent` automatically start the dashboard if the skill is available.
+Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatically start the dashboard if the skill is available.
 
 **Changelog:**
 
@@ -288,11 +288,11 @@ If no path is given, the skill looks for a skill or agent in the current directo
 
 ### implement-roadmap-agent
 
-Autonomous version of `/implement-roadmap`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
+Autonomous version of `/implement-roadmap-interactively`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
 
 **How it differs from the skill:**
 
-| | /implement-roadmap (skill) | implement-roadmap-agent (agent) |
+| | /implement-roadmap-interactively (skill) | implement-roadmap-agent (agent) |
 |---|---|---|
 | **Interaction** | Interactive — pauses at checkpoints for your acknowledgment | Autonomous — logs summaries and continues |
 | **Feature selection** | You choose from a menu | Feature name passed in the task prompt |

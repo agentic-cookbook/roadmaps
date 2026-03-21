@@ -420,7 +420,7 @@ install_openclaw_skills() {
 # --- Remove Renamed Extensions ---
 # Clean up old names from prior installs so they don't coexist with the new names.
 
-RENAMED_SKILLS=(plan-feature implement-feature)
+RENAMED_SKILLS=(plan-feature implement-feature implement-roadmap)
 RENAMED_AGENTS=(implement-feature-auto.md implement-roadmap-auto.md)
 
 remove_renamed_extensions() {
