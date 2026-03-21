@@ -52,72 +52,57 @@ The lock is now held. **All work below runs under this lock.**
 
 ### 4. Start Progress Dashboard
 
-The `progress-dashboard` skill is preloaded — follow its instructions to start the dashboard:
-
-1. Create a temp directory:
-   ```bash
-   DASH_DIR=$(mktemp -d "${TMPDIR:-/tmp}/progress-dashboard-XXXXXX")
-   ```
-
-2. Copy the HTML and server from the skill's references directory:
-   ```bash
-   cp "$(find ~/.claude/skills -path '*/progress-dashboard/references/dashboard.html' 2>/dev/null | head -1)" "$DASH_DIR/index.html"
-   cp "$(find ~/.claude/skills -path '*/progress-dashboard/references/server.py' 2>/dev/null | head -1)" "$DASH_DIR/server.py"
-   ```
-
-3. Write the initial `$DASH_DIR/progress.json` with all Roadmap steps set to `not_started` (see the progress-dashboard skill for the JSON schema).
-
-4. Start the server and open the browser:
-   ```bash
-   DASH_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
-   python3 "$DASH_DIR/server.py" "$DASH_PORT" "$DASH_DIR" &
-   DASH_PID=$!
-   sleep 1 && kill -0 "$DASH_PID" 2>/dev/null && echo "Server running on port $DASH_PORT" || echo "Server failed"
-   open "http://127.0.0.1:$DASH_PORT"
-   ```
-
-If any step fails (e.g., skill files not found, server won't start), log the error and continue without the dashboard — it is not required for implementation.
-
-### Dashboard Updates
-
-Throughout implementation, update the dashboard by overwriting `$DASH_DIR/progress.json`. Write the entire JSON file each time using the Write tool or bash:
+Locate the `dash` CLI from the progress-dashboard skill:
 
 ```bash
-cat > "$DASH_DIR/progress.json" << 'ENDJSON'
-{
-  "title": "<FeatureName>",
-  "status": "running",
-  "steps": [
-    {
-      "name": "<step description from Roadmap>",
-      "status": "<not_started|in_progress|complete|error>",
-      "detail": "<current activity or result summary, or null>",
-      "links": [
-        { "label": "PR #42", "url": "https://github.com/<owner>/<repo>/pull/42" }
-      ],
-      "updated_at": "<ISO 8601 timestamp or null>"
-    }
-  ],
-  "events": [
-    { "time": "<ISO 8601 timestamp>", "message": "<what happened>" }
-  ],
-  "updated_at": "<ISO 8601 timestamp>"
-}
-ENDJSON
+DASH_CLI="$(find ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
 ```
 
-**When to update:**
+If found, initialize the dashboard with the feature name and all step names from the Roadmap:
 
-| Moment | What to change |
-|--------|----------------|
-| Step starts | Set step status to `in_progress`, add event "Step N started: \<name\>" |
-| PR created | Set step detail to "PR #N created", add PR link to step's `links`, add event |
-| Reviews complete | Set step detail to "Reviews passed", add event |
-| PR merged | Set step status to `complete`, add event "Step N complete" |
-| Error occurs | Set step status to `error`, set detail to error message, set root `status` to `error` |
-| All steps done | Set root `status` to `complete` |
+```bash
+python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
+```
 
-**Always** include all steps in the array (not just the current one) so the dashboard shows the full picture. The `events` array is append-only — add new entries, never remove old ones.
+This creates the temp directory, starts the server, opens the browser, and writes the initial `progress.json`. The `dash` CLI manages all state internally — no shell variables to track.
+
+If `dash` is not found or `init` fails, log the error and continue without the dashboard — it is not required for implementation.
+
+### Dashboard Commands
+
+Use the `dash` CLI throughout implementation. All commands are one-liners:
+
+```bash
+# Step lifecycle
+python3 "$DASH_CLI" step-start <N>                         # mark step N as in-progress
+python3 "$DASH_CLI" step-detail <N> "Building components"   # update step detail text
+python3 "$DASH_CLI" step-link <N> "PR #42" "https://..."    # add a clickable link
+python3 "$DASH_CLI" step-complete <N>                       # mark step N as done
+python3 "$DASH_CLI" step-error <N> "Build failed: ..."      # mark step N as failed
+
+# Events (for the log)
+python3 "$DASH_CLI" event "Reviews passed with 0 findings"
+
+# Check user controls (pause/resume/stop buttons)
+python3 "$DASH_CLI" check-control                           # prints: none, pause, resume, or stop
+
+# Completion
+python3 "$DASH_CLI" complete                                # mark everything done
+python3 "$DASH_CLI" error "Unrecoverable: ..."              # mark as failed
+python3 "$DASH_CLI" shutdown                                # kill the server
+```
+
+**When to call what:**
+
+| Moment | Command |
+|--------|---------|
+| Before each step | `check-control` — handle pause/stop if returned |
+| Step starts | `step-start <N>` |
+| PR created | `step-detail <N> "PR #X created"` then `step-link <N> "PR #X" "<url>"` |
+| Reviews done | `step-detail <N> "Reviews passed"` |
+| PR merged | `step-complete <N>` |
+| Error occurs | `step-error <N> "<message>"` then `shutdown` |
+| All steps done | `complete` then `shutdown` |
 
 ### 5. Read Feature Definition
 
@@ -135,18 +120,18 @@ Repeat for each step in the Roadmap with status "Not Started".
 **Before each step**, if the dashboard is running, check for user controls:
 
 ```bash
-cat "$DASH_DIR/control.json" 2>/dev/null
+python3 "$DASH_CLI" check-control
 ```
 
-- If `"action": "pause"` — wait. Poll `control.json` every 5 seconds until it changes to `resume` or `stop`.
-- If `"action": "stop"` — finish the current atomic operation, release the lock, update the dashboard to `"status": "error"` with detail "Stopped by user", kill the server, and **STOP**.
-- If `"action": "resume"` or file doesn't exist — delete `control.json` if present and continue normally.
+- If output is `pause` — wait. Re-run `check-control` every 5 seconds until it returns `resume` or `stop`.
+- If output is `stop` — finish the current atomic operation, release the lock, run `python3 "$DASH_CLI" error "Stopped by user"` then `python3 "$DASH_CLI" shutdown`, and **STOP**.
+- If output is `none` or `resume` — continue normally.
 
 ### Step 1: Update Status
 
 Set the step's status to "In Progress" in the Roadmap. Commit and push this change.
 
-**Dashboard**: If the dashboard is running, update `$DASH_DIR/progress.json` — set this step to `in_progress`, add an event entry.
+**Dashboard**: `python3 "$DASH_CLI" step-start <N>`
 
 ### Step 2: Plan
 
@@ -246,7 +231,12 @@ gh issue close <number>
 
 ### Checkpoint (log and continue)
 
-**Dashboard**: If the dashboard is running, update `$DASH_DIR/progress.json` — set this step to `complete`, add PR/issue links to the step's `links` array, add an event entry. Set the next step to `in_progress` if applicable.
+**Dashboard**:
+```bash
+python3 "$DASH_CLI" step-link <N> "PR #<number>" "<pr_url>"
+python3 "$DASH_CLI" step-link <N> "Issue #<number>" "<issue_url>"
+python3 "$DASH_CLI" step-complete <N>
+```
 
 Print:
 
@@ -351,10 +341,9 @@ git push
 
 ### 8. Stop Dashboard
 
-If the dashboard is running, write a final `progress.json` with `"status": "complete"` and all steps marked `complete`. Then kill the server:
-
 ```bash
-kill "$DASH_PID" 2>/dev/null
+python3 "$DASH_CLI" complete
+python3 "$DASH_CLI" shutdown
 ```
 
 ### 9. Final Report
@@ -387,4 +376,4 @@ Roadmap archived to: .claude/Features/Completed-Roadmaps/
 - **Merge conflict**: Attempt to resolve. If resolution fails, log the conflict details, release the lock, and stop.
 - **Review tool unavailable**: Perform the review yourself using the criteria from the review guide.
 - **Any unrecoverable error**: Always release the lock before stopping. A stale lock blocks future implementation sessions.
-- **Dashboard on error**: If the dashboard is running, write a final `progress.json` with `"status": "error"` and the failing step marked `error` with the error message in `detail`. Then kill the server.
+- **Dashboard on error**: `python3 "$DASH_CLI" step-error <N> "<message>"` then `python3 "$DASH_CLI" shutdown`.

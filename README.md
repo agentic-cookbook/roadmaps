@@ -183,6 +183,7 @@ Both `/implement-roadmap` and `implement-roadmap-agent` automatically start the 
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2 | 2026-03-21 | Added `dash` CLI helper script — single-command interface for init, step updates, control checks, and shutdown; eliminates manual JSON construction and shell variable tracking |
 | v1 | 2026-03-21 | Initial release — live HTML dashboard with progress polling, Pause/Resume/Stop controls, custom Python server for bidirectional communication |
 
 ---

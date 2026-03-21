@@ -2,7 +2,7 @@
 name: progress-dashboard
 description: "Start a live progress dashboard in the browser. Use when an agent or skill wants to show real-time step-by-step progress to the user. Triggers on 'show progress', 'start dashboard', or /progress-dashboard."
 argument-hint: "<feature-name>"
-allowed-tools: Read, Bash(cp *), Bash(mkdir *), Bash(python3 *), Bash(open *), Bash(cat *), Bash(kill *), Bash(lsof *), Write
+allowed-tools: Read, Bash(cp *), Bash(mkdir *), Bash(python3 *), Bash(open *), Bash(cat *), Bash(kill *), Bash(lsof *), Bash(chmod *), Write
 ---
 
 # Progress Dashboard
@@ -11,9 +11,46 @@ Reusable live progress dashboard. Starts a tiny local web server serving a progr
 
 ## How It Works
 
-1. **Start**: Creates a temp directory, copies in the HTML, starts `python3 -m http.server`, opens the browser.
-2. **Update**: The caller writes `progress.json` to the temp directory whenever state changes.
-3. **Stop**: Kills the server process. The temp directory is cleaned up by the OS.
+1. **Start**: Creates a temp directory, copies in the HTML, starts a Python HTTP server, opens the browser.
+2. **Update**: The caller uses the `dash` CLI to update progress — one command per state change.
+3. **Stop**: `dash shutdown` kills the server. The temp directory is cleaned up by the OS.
+
+## Quick Start with `dash` CLI
+
+The `dash` CLI at `${CLAUDE_SKILL_DIR}/references/dash` handles all dashboard operations. It persists state internally so you don't need to track shell variables between calls.
+
+```bash
+DASH_CLI="${CLAUDE_SKILL_DIR}/references/dash"
+
+# Start — creates temp dir, starts server, opens browser
+python3 "$DASH_CLI" init "MyFeature" "Step 1: Setup" "Step 2: Build" "Step 3: Test"
+
+# Update steps
+python3 "$DASH_CLI" step-start 1
+python3 "$DASH_CLI" step-detail 1 "Installing dependencies"
+python3 "$DASH_CLI" step-link 1 "PR #42" "https://github.com/org/repo/pull/42"
+python3 "$DASH_CLI" step-complete 1
+
+# Add event log entries
+python3 "$DASH_CLI" event "Reviews passed"
+
+# Check user controls (pause/resume/stop buttons)
+python3 "$DASH_CLI" check-control    # prints: none, pause, resume, or stop
+
+# Finish
+python3 "$DASH_CLI" complete         # mark all done
+python3 "$DASH_CLI" shutdown         # kill server
+
+# On error
+python3 "$DASH_CLI" step-error 2 "Build failed: missing dependency"
+python3 "$DASH_CLI" shutdown
+```
+
+If you need lower-level control, the manual steps below still work — but the `dash` CLI is the recommended approach.
+
+---
+
+## Manual Setup (alternative to `dash` CLI)
 
 ---
 

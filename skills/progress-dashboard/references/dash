@@ -1,0 +1,405 @@
+#!/usr/bin/env python3
+"""Progress dashboard CLI helper.
+
+Manages the lifecycle of a progress dashboard: init, update steps,
+check user controls, and shutdown. Persists state in the dashboard
+directory so each invocation is stateless from the caller's perspective.
+
+Usage:
+    dash init <title> <step1_name> [step2_name ...]
+    dash step-start <step_number>
+    dash step-detail <step_number> <detail_text>
+    dash step-link <step_number> <label> <url>
+    dash step-complete <step_number>
+    dash step-error <step_number> <error_message>
+    dash event <message>
+    dash check-control
+    dash complete
+    dash error <message>
+    dash shutdown
+    dash dir
+
+All step numbers are 1-based.
+
+The 'init' command creates the temp directory, copies in the HTML and
+server, starts the server, opens the browser, and writes the initial
+progress.json. It prints the DASH_DIR path to stdout.
+
+Subsequent commands find the dashboard via a state file at
+$TMPDIR/progress-dashboard-active (or /tmp/progress-dashboard-active).
+"""
+
+import json
+import os
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def state_file():
+    return Path(os.environ.get("TMPDIR", "/tmp")) / "progress-dashboard-active"
+
+
+def save_state(dash_dir, pid, port):
+    state_file().write_text(json.dumps({
+        "dash_dir": str(dash_dir),
+        "pid": pid,
+        "port": port,
+    }))
+
+
+def load_state():
+    sf = state_file()
+    if not sf.exists():
+        return None
+    try:
+        return json.loads(sf.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def get_dash_dir():
+    state = load_state()
+    if not state:
+        print("ERROR: No active dashboard. Run 'dash init' first.", file=sys.stderr)
+        sys.exit(1)
+    return Path(state["dash_dir"])
+
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def read_progress(dash_dir):
+    p = dash_dir / "progress.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def write_progress(dash_dir, data):
+    data["updated_at"] = now_iso()
+    (dash_dir / "progress.json").write_text(json.dumps(data, indent=2))
+
+
+def add_event(data, message):
+    if "events" not in data:
+        data["events"] = []
+    data["events"].append({"time": now_iso(), "message": message})
+
+
+def find_skill_references():
+    """Find the progress-dashboard skill references directory."""
+    search_paths = [
+        Path.home() / ".claude" / "skills" / "progress-dashboard" / "references",
+    ]
+    # Also check if we're in the repo itself
+    script_dir = Path(__file__).resolve().parent
+    if script_dir.name == "references":
+        search_paths.insert(0, script_dir)
+
+    for p in search_paths:
+        if (p / "dashboard.html").exists() and (p / "server.py").exists():
+            return p
+    return None
+
+
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        return s.getsockname()[1]
+
+
+def cmd_init(args):
+    if len(args) < 2:
+        print("Usage: dash init <title> <step1> [step2 ...]", file=sys.stderr)
+        sys.exit(1)
+
+    title = args[0]
+    step_names = args[1:]
+
+    # Check for existing dashboard
+    existing = load_state()
+    if existing and Path(existing["dash_dir"]).exists():
+        print(f"WARNING: Dashboard already active at {existing['dash_dir']}", file=sys.stderr)
+        print("Run 'dash shutdown' first, or it will be replaced.", file=sys.stderr)
+        try:
+            os.kill(existing["pid"], signal.SIGTERM)
+        except (OSError, ProcessLookupError):
+            pass
+
+    # Find skill references
+    refs = find_skill_references()
+    if not refs:
+        print("ERROR: Cannot find progress-dashboard references (dashboard.html, server.py)", file=sys.stderr)
+        sys.exit(1)
+
+    # Create temp directory
+    dash_dir = Path(tempfile.mkdtemp(prefix="progress-dashboard-"))
+
+    # Copy assets
+    shutil.copy2(refs / "dashboard.html", dash_dir / "index.html")
+    shutil.copy2(refs / "server.py", dash_dir / "server.py")
+
+    # Write initial progress.json
+    data = {
+        "title": title,
+        "status": "running",
+        "steps": [
+            {
+                "name": name,
+                "status": "not_started",
+                "detail": None,
+                "links": [],
+                "updated_at": None,
+            }
+            for name in step_names
+        ],
+        "events": [{"time": now_iso(), "message": "Dashboard started"}],
+        "updated_at": now_iso(),
+    }
+    write_progress(dash_dir, data)
+
+    # Start server
+    port = find_free_port()
+    proc = subprocess.Popen(
+        [sys.executable, str(dash_dir / "server.py"), str(port), str(dash_dir)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    # Verify server started
+    time.sleep(1)
+    if proc.poll() is not None:
+        print("ERROR: Server failed to start", file=sys.stderr)
+        sys.exit(1)
+
+    # Save state
+    save_state(dash_dir, proc.pid, port)
+
+    # Open browser
+    url = f"http://127.0.0.1:{port}"
+    if sys.platform == "darwin":
+        subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif shutil.which("xdg-open"):
+        subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    # Print info for caller
+    print(f"{dash_dir}")
+
+
+def get_step(data, step_num):
+    idx = step_num - 1
+    if idx < 0 or idx >= len(data.get("steps", [])):
+        print(f"ERROR: Step {step_num} out of range (1-{len(data.get('steps', []))})", file=sys.stderr)
+        sys.exit(1)
+    return data["steps"][idx], idx
+
+
+def cmd_step_start(args):
+    if len(args) < 1:
+        print("Usage: dash step-start <step_number>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        print("ERROR: No progress.json found", file=sys.stderr)
+        sys.exit(1)
+
+    step_num = int(args[0])
+    step, _ = get_step(data, step_num)
+    step["status"] = "in_progress"
+    step["updated_at"] = now_iso()
+    add_event(data, f"Step {step_num} started: {step['name']}")
+    write_progress(dash_dir, data)
+
+
+def cmd_step_detail(args):
+    if len(args) < 2:
+        print("Usage: dash step-detail <step_number> <detail>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    detail = " ".join(args[1:])
+    step, _ = get_step(data, step_num)
+    step["detail"] = detail
+    step["updated_at"] = now_iso()
+    write_progress(dash_dir, data)
+
+
+def cmd_step_link(args):
+    if len(args) < 3:
+        print("Usage: dash step-link <step_number> <label> <url>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    label = args[1]
+    url = args[2]
+    step, _ = get_step(data, step_num)
+    step["links"].append({"label": label, "url": url})
+    step["updated_at"] = now_iso()
+    add_event(data, f"Step {step_num}: {label}")
+    write_progress(dash_dir, data)
+
+
+def cmd_step_complete(args):
+    if len(args) < 1:
+        print("Usage: dash step-complete <step_number>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    step, _ = get_step(data, step_num)
+    step["status"] = "complete"
+    step["updated_at"] = now_iso()
+    add_event(data, f"Step {step_num} complete: {step['name']}")
+    write_progress(dash_dir, data)
+
+
+def cmd_step_error(args):
+    if len(args) < 2:
+        print("Usage: dash step-error <step_number> <message>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    message = " ".join(args[1:])
+    step, _ = get_step(data, step_num)
+    step["status"] = "error"
+    step["detail"] = message
+    step["updated_at"] = now_iso()
+    data["status"] = "error"
+    add_event(data, f"Step {step_num} error: {message}")
+    write_progress(dash_dir, data)
+
+
+def cmd_event(args):
+    if len(args) < 1:
+        print("Usage: dash event <message>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    add_event(data, " ".join(args))
+    write_progress(dash_dir, data)
+
+
+def cmd_check_control(args):
+    dash_dir = get_dash_dir()
+    control_file = dash_dir / "control.json"
+    if not control_file.exists():
+        print("none")
+        return
+
+    try:
+        control = json.loads(control_file.read_text())
+        action = control.get("action", "none")
+        print(action)
+        if action == "resume":
+            control_file.unlink(missing_ok=True)
+    except (json.JSONDecodeError, OSError):
+        print("none")
+
+
+def cmd_complete(args):
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    data["status"] = "complete"
+    for step in data.get("steps", []):
+        if step["status"] == "in_progress":
+            step["status"] = "complete"
+            step["updated_at"] = now_iso()
+    add_event(data, "All steps complete")
+    write_progress(dash_dir, data)
+
+
+def cmd_error(args):
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    message = " ".join(args) if args else "Unknown error"
+    data["status"] = "error"
+    add_event(data, f"Error: {message}")
+    write_progress(dash_dir, data)
+
+
+def cmd_shutdown(args):
+    state = load_state()
+    if not state:
+        print("No active dashboard to shut down.")
+        return
+
+    try:
+        os.kill(state["pid"], signal.SIGTERM)
+    except (OSError, ProcessLookupError):
+        pass
+
+    state_file().unlink(missing_ok=True)
+    print(f"Dashboard shut down (was at {state['dash_dir']})")
+
+
+def cmd_dir(args):
+    state = load_state()
+    if not state:
+        print("ERROR: No active dashboard", file=sys.stderr)
+        sys.exit(1)
+    print(state["dash_dir"])
+
+
+COMMANDS = {
+    "init": cmd_init,
+    "step-start": cmd_step_start,
+    "step-detail": cmd_step_detail,
+    "step-link": cmd_step_link,
+    "step-complete": cmd_step_complete,
+    "step-error": cmd_step_error,
+    "event": cmd_event,
+    "check-control": cmd_check_control,
+    "complete": cmd_complete,
+    "error": cmd_error,
+    "shutdown": cmd_shutdown,
+    "dir": cmd_dir,
+}
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+        print("Usage: dash <command> [args...]", file=sys.stderr)
+        print(f"Commands: {', '.join(COMMANDS.keys())}", file=sys.stderr)
+        sys.exit(1)
+
+    COMMANDS[sys.argv[1]](sys.argv[2:])
+
+
+if __name__ == "__main__":
+    main()
