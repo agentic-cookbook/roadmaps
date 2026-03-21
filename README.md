@@ -263,6 +263,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v6 | 2026-03-21 | Never stop polling — slow down when done so overlays clear when dashboard restarts |
 | v5 | 2026-03-21 | Clear stale stop/completion overlays when dashboard restarts in running state |
 | v4 | 2026-03-21 | Persist port in dashboard directory for reliable reuse across restarts; `begin-step` auto-closes any other in-progress step to enforce single-active-step |
 | v3 | 2026-03-21 | Deterministic dashboard directory per feature name; reuse existing state on restart; reuse previous port; clear stale control state |

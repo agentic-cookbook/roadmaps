@@ -526,7 +526,7 @@
 
   <div id="poll-status" class="footer">
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v11</span>
+    <span class="footer-version">v12</span>
   </div>
 
   <div id="completion-overlay" class="completion-overlay">
@@ -1070,12 +1070,20 @@ async function poll() {
 }
 
 poll();
+var SLOW_POLL = 5000;
+var currentInterval = POLL_INTERVAL;
 var intervalId = setInterval(async function() {
   await poll();
   if (lastJson) {
     try {
       var data = JSON.parse(lastJson);
-      if (data.status === 'complete' || data.status === 'error') clearInterval(intervalId);
+      var done = data.status === 'complete' || data.status === 'error';
+      var desiredInterval = done ? SLOW_POLL : POLL_INTERVAL;
+      if (desiredInterval !== currentInterval) {
+        clearInterval(intervalId);
+        currentInterval = desiredInterval;
+        intervalId = setInterval(arguments.callee, currentInterval);
+      }
     } catch(e) {}
   }
 }, POLL_INTERVAL);
