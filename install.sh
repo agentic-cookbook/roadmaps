@@ -202,25 +202,27 @@ scan_and_install_tools() {
     echo "  All selected tools installed!"
 }
 
-# --- Skills Install Method Prompt ---
+# --- Skills Install Helpers ---
 
-prompt_install_method() {
-    echo ""
-    echo "  How would you like to install skills?"
-    echo "    1. Symlink (skills update automatically when repo is pulled)"
-    echo "    2. Copy (standalone copy, must re-run install to update)"
-    echo ""
-    echo -n "  Choose [1/2] (default: 1): "
-    local choice
-    read -r choice < /dev/tty
-    if [[ "$choice" == "2" ]]; then
+detect_install_method() {
+    local target="$1"
+    if [ -L "$target" ]; then
+        echo "symlink"
+    elif [ -d "$target" ]; then
         echo "copy"
     else
-        echo "symlink"
+        echo "none"
     fi
 }
 
-# --- Install a single skill to a target directory ---
+remove_skill() {
+    local target="$1"
+    if [ -L "$target" ]; then
+        rm "$target"
+    elif [ -d "$target" ]; then
+        rm -rf "$target"
+    fi
+}
 
 install_skill() {
     local skill_dir="$1"
@@ -230,24 +232,31 @@ install_skill() {
     skill_name=$(basename "$skill_dir")
     local target="$target_dir/$skill_name"
 
-    if [[ "$method" == "copy" ]]; then
-        if [ -d "$target" ] && [ ! -L "$target" ]; then
-            echo "  [ok] $skill_name (already copied)"
-        else
-            # Remove existing symlink if switching to copy
-            [ -L "$target" ] && rm "$target"
-            cp -R "$skill_dir" "$target"
-            echo "  [copied] $skill_name"
-        fi
+    if [ "$method" = "symlink" ]; then
+        ln -s "$skill_dir" "$target"
+        echo "  [symlinked] $skill_name"
     else
-        if [ -L "$target" ]; then
-            echo "  [ok] $skill_name (already linked)"
-        elif [ -d "$target" ]; then
-            echo "  [skip] $skill_name (local copy exists — remove it to use shared version)"
-        else
-            ln -s "$skill_dir" "$target"
-            echo "  [linked] $skill_name -> $skill_dir"
-        fi
+        cp -R "$skill_dir" "$target"
+        echo "  [copied] $skill_name"
+    fi
+}
+
+prompt_install_method() {
+    local current="$1"
+    if [ "$current" != "none" ]; then
+        echo "  Current install method: $current"
+    fi
+    echo ""
+    echo -n "  Install skills as [s]ymlink or [c]opy? [s/c/q] "
+    local choice
+    read -r choice < /dev/tty
+    if [[ "$choice" =~ ^[qQ]$ ]]; then
+        echo "  EXIT"
+        exit 0
+    elif [[ "$choice" =~ ^[cC]$ ]]; then
+        echo "copy"
+    else
+        echo "symlink"
     fi
 }
 
@@ -263,7 +272,21 @@ install_claude_skills() {
 
     for skill_dir in "$SCRIPT_DIR/skills"/*/; do
         [ -d "$skill_dir" ] || continue
-        install_skill "$skill_dir" "$SKILLS_DIR" "$method"
+        local skill_name
+        skill_name=$(basename "$skill_dir")
+        local target="$SKILLS_DIR/$skill_name"
+        local existing
+        existing=$(detect_install_method "$target")
+
+        if [ "$existing" = "$method" ]; then
+            echo "  [ok] $skill_name (already ${method}ed)"
+        else
+            if [ "$existing" != "none" ]; then
+                echo "  [reinstall] $skill_name ($existing -> $method)"
+                remove_skill "$target"
+            fi
+            install_skill "$skill_dir" "$SKILLS_DIR" "$method"
+        fi
     done
 }
 
@@ -292,14 +315,20 @@ install_openclaw_skills() {
     fi
 
     echo "  OpenClaw skills dir: $openclaw_skills"
+    echo "  Using same method: $method"
     for skill_dir in "$SCRIPT_DIR/skills"/*/; do
         [ -d "$skill_dir" ] || continue
         local skill_name
         skill_name=$(basename "$skill_dir")
         local target="$openclaw_skills/$skill_name"
+        local existing
+        existing=$(detect_install_method "$target")
 
-        if [ -L "$target" ] || [ -d "$target" ]; then
-            echo "  [ok] $skill_name (already present)"
+        if [ "$existing" = "$method" ]; then
+            echo "  [ok] $skill_name (already ${method}ed)"
+        elif [ "$existing" != "none" ]; then
+            # Could be a built-in — don't remove automatically
+            echo "  [skip] $skill_name (exists as $existing — may be built-in)"
         else
             install_skill "$skill_dir" "$openclaw_skills" "$method"
         fi
@@ -318,8 +347,20 @@ main() {
     echo "--- Checking Tools ---"
     scan_and_install_tools
 
+    # Detect current install method from first installed skill
+    local current_method="none"
+    for skill_dir in "$SCRIPT_DIR/skills"/*/; do
+        [ -d "$skill_dir" ] || continue
+        local skill_name
+        skill_name=$(basename "$skill_dir")
+        current_method=$(detect_install_method "$SKILLS_DIR/$skill_name")
+        if [ "$current_method" != "none" ]; then
+            break
+        fi
+    done
+
     local method
-    method=$(prompt_install_method)
+    method=$(prompt_install_method "$current_method")
 
     install_claude_skills "$method"
     install_openclaw_skills "$method"
