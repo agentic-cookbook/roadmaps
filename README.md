@@ -129,6 +129,7 @@ You can continue working in the current session while the agent runs. For intera
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.1.0 | 2026-03-21 | List available roadmaps with quit option when called without arguments; accept feature name as argument |
 | v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — background launcher for implement-roadmap-agent |
 
@@ -262,6 +263,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.1.0 | 2026-03-21 | Deterministic dashboard directory per feature name (no more duplicate sites); reuse existing state on restart; reuse previous port; clear stale control state |
 | v2.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v2 | 2026-03-21 | Added `dash` CLI helper script — single-command interface for init, step updates, control checks, and shutdown; eliminates manual JSON construction and shell variable tracking |
 | v1 | 2026-03-21 | Initial release — live HTML dashboard with progress polling, Pause/Resume/Stop controls, custom Python server for bidirectional communication |

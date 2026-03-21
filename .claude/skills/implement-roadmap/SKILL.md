@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "1.0.0"
+version: "1.1.0"
 description: "Implement a planned feature from its Roadmap autonomously in the background. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap v1.0.0
+> implement-roadmap v1.1.0
 
 Then stop. Do not continue with the rest of the skill.
 
