@@ -1,4 +1,5 @@
 # Cat Herding
+My cat's name is Claude.
 
 Shared repository of reusable Claude Code skills and agents.
 
