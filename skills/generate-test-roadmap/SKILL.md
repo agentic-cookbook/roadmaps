@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Generate Test Roadmap
 
-Creates a complete test roadmap for exercising the `/implement-roadmap-interactively` skill and `implement-roadmap-agent`. Generates all planning artifacts (Feature Definition, Feature Roadmap, GitHub issues) in one shot with no user interaction.
+Creates a complete test roadmap for exercising the `/implement-roadmap` skill and `implement-roadmap-agent`. Generates all planning artifacts (Feature Definition, Feature Roadmap, GitHub issues) in one shot with no user interaction.
 
 The test feature is deliberately trivial — 20 steps that each append a line to `roadmap-test.md`. The content is silly cat-herding themed.
 
@@ -207,7 +207,7 @@ GitHub Issues: #<first> through #<last>
 Phase: Ready
 
 To implement, run:
-  /implement-roadmap-interactively
+  /implement-roadmap
   or: claude --agent implement-roadmap-agent "Implement ${FEATURE_NAME}"
 ```
 

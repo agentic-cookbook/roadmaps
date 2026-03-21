@@ -111,6 +111,26 @@ Pass issue numbers, or `all` to include every open issue.
 
 ---
 
+### /implement-roadmap
+
+Launches the `implement-roadmap-agent` in the background to autonomously implement a feature from its Roadmap. Scans available roadmaps, lets you pick one (or auto-selects if only one), and runs the agent.
+
+**Usage:**
+
+```
+/implement-roadmap
+```
+
+You can continue working in the current session while the agent runs. For interactive step-by-step control, use `/implement-roadmap-interactively` instead.
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-21 | Initial release — background launcher for implement-roadmap-agent |
+
+---
+
 ### /implement-roadmap-interactively
 
 Implementation skill for features planned with `/plan-roadmap`. Works through each Roadmap step with proper isolation, testing, and review.
