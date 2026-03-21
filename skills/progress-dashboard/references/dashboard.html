@@ -321,6 +321,42 @@
   }
   .footer.error { color: var(--red); }
 
+  /* --- Completion overlay --- */
+  .completion-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 17, 23, 0.85);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+  }
+  .completion-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .completion-check {
+    font-size: 8rem;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 40px rgba(63, 185, 80, 0.4));
+  }
+  .completion-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+  .completion-subtext {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
     display: inline-block;
@@ -401,6 +437,12 @@
   </div>
 
   <div id="poll-status" class="footer">Connecting...</div>
+
+  <div id="completion-overlay" class="completion-overlay">
+    <div class="completion-check">&check;</div>
+    <div class="completion-text" id="completion-text">Complete</div>
+    <div class="completion-subtext" id="completion-subtext"></div>
+  </div>
 
   <span id="measure" class="measure"></span>
 
@@ -540,7 +582,7 @@ function calcEta(steps) {
   });
 
   if (completed.length === 0) {
-    if (inProgressStart) return { text: 'Calculating...', state: 'calculating' };
+    if (inProgressStart) return { text: 'Estimating time remaining\u2026 completing first step', state: 'calculating' };
     return { text: '', state: 'none' };
   }
 
@@ -741,6 +783,7 @@ function render(data) {
     pollStatus.textContent = 'Done. You can close this window.';
     pollStatus.className = 'footer';
     hideControls();
+    showCompletionOverlay(steps);
   } else if (data.status === 'error') {
     pollStatus.textContent = 'Agent stopped with an error. Check the terminal for details.';
     pollStatus.className = 'footer error';
@@ -753,6 +796,38 @@ function render(data) {
   if (data.status === 'running' && currentControl === 'pause') {
     document.getElementById('control-status').textContent = 'Paused \u2014 agent will pause after current operation';
   }
+}
+
+function showCompletionOverlay(steps) {
+  var overlay = document.getElementById('completion-overlay');
+  if (overlay.classList.contains('visible')) return;
+
+  var title = document.getElementById('title').textContent;
+  document.getElementById('completion-text').textContent = title + ' \u2014 Complete';
+
+  // Total elapsed
+  var firstStart = null;
+  var lastEnd = null;
+  steps.forEach(function(s) {
+    if (s.started_at) {
+      var t = new Date(s.started_at).getTime();
+      if (!firstStart || t < firstStart) firstStart = t;
+    }
+    if (s.completed_at) {
+      var t2 = new Date(s.completed_at).getTime();
+      if (!lastEnd || t2 > lastEnd) lastEnd = t2;
+    }
+  });
+  var sub = steps.length + ' steps';
+  if (firstStart && lastEnd) {
+    sub += ' in ' + formatDuration(lastEnd - firstStart);
+  }
+  document.getElementById('completion-subtext').textContent = sub;
+
+  // Small delay so the final progress update renders first
+  setTimeout(function() {
+    overlay.classList.add('visible');
+  }, 500);
 }
 
 async function sendControl(action) {
