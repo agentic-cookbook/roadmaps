@@ -7,9 +7,17 @@ disable-model-invocation: true
 
 ## Version Check
 
-If `$ARGUMENTS` is `--version`, respond with exactly:
+If `$ARGUMENTS` is `--version`:
 
-> implement-roadmap v1.2.0
+1. Print the skill version:
+   > implement-roadmap v1.2.0
+
+2. Print the agent version by running:
+   ```bash
+   grep -m1 'version:' ~/.claude/agents/implement-roadmap-agent.md
+   ```
+   Format the output as:
+   > implement-roadmap-agent v{version}
 
 Then stop. Do not continue with the rest of the skill.
 
