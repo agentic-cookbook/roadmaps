@@ -37,13 +37,11 @@ Replace `<FeatureName>` with the feature name from your task prompt. **Do not re
 
 If `dash` is not found (`NO_DASH`), continue without the dashboard — it is not required.
 
-Steps and details will be populated later in step 5a after reading the roadmap.
-
 ### 2. Resolve Feature Name
 
 Extract the feature name from your task prompt. Scan `.claude/Features/Active-Roadmaps/` for a matching `*-FeatureRoadmap.md` file.
 
-If the task prompt does not specify a feature, or if no matching roadmap exists, report the error (and update dashboard with `python3 "$DASH_CLI" error "No matching roadmap found"` then `python3 "$DASH_CLI" shutdown` if dashboard is running) and **STOP**.
+If the task prompt does not specify a feature, or if no matching roadmap exists, report the error (and `python3 "$DASH_CLI" error "No matching roadmap found" && python3 "$DASH_CLI" shutdown` if dashboard is running) and **STOP**.
 
 ### 3. Validate Roadmap State
 
@@ -54,78 +52,32 @@ Read the roadmap file and check:
 
 If either check fails, report why (and update dashboard with error + shutdown if running) and **STOP**.
 
-### Dashboard Commands
+### 4. Load Roadmap into Dashboard
 
-Use the `dash` CLI throughout implementation. All commands are one-liners:
+**One command populates everything** — all step names, issues, PRs, and completion status are parsed directly from the roadmap file. You do NOT manually set step names, add issues, or add PRs. The `load-roadmap` command does it all.
 
 ```bash
-# Step lifecycle
-python3 "$DASH_CLI" step-start <N>                         # mark step N as in-progress
-python3 "$DASH_CLI" step-detail <N> "Building components"   # update step detail text
-python3 "$DASH_CLI" step-link <N> "PR #42" "https://..."    # add a clickable link
-python3 "$DASH_CLI" step-complete <N>                       # mark step N as done
-python3 "$DASH_CLI" step-error <N> "Build failed: ..."      # mark step N as failed
-
-# Events (for the log)
-python3 "$DASH_CLI" event "Reviews passed with 0 findings"
-
-# Check user controls (pause/resume/stop buttons)
-python3 "$DASH_CLI" check-control                           # prints: none, pause, resume, or stop
-
-# Completion
-python3 "$DASH_CLI" complete                                # mark everything done
-python3 "$DASH_CLI" error "Unrecoverable: ..."              # mark as failed
-python3 "$DASH_CLI" shutdown                                # kill the server
+python3 "$DASH_CLI" load-roadmap ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-**When to call what:**
+This reads the roadmap markdown, extracts every step's description, GitHub issue number, PR number, and status, and populates the dashboard automatically. Completed steps from previous runs appear with their PR and issue links.
+
+### Dashboard Commands
+
+Use these commands during implementation — each is a single call that updates everything atomically:
 
 | Moment | Command |
 |--------|---------|
-| After reading roadmap | `set-steps`, `add-issue`, `step-detail`, mark completed steps (see 5a) |
-| Before each step | `check-control` — handle pause/stop if returned |
-| Step starts | `step-start <N>` then `update-issue <issue_number> in_progress` then `step-link <N> "Issue #<number>" "<url>"` |
-| PR created | `add-pr <number> "<title>" "<url>"` then `step-link <N> "PR #<number>" "<url>"` |
-| Reviews done | `event "Step <N>: reviews passed"` |
-| PR merged | `update-pr <number> merged` then `step-complete <N>` then `update-issue <issue_number> closed` |
-| Error occurs | `step-error <N> "<message>"` then `shutdown` |
-| All steps done | `complete` then `shutdown` |
+| Before each step | `python3 "$DASH_CLI" check-control` — prints `none`, `pause`, or `stop` |
+| Step starts | `python3 "$DASH_CLI" begin-step <N>` — marks step in_progress, updates issue |
+| PR created | `python3 "$DASH_CLI" pr-created <N> <pr_number> <pr_url>` — adds PR to panel + step link |
+| Step done | `python3 "$DASH_CLI" finish-step <N>` — marks complete, PR merged, issue closed |
+| Log a message | `python3 "$DASH_CLI" log "<message>"` |
+| Step detail | `python3 "$DASH_CLI" step-detail <N> "<text>"` |
+| Error | `python3 "$DASH_CLI" step-error <N> "<message>"` then `shutdown` |
+| All done | `python3 "$DASH_CLI" complete` then `shutdown` |
 
-### 5a. Populate Dashboard
-
-Now that you've read the Roadmap, populate the dashboard. **Batch all of these into a single bash command** (chain with `&&`) to minimize round trips.
-
-**CRITICAL RULES for dashboard population:**
-- Include **ALL** steps from the Roadmap — both completed and not-started. `set-steps` replaces the full list.
-- **Never** append "(DONE)" or any status text to step names — the dashboard shows status via icons.
-- **Never** use `step-detail` to say "PR #X created" — use `step-link` for links, `step-detail` for descriptions.
-- Step names should be just the description from the Roadmap, e.g. `"Setup project scaffolding"` not `"Step 1: Setup project scaffolding (DONE)"`.
-
-```bash
-# Load ALL steps from the Roadmap (completed + remaining)
-python3 "$DASH_CLI" set-steps "<step 1 name>" "<step 2 name>" ... "<step N name>" && \
-# Add all GitHub issues
-python3 "$DASH_CLI" add-issue <issue1> "<title>" "<url>" && \
-python3 "$DASH_CLI" add-issue <issue2> "<title>" "<url>" && \
-# ... for all issues
-# Set details for each step
-python3 "$DASH_CLI" step-detail 1 "<description> — Acceptance: <criteria>" && \
-python3 "$DASH_CLI" step-detail 2 "<description> — Acceptance: <criteria>" && \
-# ... for all steps
-# For steps already Complete (from a previous run), add their links and mark done:
-python3 "$DASH_CLI" step-start 1 && \
-python3 "$DASH_CLI" step-link 1 "Issue #<N>" "<issue_url>" && \
-python3 "$DASH_CLI" step-link 1 "PR #<N>" "<pr_url>" && \
-python3 "$DASH_CLI" step-complete 1 && \
-python3 "$DASH_CLI" update-issue <issue_number> closed && \
-python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>" && \
-python3 "$DASH_CLI" update-pr <pr_number> merged
-# ... repeat for each completed step
-```
-
-Read PR info from each step's `**PR**:` field in the Roadmap.
-
-### 5b. Read Feature Definition
+### 5. Read Feature Definition
 
 Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to understand:
 - The feature's goal and acceptance criteria
@@ -152,12 +104,7 @@ python3 "$DASH_CLI" check-control
 
 Set the step's status to "In Progress" in the Roadmap. Commit and push this change.
 
-**Dashboard**:
-```bash
-python3 "$DASH_CLI" step-start <N>
-python3 "$DASH_CLI" update-issue <issue_number> in_progress
-python3 "$DASH_CLI" step-link <N> "Issue #<issue_number>" "<issue_url>"
-```
+**Dashboard**: `python3 "$DASH_CLI" begin-step <N>`
 
 ### Step 2: Plan
 
@@ -220,11 +167,7 @@ EOF
 )"
 ```
 
-**Dashboard**: After the PR is created, capture its number and URL:
-```bash
-python3 "$DASH_CLI" add-pr <pr_number> "<Step description>" "<pr_url>"
-python3 "$DASH_CLI" step-link <N> "PR #<pr_number>" "<pr_url>"
-```
+**Dashboard**: `python3 "$DASH_CLI" pr-created <N> <pr_number> <pr_url>`
 
 ### Step 8: Run Reviews
 
@@ -247,11 +190,6 @@ Fix high and critical issues. Re-run relevant reviews to confirm resolution.
 gh pr merge --squash
 ```
 
-**Dashboard**:
-```bash
-python3 "$DASH_CLI" update-pr <pr_number> merged
-```
-
 ### Step 11: Update Roadmap
 
 - Mark the step as "Complete"
@@ -266,19 +204,9 @@ gh issue comment <number> --body "Completed in PR #<pr_number>. <Brief summary o
 gh issue close <number>
 ```
 
-**Dashboard**:
-```bash
-python3 "$DASH_CLI" update-issue <issue_number> closed
-```
-
 ### Checkpoint (log and continue)
 
-**Dashboard**:
-```bash
-python3 "$DASH_CLI" step-complete <N>
-```
-
-Links for PR and Issue should already be on the step from earlier dashboard calls.
+**Dashboard**: `python3 "$DASH_CLI" finish-step <N>` — atomically marks step complete, PR merged, issue closed.
 
 Print:
 

@@ -74,56 +74,26 @@ Wait for the user to choose.
 
 ### Step 5: Initialize Progress Dashboard
 
-If `DASH_CLI` was found in Step 0, initialize the dashboard now that you have the feature name and step names:
+If `DASH_CLI` was found in Step 0, initialize and load the roadmap:
 
 ```bash
-python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
+python3 "$DASH_CLI" init "<FeatureName>"
+python3 "$DASH_CLI" load-roadmap ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-This creates the temp directory, starts the server, and opens the browser. The `dash` CLI manages all state internally — no shell variables to track between calls.
+The `init` command opens the browser immediately. The `load-roadmap` command reads the roadmap markdown file and automatically populates all step names, GitHub issues, PRs, and completion status. You do NOT manually add steps, issues, or PRs — `load-roadmap` does it all.
 
-After init, populate the dashboard. **Batch into a single bash command** (chain with `&&`):
+Use these commands during implementation — each is a single atomic call:
 
-**CRITICAL RULES:**
-- Include **ALL** steps — both completed and not-started. `set-steps` replaces the full list.
-- **Never** append "(DONE)" or status text to step names — the dashboard shows status via icons.
-- **Never** use `step-detail` to say "PR #X created" — use `step-link` for links.
-- Step names should be just the description, e.g. `"Setup project"` not `"Step 1: Setup project (DONE)"`.
-
-```bash
-# Load ALL steps
-python3 "$DASH_CLI" set-steps "<step 1 name>" "<step 2 name>" ... && \
-# Add all issues
-python3 "$DASH_CLI" add-issue <N> "<title>" "<url>" && \
-# Set step details
-python3 "$DASH_CLI" step-detail 1 "<description> — Acceptance: <criteria>" && \
-# For completed steps, add links and mark done:
-python3 "$DASH_CLI" step-start 1 && \
-python3 "$DASH_CLI" step-link 1 "Issue #<N>" "<url>" && \
-python3 "$DASH_CLI" step-link 1 "PR #<N>" "<url>" && \
-python3 "$DASH_CLI" step-complete 1 && \
-python3 "$DASH_CLI" update-issue <N> closed && \
-python3 "$DASH_CLI" add-pr <N> "<title>" "<url>" && \
-python3 "$DASH_CLI" update-pr <N> merged
-```
-
-Use `dash` commands throughout implementation:
-
-```bash
-# When a step starts
-python3 "$DASH_CLI" update-issue <issue_number> in_progress
-
-# When a PR is created — add to PRs panel and link on the step
-python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>"
-python3 "$DASH_CLI" step-link <N> "PR #<pr_number>" "<pr_url>"
-
-# When a PR is merged
-python3 "$DASH_CLI" update-pr <pr_number> merged
-
-# When an issue is closed — link on the step
-python3 "$DASH_CLI" step-link <N> "Issue #<issue_number>" "<issue_url>"
-python3 "$DASH_CLI" update-issue <issue_number> closed
-```
+| Moment | Command |
+|--------|---------|
+| Before each step | `python3 "$DASH_CLI" check-control` |
+| Step starts | `python3 "$DASH_CLI" begin-step <N>` |
+| PR created | `python3 "$DASH_CLI" pr-created <N> <pr_number> <pr_url>` |
+| Step done | `python3 "$DASH_CLI" finish-step <N>` |
+| Log a message | `python3 "$DASH_CLI" log "<message>"` |
+| Error | `python3 "$DASH_CLI" step-error <N> "<message>"` then `shutdown` |
+| All done | `python3 "$DASH_CLI" complete` then `shutdown` |
 
 If init fails, skip the dashboard and continue without it — it is not required for implementation.
 
@@ -151,12 +121,7 @@ Read the Roadmap file. Find the next step with status "Not Started". If all step
 
 Update the step's status to "In Progress" in the Roadmap file. Commit and push this change.
 
-**Dashboard**:
-```bash
-python3 "$DASH_CLI" step-start <N>
-python3 "$DASH_CLI" update-issue <issue_number> in_progress
-python3 "$DASH_CLI" step-link <N> "Issue #<issue_number>" "<issue_url>"
-```
+**Dashboard**: `python3 "$DASH_CLI" begin-step <N>`
 
 ### Step 3: Plan the Step
 
@@ -268,12 +233,7 @@ gh issue close <number>
 
 ### CHECKPOINT GATE — Step Complete
 
-**Dashboard**:
-```bash
-python3 "$DASH_CLI" step-complete <N>
-```
-
-Links for PR and Issue should already be on the step from earlier dashboard calls.
+**Dashboard**: `python3 "$DASH_CLI" finish-step <N>` — atomically marks step complete, PR merged, issue closed.
 
 Print the following to the user before starting the next step:
 

@@ -32,6 +32,7 @@ $TMPDIR/progress-dashboard-active (or /tmp/progress-dashboard-active).
 import json
 import os
 import platform
+import re
 import shutil
 import signal
 import socket
@@ -576,7 +577,265 @@ def cmd_update_pr(args):
     print(f"WARNING: PR #{number} not found", file=sys.stderr)
 
 
+# --- Roadmap parser helpers ---
+
+def parse_step_fields(block):
+    """Extract key-value pairs from lines like '- **Key**: value'."""
+    fields = {}
+    for line in block.splitlines():
+        m = re.match(r"^\s*-\s*\*\*(.+?)\*\*:\s*(.*)", line)
+        if m:
+            fields[m.group(1).strip()] = m.group(2).strip()
+    return fields
+
+
+def map_status(roadmap_status):
+    s = roadmap_status.strip().lower()
+    return {
+        "not started": "not_started",
+        "in progress": "in_progress",
+        "complete": "complete",
+        "blocked": "not_started",
+    }.get(s, "not_started")
+
+
+def extract_number(ref, pattern_suffix="issues"):
+    """Extract a number from issue/PR refs like '#N', 'repo#N', or URLs."""
+    if not ref:
+        return None
+    m = re.search(r"#(\d+)", ref)
+    if m:
+        return int(m.group(1))
+    m = re.search(rf"/{pattern_suffix}/(\d+)", ref)
+    if m:
+        return int(m.group(1))
+    m = re.match(r"^\d+$", ref.strip())
+    if m:
+        return int(ref.strip())
+    return None
+
+
+# --- New high-level commands ---
+
+def cmd_load_roadmap(args):
+    if len(args) < 1:
+        print("Usage: dash load-roadmap <path-to-roadmap.md>", file=sys.stderr)
+        sys.exit(1)
+
+    roadmap_path = Path(args[0])
+    if not roadmap_path.exists():
+        print(f"ERROR: Roadmap not found: {roadmap_path}", file=sys.stderr)
+        sys.exit(1)
+
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    content = roadmap_path.read_text()
+
+    # Extract title from "# Feature Roadmap: <Name>"
+    title_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
+    if title_match:
+        data["title"] = title_match.group(1).strip()
+
+    # Get repo URL for constructing links
+    env = data.get("environment", {})
+    repo_url = env.get("repo_url")
+
+    # Split into step blocks by "### Step N:" headers
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+
+    steps = []
+    issues = []
+    prs = []
+
+    for i, match in enumerate(matches):
+        step_num = int(match.group(1))
+        step_desc = match.group(2).strip()
+
+        # Extract the block text between this step header and the next (or end)
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        block = content[block_start:block_end]
+
+        fields = parse_step_fields(block)
+        status = map_status(fields.get("Status", "Not Started"))
+
+        step = {
+            "name": step_desc,
+            "status": status,
+            "detail": fields.get("Description"),
+            "links": [],
+            "started_at": now_iso() if status in ("in_progress", "complete") else None,
+            "completed_at": now_iso() if status == "complete" else None,
+            "updated_at": now_iso() if status != "not_started" else None,
+            "issue_number": None,
+            "pr_number": None,
+        }
+
+        # Parse issue
+        issue_ref = fields.get("GitHub Issue", "")
+        issue_num = extract_number(issue_ref, "issues")
+        if issue_num:
+            step["issue_number"] = issue_num
+            issue_url = f"{repo_url}/issues/{issue_num}" if repo_url else None
+            step["links"].append({"label": f"Issue #{issue_num}", "url": issue_url})
+            issue_status = "closed" if status == "complete" else (
+                "in_progress" if status == "in_progress" else "open"
+            )
+            issues.append({
+                "number": issue_num,
+                "title": f"Step {step_num}: {step_desc}",
+                "url": issue_url,
+                "status": issue_status,
+            })
+
+        # Parse PR
+        pr_ref = fields.get("PR", "")
+        if pr_ref.strip() not in ("_TBD_", "TBD", ""):
+            pr_num = extract_number(pr_ref, "pull")
+            if pr_num:
+                step["pr_number"] = pr_num
+                pr_url = f"{repo_url}/pull/{pr_num}" if repo_url else None
+                # Try to extract URL from the field if it's a full URL
+                url_match = re.search(r"(https?://\S+)", pr_ref)
+                if url_match:
+                    pr_url = url_match.group(1)
+                pr_status = "merged" if status == "complete" else "open"
+                step["links"].append({"label": f"PR #{pr_num}", "url": pr_url})
+                prs.append({
+                    "number": pr_num,
+                    "title": f"Step {step_num}: {step_desc}",
+                    "url": pr_url,
+                    "status": pr_status,
+                })
+
+        # Complexity as detail if no description
+        if not step["detail"] and fields.get("Complexity"):
+            step["detail"] = f"Complexity: {fields['Complexity']}"
+
+        steps.append(step)
+
+    data["steps"] = steps
+    data["issues"] = issues
+    data["prs"] = prs
+    data["roadmap_path"] = str(roadmap_path)
+
+    complete_count = sum(1 for s in steps if s["status"] == "complete")
+    add_event(data, f"Loaded roadmap: {len(steps)} steps, {complete_count} already complete")
+    write_progress(dash_dir, data)
+    print(f"Loaded {len(steps)} steps ({complete_count} complete, {len(issues)} issues, {len(prs)} PRs)")
+
+
+def cmd_begin_step(args):
+    if len(args) < 1:
+        print("Usage: dash begin-step <step_number>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    step, _ = get_step(data, step_num)
+
+    step["status"] = "in_progress"
+    step["started_at"] = now_iso()
+    step["updated_at"] = now_iso()
+
+    # Update linked issue status
+    if step.get("issue_number"):
+        for issue in data.get("issues", []):
+            if issue["number"] == step["issue_number"]:
+                issue["status"] = "in_progress"
+
+    add_event(data, f"Step {step_num} started: {step['name']}")
+    write_progress(dash_dir, data)
+
+
+def cmd_pr_created(args):
+    if len(args) < 3:
+        print("Usage: dash pr-created <step_number> <pr_number> <pr_url>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    pr_number = int(args[1])
+    pr_url = args[2]
+    step, _ = get_step(data, step_num)
+
+    # Store PR number on step
+    step["pr_number"] = pr_number
+    step["updated_at"] = now_iso()
+
+    # Add link to step (avoid duplicates)
+    pr_label = f"PR #{pr_number}"
+    if not any(l["label"] == pr_label for l in step.get("links", [])):
+        step.setdefault("links", []).append({"label": pr_label, "url": pr_url})
+
+    # Add to PRs panel (update if exists)
+    prs_list = data.setdefault("prs", [])
+    existing = next((p for p in prs_list if p["number"] == pr_number), None)
+    if existing:
+        existing["url"] = pr_url
+        existing["title"] = f"Step {step_num}: {step['name']}"
+    else:
+        prs_list.append({
+            "number": pr_number,
+            "title": f"Step {step_num}: {step['name']}",
+            "url": pr_url,
+            "status": "open",
+        })
+
+    add_event(data, f"Step {step_num}: PR #{pr_number} created")
+    write_progress(dash_dir, data)
+
+
+def cmd_finish_step(args):
+    if len(args) < 1:
+        print("Usage: dash finish-step <step_number>", file=sys.stderr)
+        sys.exit(1)
+    dash_dir = get_dash_dir()
+    data = read_progress(dash_dir)
+    if not data:
+        sys.exit(1)
+
+    step_num = int(args[0])
+    step, _ = get_step(data, step_num)
+
+    step["status"] = "complete"
+    step["completed_at"] = now_iso()
+    step["updated_at"] = now_iso()
+
+    # Mark PR as merged
+    if step.get("pr_number"):
+        for pr in data.get("prs", []):
+            if pr["number"] == step["pr_number"]:
+                pr["status"] = "merged"
+
+    # Mark issue as closed
+    if step.get("issue_number"):
+        for issue in data.get("issues", []):
+            if issue["number"] == step["issue_number"]:
+                issue["status"] = "closed"
+
+    add_event(data, f"Step {step_num} complete: {step['name']}")
+    write_progress(dash_dir, data)
+
+
 COMMANDS = {
+    # New high-level commands
+    "load-roadmap": cmd_load_roadmap,
+    "begin-step": cmd_begin_step,
+    "pr-created": cmd_pr_created,
+    "finish-step": cmd_finish_step,
+    "log": cmd_event,
+    # Legacy commands (kept for backward compatibility)
     "init": cmd_init,
     "set-steps": cmd_set_steps,
     "step-start": cmd_step_start,
