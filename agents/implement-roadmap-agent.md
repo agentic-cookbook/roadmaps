@@ -111,7 +111,20 @@ python3 "$DASH_CLI" add-issue <issue_number> "<Step N: description>" "https://gi
 python3 "$DASH_CLI" step-detail <N> "<description> — Acceptance: <criteria>"
 ```
 
-This ensures the Issues panel and step details are populated from the start, before any implementation begins.
+3. If the step is already **Complete** (from a previous run), populate its links and status:
+```bash
+python3 "$DASH_CLI" step-start <N>
+python3 "$DASH_CLI" step-link <N> "PR #<number>" "<pr_url>"
+python3 "$DASH_CLI" step-link <N> "Issue #<number>" "<issue_url>"
+python3 "$DASH_CLI" step-complete <N>
+python3 "$DASH_CLI" update-issue <issue_number> closed
+python3 "$DASH_CLI" add-pr <pr_number> "<title>" "<pr_url>"
+python3 "$DASH_CLI" update-pr <pr_number> merged
+```
+
+Read the PR number and URL from the step's `**PR**:` field in the Roadmap. This ensures the dashboard shows the full history even on subsequent runs.
+
+This ensures the Issues panel, PRs panel, and step details are populated from the start, before any new implementation begins.
 
 ### 5b. Read Feature Definition
 

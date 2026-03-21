@@ -317,12 +317,16 @@
   /* --- Footer --- */
   .footer {
     flex-shrink: 0;
-    text-align: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 0.5rem 1.5rem;
     font-size: 0.7rem;
     color: var(--text-muted);
   }
-  .footer.error { color: var(--red); }
+  .footer.error .footer-status { color: var(--red); }
+  .footer-status { flex: 1; text-align: center; }
+  .footer-version { flex-shrink: 0; opacity: 0.5; }
 
   /* --- Completion overlay --- */
   .completion-overlay {
@@ -520,7 +524,10 @@
     </div>
   </div>
 
-  <div id="poll-status" class="footer">Connecting...</div>
+  <div id="poll-status" class="footer">
+    <span class="footer-status" id="footer-status">Connecting...</span>
+    <span class="footer-version">v7</span>
+  </div>
 
   <div id="completion-overlay" class="completion-overlay">
     <div class="completion-check">&check;</div>
@@ -893,48 +900,45 @@ function render(data) {
   eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
   // Footer and overlays
-  var pollStatus = document.getElementById('poll-status');
+  var footerEl = document.getElementById('poll-status');
+  var statusEl = document.getElementById('footer-status');
   if (data.status === 'complete') {
-    pollStatus.textContent = 'Done. You can close this window.';
-    pollStatus.className = 'footer';
+    statusEl.textContent = 'Done. You can close this window.';
+    footerEl.className = 'footer';
     hideControls();
     document.getElementById('pause-overlay').classList.remove('visible');
     showCompletionOverlay(steps);
   } else if (data.status === 'error') {
     hideControls();
     document.getElementById('pause-overlay').classList.remove('visible');
-    // Check if this was a user-initiated stop
     var wasUserStop = false;
     (data.events || []).forEach(function(e) {
       if (e.message && e.message.indexOf('Stopped by user') >= 0) wasUserStop = true;
     });
     if (wasUserStop || currentControl === 'stop') {
-      pollStatus.textContent = 'Stopped. You can close this window.';
-      pollStatus.className = 'footer';
+      statusEl.textContent = 'Stopped. You can close this window.';
+      footerEl.className = 'footer';
       showStopOverlay();
     } else {
-      pollStatus.textContent = 'Agent stopped with an error. Check the terminal for details.';
-      pollStatus.className = 'footer error';
+      statusEl.textContent = 'Agent stopped with an error. Check the terminal for details.';
+      footerEl.className = 'footer error';
     }
   } else {
-    pollStatus.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
-    pollStatus.className = 'footer';
+    statusEl.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
+    footerEl.className = 'footer';
 
-    // Check control_state from the agent
     if (data.control_state === 'stop') {
       hideControls();
       document.getElementById('pause-overlay').classList.remove('visible');
-      pollStatus.textContent = 'Stopping... agent is shutting down gracefully.';
-      pollStatus.className = 'footer error';
+      statusEl.textContent = 'Stopping... agent is shutting down gracefully.';
+      footerEl.className = 'footer error';
       showStopOverlay();
     } else if (data.control_state === 'pause') {
-      // Agent has acknowledged the pause
       if (!document.getElementById('pause-overlay').classList.contains('visible')) {
         document.getElementById('pause-overlay').classList.add('visible');
       }
       document.getElementById('btn-resume').disabled = false;
     } else if (data.control_state === 'resume' || !data.control_state) {
-      // Agent resumed or no control state
       if (currentControl !== 'pause') {
         document.getElementById('pause-overlay').classList.remove('visible');
       }
@@ -1049,7 +1053,7 @@ async function poll() {
   try {
     var resp = await fetch('progress.json?t=' + Date.now());
     if (!resp.ok) {
-      document.getElementById('poll-status').textContent = 'Waiting for progress data...';
+      document.getElementById('footer-status').textContent = 'Waiting for progress data...';
       return;
     }
     var text = await resp.text();
@@ -1057,7 +1061,7 @@ async function poll() {
     lastJson = text;
     render(JSON.parse(text));
   } catch (e) {
-    document.getElementById('poll-status').textContent = 'Waiting for progress data...';
+    document.getElementById('footer-status').textContent = 'Waiting for progress data...';
   }
 }
 
