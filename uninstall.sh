@@ -171,6 +171,18 @@ find_openclaw_skills_dir() {
     done
 }
 
+find_openclaw_agents_dir() {
+    for candidate in \
+        "$(npm root -g 2>/dev/null)/openclaw/agents" \
+        "/opt/homebrew/lib/node_modules/openclaw/agents" \
+        "/usr/local/lib/node_modules/openclaw/agents"; do
+        if [ -d "$candidate" ]; then
+            echo "$candidate"
+            return
+        fi
+    done
+}
+
 # --- Remove Renamed Extensions ---
 
 RENAMED_SKILLS=(plan-feature implement-feature implement-roadmap)
@@ -233,6 +245,12 @@ main() {
     openclaw_dir=$(find_openclaw_skills_dir)
     if [ -n "$openclaw_dir" ]; then
         remove_skills "$openclaw_dir" "OpenClaw Skills"
+    fi
+
+    local openclaw_agents_dir
+    openclaw_agents_dir=$(find_openclaw_agents_dir)
+    if [ -n "$openclaw_agents_dir" ]; then
+        remove_agents "$openclaw_agents_dir" "OpenClaw Agents"
     fi
 
     echo ""

@@ -417,6 +417,56 @@ install_openclaw_skills() {
     done
 }
 
+# --- OpenClaw Agents Installation ---
+
+install_openclaw_agents() {
+    local method="$1"
+
+    echo ""
+    echo "--- OpenClaw Agents Installation ---"
+
+    if [ ! -d "$SCRIPT_DIR/agents" ] || [ -z "$(ls "$SCRIPT_DIR/agents"/*.md 2>/dev/null)" ]; then
+        echo "  [skip] No agents found in repo"
+        return
+    fi
+
+    local openclaw_root=""
+    for candidate in \
+        "$(npm root -g 2>/dev/null)/openclaw" \
+        "/opt/homebrew/lib/node_modules/openclaw" \
+        "/usr/local/lib/node_modules/openclaw"; do
+        if [ -d "$candidate" ]; then
+            openclaw_root="$candidate"
+            break
+        fi
+    done
+
+    if [ -z "$openclaw_root" ]; then
+        echo "  [skip] OpenClaw not found"
+        return
+    fi
+
+    local openclaw_agents="$openclaw_root/agents"
+    mkdir -p "$openclaw_agents"
+
+    for agent_file in "$SCRIPT_DIR/agents"/*.md; do
+        [ -f "$agent_file" ] || continue
+        local agent_name
+        agent_name=$(basename "$agent_file")
+        local target="$openclaw_agents/$agent_name"
+        local existing
+        existing=$(detect_agent_install_method "$target")
+
+        if [ "$existing" = "$method" ]; then
+            echo "  [ok] $agent_name ($existing)"
+        elif [ "$existing" != "none" ]; then
+            echo "  [skip] $agent_name (exists as $existing — may be built-in)"
+        else
+            install_agent "$agent_file" "$openclaw_agents" "$method"
+        fi
+    done
+}
+
 # --- Remove Renamed Extensions ---
 # Clean up old names from prior installs so they don't coexist with the new names.
 
@@ -491,6 +541,7 @@ main() {
     install_claude_skills "$method"
     install_claude_agents "$method"
     install_openclaw_skills "$method"
+    install_openclaw_agents "$method"
 
     echo ""
     echo "=== Done ==="
