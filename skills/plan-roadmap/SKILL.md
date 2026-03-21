@@ -1,7 +1,18 @@
 ---
 name: plan-roadmap
+version: "2.0.0"
 description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
 disable-model-invocation: true
+---
+
+## Version Check
+
+If `$ARGUMENTS` is `--version`, respond with exactly:
+
+> plan-roadmap v2.0.0
+
+Then stop. Do not continue with the rest of the skill.
+
 ---
 
 # Plan Roadmap
@@ -402,18 +413,15 @@ GitHub Issues:
 
 All artifacts verified. All commits saved.
 
-Would you like to start implementation now? (yes/no)
-  yes — I'll launch the implement-roadmap agent to begin autonomous implementation.
-  no  — You can run /implement-roadmap later when you're ready.
+Ready to implement? (yes/no)
+  yes — I'll run /implement-roadmap to launch the agent in the background.
+  no  — Run /implement-roadmap when you're ready.
 ```
 
 **STOP. Wait for the user's response.**
 
 ### 7d: Launch implementation (if requested)
 
-If the user says **yes**, launch the `implement-roadmap-agent` using the Agent tool:
+If the user says **yes**, invoke the `/implement-roadmap` skill using the Skill tool.
 
-- **subagent_type**: `implement-roadmap-agent`
-- **prompt**: `Implement the <FeatureName> feature. Roadmap: .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md`
-
-If the user says **no**, end the skill. The user can run `/implement-roadmap` later.
+If the user says **no**, end the skill.
