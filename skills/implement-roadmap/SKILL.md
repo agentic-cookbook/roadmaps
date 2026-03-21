@@ -21,7 +21,17 @@ Implementation workflow for features that have been planned with `/plan-roadmap`
 
 ## STARTUP: Select a Feature to Implement
 
-Before doing anything else, scan for available features and let the user choose.
+### Step 0: Start Progress Dashboard
+
+**This is the very first thing you do.** Before scanning roadmaps or prompting the user, start the dashboard so progress is visible from the beginning.
+
+Locate the `dash` CLI:
+
+```bash
+DASH_CLI="$(find -L ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
+```
+
+You will initialize the dashboard after the user selects a feature (since you need the feature name and step names). For now, just confirm `DASH_CLI` is available. If not found, log it and continue without the dashboard.
 
 ### Step 1: Scan Active Roadmaps
 
@@ -81,20 +91,21 @@ Once the user selects a feature:
 
 The lock is now held. **All code below runs under this lock.**
 
-### Step 5: Start Progress Dashboard
+### Step 5: Initialize Progress Dashboard
 
-Locate the `dash` CLI and initialize the dashboard:
+If `DASH_CLI` was found in Step 0, initialize the dashboard now that you have the feature name and step names:
 
 ```bash
-DASH_CLI="$(find ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
 python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
 ```
 
 This creates the temp directory, starts the server, and opens the browser. The `dash` CLI manages all state internally — no shell variables to track between calls.
 
+**Dashboard**: `python3 "$DASH_CLI" event "Implementation lock acquired"`
+
 Use `dash` commands throughout implementation to update the dashboard (see the Dashboard Commands table in the progress-dashboard skill for the full list).
 
-If the `dash` CLI is not found or init fails, skip the dashboard and continue without it — it is not required for implementation.
+If init fails, skip the dashboard and continue without it — it is not required for implementation.
 
 ---
 

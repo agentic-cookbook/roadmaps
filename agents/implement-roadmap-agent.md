@@ -27,38 +27,17 @@ You are an autonomous implementation agent. You implement features planned by `/
 
 ## STARTUP
 
-### 1. Resolve Feature Name
+### 1. Start Progress Dashboard
 
-Extract the feature name from your task prompt. Scan `.claude/Features/Active-Roadmaps/` for a matching `*-FeatureRoadmap.md` file.
+**This is the very first thing you do.** Before anything else, start the dashboard so the user can see progress from the beginning.
 
-If the task prompt does not specify a feature, or if no matching roadmap exists, report the error and **STOP**.
-
-### 2. Validate Roadmap State
-
-Read the roadmap file and check:
-
-- `**Phase**:` must be `Ready` (or absent for backward compatibility)
-- `**Implementing**:` must be `No`
-- `**Status**:` must not be `Complete`
-
-If any check fails, report why and **STOP**.
-
-### 3. Acquire Lock
-
-1. Set `**Implementing**:` to `Yes` in the roadmap
-2. Commit and push: `chore: acquire implementation lock for <FeatureName>`
-
-The lock is now held. **All work below runs under this lock.**
-
-### 4. Start Progress Dashboard
-
-Locate the `dash` CLI from the progress-dashboard skill:
+Locate the `dash` CLI:
 
 ```bash
 DASH_CLI="$(find -L ~/.claude/skills -path '*/progress-dashboard/references/dash' 2>/dev/null | head -1)"
 ```
 
-If found, initialize the dashboard with the feature name and all step names from the Roadmap:
+If found, resolve the feature name and step names from the Roadmap first (read `.claude/Features/Active-Roadmaps/` to find the matching roadmap file, parse step names from it), then initialize:
 
 ```bash
 python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
@@ -67,6 +46,31 @@ python3 "$DASH_CLI" init "<FeatureName>" "Step 1: <name>" "Step 2: <name>" ...
 This creates the temp directory, starts the server, opens the browser, and writes the initial `progress.json`. The `dash` CLI manages all state internally — no shell variables to track.
 
 If `dash` is not found or `init` fails, log the error and continue without the dashboard — it is not required for implementation.
+
+### 2. Resolve Feature Name
+
+Extract the feature name from your task prompt. Scan `.claude/Features/Active-Roadmaps/` for a matching `*-FeatureRoadmap.md` file.
+
+If the task prompt does not specify a feature, or if no matching roadmap exists, report the error (and update dashboard with `python3 "$DASH_CLI" error "No matching roadmap found"` then `python3 "$DASH_CLI" shutdown` if dashboard is running) and **STOP**.
+
+### 3. Validate Roadmap State
+
+Read the roadmap file and check:
+
+- `**Phase**:` must be `Ready` (or absent for backward compatibility)
+- `**Implementing**:` must be `No`
+- `**Status**:` must not be `Complete`
+
+If any check fails, report why (and update dashboard with error + shutdown if running) and **STOP**.
+
+### 4. Acquire Lock
+
+1. Set `**Implementing**:` to `Yes` in the roadmap
+2. Commit and push: `chore: acquire implementation lock for <FeatureName>`
+
+**Dashboard**: `python3 "$DASH_CLI" event "Implementation lock acquired"`
+
+The lock is now held. **All work below runs under this lock.**
 
 ### Dashboard Commands
 
