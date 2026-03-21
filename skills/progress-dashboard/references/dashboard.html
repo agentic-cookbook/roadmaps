@@ -312,6 +312,7 @@
   .event-msg { color: var(--text); }
   .event-msg-warn { color: var(--yellow); }
   .event-msg-error { color: var(--red); }
+  .event-msg-success { color: var(--green); }
 
   /* --- Footer --- */
   .footer {
@@ -560,6 +561,7 @@ var STATUS_COLORS = {
 
 var lastJson = '';
 var currentControl = null;
+var localEvents = [];
 
 function formatTime(iso) {
   if (!iso) return '';
@@ -603,10 +605,13 @@ function measureStepWidth(steps) {
   return maxW + 175;
 }
 
-function buildStepEl(step, index) {
+function buildStepEl(step, index, isPaused) {
   var isActive = step.status === 'in_progress';
   var iconEl = el('span', { className: 'step-icon', style: { color: STATUS_COLORS[step.status] || 'var(--text-muted)' } });
-  if (isActive) {
+  if (isActive && isPaused) {
+    iconEl.textContent = '\u23F8';
+    iconEl.style.color = 'var(--yellow)';
+  } else if (isActive) {
     iconEl.appendChild(el('span', { className: 'spinner' }));
   } else {
     iconEl.textContent = STATUS_ICONS[step.status] || '\u25CB';
@@ -843,7 +848,7 @@ function render(data) {
   while (stepsEl.firstChild) stepsEl.removeChild(stepsEl.firstChild);
   var activeIndex = -1;
   steps.forEach(function(step, i) {
-    stepsEl.appendChild(buildStepEl(step, i));
+    stepsEl.appendChild(buildStepEl(step, i, currentControl === 'pause'));
     if (step.status === 'in_progress') activeIndex = i;
   });
 
@@ -862,15 +867,22 @@ function render(data) {
   renderTickets(document.getElementById('issues'), issues, 'issue');
   renderTickets(document.getElementById('prs'), prs, 'pr');
 
-  // Render events
-  var events = data.events || [];
+  // Render events — merge server events with local events by timestamp
+  var serverEvents = (data.events || []).map(function(e) { return { time: e.time, message: e.message, colorClass: '' }; });
+  var allEvents = serverEvents.concat(localEvents);
+  allEvents.sort(function(a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+
   var eventsEl = document.getElementById('events');
   while (eventsEl.firstChild) eventsEl.removeChild(eventsEl.firstChild);
-  events.forEach(function(evt) {
-    eventsEl.appendChild(buildEventEl(evt));
+  allEvents.forEach(function(evt) {
+    var msgEl = el('span', { className: 'event-msg' + (evt.colorClass ? ' ' + evt.colorClass : ''), textContent: evt.message });
+    var row = el('div', { className: 'event' }, [
+      el('span', { className: 'event-time', textContent: formatTime(evt.time) }),
+      msgEl
+    ]);
+    eventsEl.appendChild(row);
   });
 
-  // Scroll events to top (newest first since reversed)
   var eventsScroll = document.getElementById('events-scroll');
   eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
@@ -950,15 +962,9 @@ function showStopOverlay() {
 }
 
 function addLocalEvent(message, colorClass) {
-  var eventsEl = document.getElementById('events');
-  var msgEl = el('span', { className: 'event-msg' + (colorClass ? ' ' + colorClass : ''), textContent: message });
-  var row = el('div', { className: 'event' }, [
-    el('span', { className: 'event-time', textContent: formatTime(new Date().toISOString()) }),
-    msgEl
-  ]);
-  eventsEl.appendChild(row);
-  var eventsScroll = document.getElementById('events-scroll');
-  eventsScroll.scrollTop = eventsScroll.scrollHeight;
+  localEvents.push({ time: new Date().toISOString(), message: message, colorClass: colorClass || '' });
+  // Force a re-render to include the new local event
+  if (lastJson) render(JSON.parse(lastJson));
 }
 
 async function sendControl(action) {
@@ -979,7 +985,7 @@ async function sendControl(action) {
         }
       }, 3000);
     } else if (action === 'resume') {
-      addLocalEvent('Resume requested', '');
+      addLocalEvent('Resume requested', 'event-msg-success');
       document.getElementById('pause-overlay').classList.remove('visible');
     } else if (action === 'stop') {
       addLocalEvent('Stop requested \u2014 waiting for graceful shutdown', 'event-msg-error');
