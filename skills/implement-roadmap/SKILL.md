@@ -19,16 +19,17 @@ Then stop. Do not continue with the rest of the skill.
 
 Launch the `implement-roadmap-agent` in the background to autonomously implement a feature from its Roadmap.
 
-## Step 1: Scan Available Roadmaps
+## Step 1: Resolve Feature
 
-Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadmap.md` file, parse:
+### If `$ARGUMENTS` names a feature:
 
-- The feature name (from `# Feature Roadmap: <name>`)
-- The `**Status**:` field
-- The `**Phase**:` field
+Look for a matching `*-FeatureRoadmap.md` in `.claude/Features/Active-Roadmaps/`. If found and `Phase` is `Ready` and `Status` is not `Complete`, use it. Otherwise report the error and **STOP**.
 
-Categorize each roadmap:
+### If `$ARGUMENTS` is empty:
 
+Scan `.claude/Features/Active-Roadmaps/` for all `*-FeatureRoadmap.md` files. Parse each for feature name, `**Status**:`, and `**Phase**:`.
+
+Categorize:
 - **Available**: `Status` is not `Complete` AND `Phase` is `Ready`
 - **Not Ready**: `Phase` is `Planning`
 - **Complete**: `Status` is `Complete`
@@ -37,13 +38,24 @@ If no features are available:
 - List any "Not Ready" features and explain they need `/plan-roadmap` completed first
 - **STOP**
 
-## Step 2: Select Feature
+Present a numbered list with a quit option:
 
-If only one feature is available, use it automatically.
+```
+Available roadmaps:
 
-If multiple are available, present a numbered list and let the user choose.
+1. FeatureA — 0/5 steps complete
+2. FeatureB — 3/7 steps complete
 
-## Step 3: Launch Agent
+q. Quit
+
+Which roadmap? (number or q)
+```
+
+**STOP. Wait for the user's choice.**
+
+If the user chooses `q`, **STOP** — do not launch anything.
+
+## Step 2: Launch Agent
 
 Launch the `implement-roadmap-agent` in the background using the Agent tool:
 
