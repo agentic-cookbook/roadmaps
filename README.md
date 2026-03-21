@@ -129,6 +129,7 @@ You can continue working in the current session while the agent runs. For intera
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v1.2.0 | 2026-03-21 | Print implement-roadmap-agent version before launching |
 | v1.1.0 | 2026-03-21 | List available roadmaps with quit option when called without arguments; accept feature name as argument |
 | v1.0.0 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support |
 | v1 | 2026-03-21 | Initial release — background launcher for implement-roadmap-agent |
