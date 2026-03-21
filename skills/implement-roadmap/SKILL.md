@@ -83,13 +83,13 @@ The lock is now held. **All code below runs under this lock.**
 
 ### Step 5: Start Progress Dashboard
 
-If the `/progress-dashboard` skill is available, invoke it with the feature name. This opens a live browser dashboard that shows step-by-step progress.
+Invoke `/progress-dashboard <FeatureName>` to start a live browser dashboard. The skill handles creating the temp directory, starting the server, and opening the browser.
 
-Save the `DASH_DIR` and `DASH_PID` values returned by the skill. You will update `$DASH_DIR/progress.json` throughout implementation.
+Save the `DASH_DIR`, `DASH_PID`, and `DASH_PORT` values it reports. You will update `$DASH_DIR/progress.json` throughout implementation.
 
-Build the initial steps array from the Roadmap — one entry per step, all set to `not_started`.
+After the dashboard starts, write the initial `$DASH_DIR/progress.json` with all Roadmap steps set to `not_started` (see the progress-dashboard skill for the JSON schema).
 
-If the skill is not available, skip the dashboard and continue without it.
+If the skill is not available or fails to start, skip the dashboard and continue without it — it is not required for implementation.
 
 ---
 

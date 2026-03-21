@@ -3,6 +3,8 @@ name: implement-roadmap-agent
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
+skills:
+  - progress-dashboard
 ---
 
 # Autonomous Roadmap Implementation
@@ -50,13 +52,31 @@ The lock is now held. **All work below runs under this lock.**
 
 ### 4. Start Progress Dashboard
 
-If the `/progress-dashboard` skill is available, invoke it with the feature name. This opens a live browser dashboard that shows step-by-step progress.
+The `progress-dashboard` skill is preloaded — follow its instructions to start the dashboard:
 
-Save the `DASH_DIR` and `DASH_PID` values returned by the skill. You will update `$DASH_DIR/progress.json` throughout implementation.
+1. Create a temp directory:
+   ```bash
+   DASH_DIR=$(mktemp -d "${TMPDIR:-/tmp}/progress-dashboard-XXXXXX")
+   ```
 
-Build the initial steps array from the Roadmap — one entry per step, all set to `not_started`.
+2. Copy the HTML and server from the skill's references directory:
+   ```bash
+   cp "$(find ~/.claude/skills -path '*/progress-dashboard/references/dashboard.html' 2>/dev/null | head -1)" "$DASH_DIR/index.html"
+   cp "$(find ~/.claude/skills -path '*/progress-dashboard/references/server.py' 2>/dev/null | head -1)" "$DASH_DIR/server.py"
+   ```
 
-If the skill is not available, skip the dashboard and continue without it.
+3. Write the initial `$DASH_DIR/progress.json` with all Roadmap steps set to `not_started` (see the progress-dashboard skill for the JSON schema).
+
+4. Start the server and open the browser:
+   ```bash
+   DASH_PORT=$(python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()")
+   python3 "$DASH_DIR/server.py" "$DASH_PORT" "$DASH_DIR" &
+   DASH_PID=$!
+   sleep 1 && kill -0 "$DASH_PID" 2>/dev/null && echo "Server running on port $DASH_PORT" || echo "Server failed"
+   open "http://127.0.0.1:$DASH_PORT"
+   ```
+
+If any step fails (e.g., skill files not found, server won't start), log the error and continue without the dashboard — it is not required for implementation.
 
 ### 5. Read Feature Definition
 
