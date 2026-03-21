@@ -296,7 +296,7 @@ install_claude_skills() {
         existing=$(detect_install_method "$target")
 
         if [ "$existing" = "$method" ]; then
-            echo "  [ok] $skill_name (already ${method}ed)"
+            echo "  [ok] $skill_name ($existing)"
         else
             if [ "$existing" != "none" ]; then
                 echo "  [reinstall] $skill_name ($existing -> $method)"
@@ -361,7 +361,7 @@ install_claude_agents() {
         existing=$(detect_agent_install_method "$target")
 
         if [ "$existing" = "$method" ]; then
-            echo "  [ok] $agent_name (already ${method}ed)"
+            echo "  [ok] $agent_name ($existing)"
         else
             if [ "$existing" != "none" ]; then
                 echo "  [reinstall] $agent_name ($existing -> $method)"
@@ -407,7 +407,7 @@ install_openclaw_skills() {
         existing=$(detect_install_method "$target")
 
         if [ "$existing" = "$method" ]; then
-            echo "  [ok] $skill_name (already ${method}ed)"
+            echo "  [ok] $skill_name ($existing)"
         elif [ "$existing" != "none" ]; then
             # Could be a built-in — don't remove automatically
             echo "  [skip] $skill_name (exists as $existing — may be built-in)"
