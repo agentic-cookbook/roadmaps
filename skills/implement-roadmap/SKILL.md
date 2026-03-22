@@ -1,9 +1,9 @@
 ---
 name: implement-roadmap
-version: "10"
-description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and launches a worker agent for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
+version: "11"
+description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 *), Bash(ls *), Bash(grep *), Bash(cat *), Bash(mkdir *), Bash(gh *), Bash(git *), Bash(claude *)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 *), Bash(ls *), Bash(grep *), Bash(cat *), Bash(mkdir *), Bash(gh *), Bash(git *), Agent
 ---
 
 ## Version Check
@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 *), Bash(ls *), Bash(
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v10
+   > implement-roadmap v11
 
 2. Print the worker agent version by running:
    ```bash
@@ -26,36 +26,101 @@ Then stop. Do not continue with the rest of the skill.
 
 # Implement Roadmap
 
-Run the deterministic coordinator script to implement a feature roadmap. The coordinator selects steps via regex (no LLM judgment) and launches a worker agent for each step.
+Uses a deterministic Python script for step selection (no LLM judgment) and the Agent tool to launch a worker agent for each step.
 
-## Step 1: Resolve and Launch
+**Do NOT modify the coordinator script, the worker agent, or any skill files.** If something fails, report the error.
 
-If `$ARGUMENTS` names a feature, find the matching roadmap and pass its path to the coordinator. If `$ARGUMENTS` is empty, let the coordinator auto-scan.
+## Step 1: Resolve Roadmap
 
-Run:
-
-```bash
-python3 "${CLAUDE_SKILL_DIR}/references/coordinator" $ARGUMENTS
-```
-
-If `$ARGUMENTS` contains a feature name, find the roadmap path first:
+Run the coordinator to find the roadmap:
 
 ```bash
-ROADMAP=$(ls .claude/Features/Active-Roadmaps/*$ARGUMENTS*-FeatureRoadmap.md 2>/dev/null | head -1)
-if [ -n "$ROADMAP" ]; then
-    python3 "${CLAUDE_SKILL_DIR}/references/coordinator" "$ROADMAP"
-else
-    python3 "${CLAUDE_SKILL_DIR}/references/coordinator" --scan
-fi
+python3 "${CLAUDE_SKILL_DIR}/references/coordinator" resolve $ARGUMENTS
 ```
 
-The coordinator handles everything:
-- Roadmap selection (auto-selects if only one available)
-- Dashboard lifecycle (init, load-roadmap, begin-step, finish-step)
-- Step selection (deterministic regex, not LLM)
-- Launching `claude --agent implement-step-agent` for each step
-- Completion summary
+This outputs JSON. Parse it:
+- If it has `"path"` — use that roadmap. Print: `Implementing: <name> (<complete>/<total> steps complete)`
+- If it has `"choose"` — present the list to the user and ask them to pick. Then use the chosen path.
+- If it has `"error"` — print the error and **STOP**.
 
-You do not need to do anything else. The coordinator runs to completion.
+## Step 2: Start Dashboard
 
-**Do NOT modify the coordinator script, the worker agent, or any skill files.** Your only job is to run the coordinator. If it fails, report the error — do not attempt to fix the coordinator code.
+```bash
+DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash"
+test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<feature_name>" && python3 "$DASH_CLI" load-roadmap "<roadmap_path>" || echo "Dashboard not available"
+```
+
+## Step 3: Implementation Loop
+
+This is a loop. Repeat until done:
+
+### 3a: Get Next Step
+
+Run the coordinator to find the next step:
+
+```bash
+python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "<roadmap_path>"
+```
+
+This outputs JSON. Parse it:
+- If `"action": "done"` — all steps are complete. Print summary and **exit the loop**.
+- If `"action": "implement"` — continue with 3b.
+- If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
+
+### 3b: Print Step Info
+
+Print:
+```
+Step <N>: <description>
+  Issue: <issue>  |  Complexity: <complexity>
+```
+
+### 3c: Update Dashboard
+
+```bash
+python3 "$DASH_CLI" begin-step <N>
+```
+
+### 3d: Launch Worker Agent
+
+Use the **Agent tool** (NOT subprocess, NOT `claude --agent`):
+
+- **subagent_type**: `implement-step-agent`
+- **prompt**: The exact text below, with values filled in:
+
+```
+Implement step <N> of the <feature_name> feature.
+
+Step <N>: <description>
+GitHub Issue: <issue>
+Complexity: <complexity>
+Roadmap file: <roadmap_path>
+Feature Definition: .claude/Features/FeatureDefinitions/<feature_name>-FeatureDefinition.md
+
+Implement ONLY this step. When done, update the roadmap to mark this step Complete, then return. Do not implement any other step.
+```
+
+### 3e: After Worker Returns
+
+Update dashboard:
+```bash
+python3 "$DASH_CLI" finish-step <N>
+```
+
+Print: `Step <N> complete.`
+
+Then **go back to 3a** to get the next step.
+
+## Step 4: Completion
+
+When the loop exits (all steps done):
+
+```bash
+python3 "$DASH_CLI" complete
+python3 "$DASH_CLI" shutdown
+```
+
+Print:
+```
+All steps complete for <feature_name>.
+```
