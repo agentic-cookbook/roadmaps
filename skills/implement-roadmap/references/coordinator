@@ -36,7 +36,7 @@ def parse_step_fields(block):
     return fields
 
 
-def next_step(roadmap_path):
+def next_step(roadmap_path, skip_manual=False):
     """Return the next non-Complete step as a dict, or None if all done."""
     content = Path(roadmap_path).read_text()
     step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
@@ -50,17 +50,41 @@ def next_step(roadmap_path):
         block = content[block_start:block_end]
         fields = parse_step_fields(block)
         status = fields.get("Status", "Not Started").strip()
+        step_type = fields.get("Type", "Auto").strip()
 
-        if status.lower() != "complete":
-            return {
-                "step": step_num,
-                "description": step_desc,
-                "status": status,
-                "issue": fields.get("GitHub Issue", ""),
-                "type": fields.get("Type", "Auto"),
-                "complexity": fields.get("Complexity", ""),
-            }
+        if status.lower() == "complete":
+            continue
+        if skip_manual and step_type.lower() == "manual":
+            continue
+
+        return {
+            "step": step_num,
+            "description": step_desc,
+            "status": status,
+            "issue": fields.get("GitHub Issue", ""),
+            "type": step_type,
+            "complexity": fields.get("Complexity", ""),
+        }
     return None
+
+
+def list_all_steps(roadmap_path):
+    """Return all steps as a list of dicts."""
+    content = Path(roadmap_path).read_text()
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+    steps = []
+    for i, match in enumerate(matches):
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        fields = parse_step_fields(content[block_start:block_end])
+        steps.append({
+            "step": int(match.group(1)),
+            "description": match.group(2).strip(),
+            "status": fields.get("Status", "Not Started").strip(),
+            "type": fields.get("Type", "Auto").strip(),
+        })
+    return steps
 
 
 def count_steps(roadmap_path):
@@ -257,18 +281,20 @@ def main():
     else:
         print("  Dashboard: not available\n")
 
-    # Main loop
+    # Log manual steps that will be skipped
+    all_steps = list_all_steps(roadmap_path)
+    for s in all_steps:
+        if s["type"].lower() == "manual" and s["status"].lower() != "complete":
+            print(f"  Step {s['step']}: {s['description']} — MANUAL (skipping)")
+            if dash_cli:
+                dash(dash_cli, "log", f"Step {s['step']} is manual — skipping")
+
+    # Main loop — skip manual steps
     completed_steps = []
     while True:
-        step = next_step(roadmap_path)
+        step = next_step(roadmap_path, skip_manual=True)
         if step is None:
             break
-
-        if step["type"].lower() == "manual":
-            print(f"  Step {step['step']}: {step['description']} — MANUAL (skipping)")
-            if dash_cli:
-                dash(dash_cli, "log", f"Step {step['step']} is manual — skipping")
-            continue
 
         print(f"\n{'—'*60}")
         print(f"  Step {step['step']}: {step['description']}")
