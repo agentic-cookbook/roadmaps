@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "5"
+version: "6"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v5
+> implement-roadmap-agent v6
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -49,7 +49,7 @@ python3 "$DASH_CLI" check-control
 
 - `none` or `resume` — continue normally.
 - `pause` — re-run `check-control` every 5 seconds until it returns `resume` or `stop`.
-- `stop` — immediately stop. Do not start the next operation. Print the **Stopped Summary** and exit.
+- `stop` — immediately stop. Do not start the next operation. Do NOT proceed to the COMPLETION section. Print the **Stopped Summary** section and exit. This is critical: a stopped agent must NEVER print the completion report or run completion steps.
 
 **When to check** — run a control check before ALL of the following:
 
@@ -279,6 +279,8 @@ Continue immediately to the next step.
 ---
 
 ## COMPLETION
+
+**GUARD: Before running any completion steps, run `check-control`.** If it returns `stop`, skip this entire section and go to **Stopped Summary** instead. The completion section is ONLY for when all steps finished successfully — never for a stopped agent.
 
 When all steps are complete:
 

@@ -362,6 +362,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v6 | 2026-03-21 | Guard completion section: check-control before completion, must use Stopped Summary if stopped |
 | v5 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
 | v4 | 2026-03-21 | Strengthen sequential step enforcement — CRITICAL rule block requiring full step completion before starting next |
 | v3 | 2026-03-21 | Print stopped summary with progress when user stops the agent, showing completed vs remaining steps |
