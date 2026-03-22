@@ -155,8 +155,12 @@
     flex-direction: column;
     min-height: 0;
   }
-  .pane-steps {
+  .pane-left {
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
     /* width set dynamically by JS based on longest step name */
   }
   .pane-right {
@@ -194,6 +198,13 @@
   .pane-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
   /* --- Steps --- */
+  .steps-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+  }
   .steps { list-style: none; }
   .step {
     background: var(--surface);
@@ -246,8 +257,6 @@
     flex-direction: column;
     gap: 0.75rem;
     margin-bottom: 0.75rem;
-  }
-  .right-panel {
   }
   .right-panel-header {
     font-size: 0.7rem;
@@ -327,123 +336,116 @@
   .footer.error .footer-status { color: var(--red); }
   .footer-status { flex: 1; text-align: center; }
   .footer-version { flex-shrink: 0; opacity: 0.5; }
+  .footer-left {
+    flex-shrink: 0;
+  }
+  .footer-left label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    user-select: none;
+  }
+  .footer-left input[type="checkbox"] {
+    accent-color: var(--accent);
+  }
 
-  /* --- Completion overlay --- */
-  .completion-overlay {
-    position: fixed;
+  /* --- Overlays (scoped to steps pane) --- */
+  .steps-overlay {
+    position: absolute;
     inset: 0;
-    background: rgba(13, 17, 23, 0.45);
+    background: rgba(13, 17, 23, 0.7);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    z-index: 10;
     opacity: 0;
-    transition: opacity 0.6s ease;
+    transition: opacity 0.5s ease;
     pointer-events: none;
-  }
-  .completion-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .completion-check {
-    font-size: 8rem;
-    color: var(--green);
-    line-height: 1;
-    margin-bottom: 1rem;
-    filter: drop-shadow(0 0 40px rgba(63, 185, 80, 0.4));
-  }
-  .completion-text {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 0.5rem;
-  }
-  .completion-subtext {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  /* --- Stop overlay --- */
-  .stop-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(13, 17, 23, 0.45);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    opacity: 0;
-    transition: opacity 0.6s ease;
-    pointer-events: none;
-  }
-  .stop-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .stop-icon {
-    font-size: 8rem;
-    line-height: 1;
-    margin-bottom: 1rem;
-    filter: drop-shadow(0 0 40px rgba(248, 81, 73, 0.4));
-  }
-  .stop-text {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--red);
-    margin-bottom: 0.5rem;
-  }
-  .stop-subtext {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-  }
-
-  /* --- Pause overlay --- */
-  .pause-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(13, 17, 23, 0.4);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-  }
-  .pause-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  .pause-icon {
-    font-size: 8rem;
-    color: var(--yellow);
-    line-height: 1;
-    margin-bottom: 1rem;
-    filter: drop-shadow(0 0 40px rgba(210, 153, 34, 0.4));
-  }
-  .pause-text {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--yellow);
-    margin-bottom: 1.5rem;
-  }
-  .pause-resume-btn {
-    padding: 0.75rem 2.5rem;
     border-radius: 0.5rem;
+  }
+  .steps-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .overlay-icon {
+    font-size: 4rem;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+  .overlay-icon-green { color: var(--green); filter: drop-shadow(0 0 20px rgba(63, 185, 80, 0.4)); }
+  .overlay-icon-red { filter: drop-shadow(0 0 20px rgba(248, 81, 73, 0.4)); }
+  .overlay-icon-yellow { color: var(--yellow); filter: drop-shadow(0 0 20px rgba(210, 153, 34, 0.4)); }
+  .overlay-text {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+  .overlay-subtext {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .overlay-resume-btn {
+    margin-top: 0.75rem;
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.375rem;
     border: 2px solid var(--green);
     background: rgba(63, 185, 80, 0.1);
     color: var(--green);
-    font-size: 1.1rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
   }
-  .pause-resume-btn:hover {
-    background: rgba(63, 185, 80, 0.25);
+  .overlay-resume-btn:hover { background: rgba(63, 185, 80, 0.25); }
+
+  /* --- Debug panel --- */
+  .debug-section {
+    flex-shrink: 0;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
   }
+  .debug-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    flex-shrink: 0;
+  }
+  .debug-toolbar .pane-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    flex: 1;
+  }
+  .debug-toolbar button {
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    cursor: pointer;
+  }
+  .debug-toolbar button:hover { border-color: var(--text-muted); color: var(--text); }
+  .debug-log {
+    flex: 1;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.65rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .debug-log::-webkit-scrollbar { width: 4px; }
+  .debug-log::-webkit-scrollbar-track { background: transparent; }
+  .debug-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
@@ -498,10 +500,37 @@
   </div>
 
   <div class="panes">
-    <div class="pane pane-steps" id="pane-steps">
-      <div class="pane-header">Steps</div>
-      <div class="pane-scroll" id="steps-scroll">
-        <ul id="steps" class="steps"></ul>
+    <div class="pane pane-left" id="pane-steps">
+      <div class="steps-section">
+        <div class="pane-header">Steps</div>
+        <div class="pane-scroll" id="steps-scroll">
+          <ul id="steps" class="steps"></ul>
+        </div>
+        <!-- Overlays scoped to steps pane -->
+        <div id="completion-overlay" class="steps-overlay">
+          <div class="overlay-icon overlay-icon-green">&check;</div>
+          <div class="overlay-text" style="color:var(--green)" id="completion-text">Complete</div>
+          <div class="overlay-subtext" id="completion-subtext"></div>
+        </div>
+        <div id="stop-overlay" class="steps-overlay">
+          <div class="overlay-icon overlay-icon-red">&#x1F6D1;</div>
+          <div class="overlay-text" style="color:var(--red)">Stopped</div>
+          <div class="overlay-subtext" id="stop-subtext">Agent has been stopped</div>
+        </div>
+        <div id="pause-overlay" class="steps-overlay">
+          <div class="overlay-icon overlay-icon-yellow">&#x23F8;</div>
+          <div class="overlay-text" style="color:var(--yellow)">Paused</div>
+          <button class="overlay-resume-btn" onclick="sendControl('resume')">Resume</button>
+        </div>
+      </div>
+      <!-- Debug panel (hidden by default) -->
+      <div id="debug-panel" class="debug-section" style="display:none">
+        <div class="debug-toolbar">
+          <span class="pane-header">Debug Log</span>
+          <button onclick="copyDebugLog()">Copy</button>
+          <button onclick="downloadDebugLog()">Download</button>
+        </div>
+        <div id="debug-log" class="debug-log"></div>
       </div>
     </div>
     <div class="pane pane-right">
@@ -525,26 +554,9 @@
   </div>
 
   <div id="poll-status" class="footer">
+    <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v15</span>
-  </div>
-
-  <div id="completion-overlay" class="completion-overlay">
-    <div class="completion-check">&check;</div>
-    <div class="completion-text" id="completion-text">Complete</div>
-    <div class="completion-subtext" id="completion-subtext"></div>
-  </div>
-
-  <div id="stop-overlay" class="stop-overlay">
-    <div class="stop-icon">&#x1F6D1;</div>
-    <div class="stop-text">Stopped</div>
-    <div class="stop-subtext" id="stop-subtext">Agent has been stopped</div>
-  </div>
-
-  <div id="pause-overlay" class="pause-overlay">
-    <div class="pause-icon">&#x23F8;</div>
-    <div class="pause-text">Paused</div>
-    <button class="pause-resume-btn" onclick="sendControl('resume')">Resume</button>
+    <span class="footer-version">v16</span>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -569,7 +581,59 @@ var STATUS_COLORS = {
 var lastJson = '';
 var currentControl = null;
 var localEvents = [];
+var debugEntries = [];
+var debugEnabled = false;
 
+// --- Debug logging ---
+function debugLog(msg) {
+  var ts = new Date().toISOString().substr(11, 12);
+  var entry = ts + ' ' + msg;
+  debugEntries.push(entry);
+  if (debugEnabled) {
+    var logEl = document.getElementById('debug-log');
+    var line = document.createElement('div');
+    line.textContent = entry;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+}
+
+function toggleDebug() {
+  debugEnabled = document.getElementById('debug-mode').checked;
+  var panel = document.getElementById('debug-panel');
+  panel.style.display = debugEnabled ? '' : 'none';
+  if (debugEnabled) {
+    // Render all buffered entries
+    var logEl = document.getElementById('debug-log');
+    while (logEl.firstChild) logEl.removeChild(logEl.firstChild);
+    debugEntries.forEach(function(entry) {
+      var line = document.createElement('div');
+      line.textContent = entry;
+      logEl.appendChild(line);
+    });
+    logEl.scrollTop = logEl.scrollHeight;
+    debugLog('Debug mode enabled (' + debugEntries.length + ' buffered entries)');
+  }
+}
+
+function copyDebugLog() {
+  navigator.clipboard.writeText(debugEntries.join('\n')).then(function() {
+    debugLog('Log copied to clipboard (' + debugEntries.length + ' entries)');
+  });
+}
+
+function downloadDebugLog() {
+  var blob = new Blob([debugEntries.join('\n')], { type: 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'dashboard-debug-' + new Date().toISOString().replace(/[:.]/g, '-') + '.log';
+  a.click();
+  URL.revokeObjectURL(url);
+  debugLog('Log downloaded');
+}
+
+// --- Utility functions ---
 function formatTime(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -607,8 +671,6 @@ function measureStepWidth(steps) {
     var w = ruler.offsetWidth;
     if (w > maxW) maxW = w;
   });
-  // Add padding for icon (1.25rem + 0.6rem gap) + time (~5ch) + card padding + scroll margin
-  // icon area ~30px, time ~65px, padding ~50px, breathing room ~30px
   return maxW + 175;
 }
 
@@ -694,16 +756,12 @@ function calcEta(steps) {
   }
 
   var avgMs = completed.reduce(function(a, b) { return a + b; }, 0) / completed.length;
-
-  // For the in-progress step, estimate remaining time as max(0, avg - elapsed)
   var inProgressRemaining = 0;
   if (inProgressStart) {
     var elapsed = Date.now() - inProgressStart;
     inProgressRemaining = Math.max(0, avgMs - elapsed);
   }
-
   var totalRemaining = inProgressRemaining + (remaining > 0 ? (remaining - (inProgressStart ? 1 : 0)) * avgMs : 0);
-
   if (totalRemaining <= 0 && remaining === 0) return { text: '', state: 'none' };
 
   return {
@@ -718,6 +776,7 @@ var envRendered = false;
 function renderEnv(env) {
   if (!env || envRendered) return;
   envRendered = true;
+  debugLog('renderEnv: machine=' + env.machine + ' repo=' + env.repo + ' branch=' + env.branch);
 
   var container = document.getElementById('env-info');
   while (container.firstChild) container.removeChild(container.firstChild);
@@ -743,9 +802,7 @@ function renderEnv(env) {
 
   addItem('machine ', env.machine);
   addItem('repo ', env.repo, env.repo_url);
-  if (env.worktree) {
-    addItem('worktree ', env.worktree);
-  }
+  if (env.worktree) addItem('worktree ', env.worktree);
   if (env.branch) {
     var branchUrl = env.repo_url ? env.repo_url + '/tree/' + env.branch : null;
     addItem('branch ', env.branch, branchUrl);
@@ -764,33 +821,29 @@ function renderTickets(container, items, type) {
   items.forEach(function(item) {
     var row = document.createElement('div');
     row.className = 'ticket';
-
     var dot = document.createElement('span');
     dot.className = 'ticket-dot ticket-dot-' + (item.status || 'open');
     row.appendChild(dot);
-
     var prefix = type === 'pr' ? 'PR' : '';
     var link = document.createElement('a');
     link.href = item.url || '#';
     link.target = '_blank';
     link.textContent = (prefix ? prefix + ' ' : '') + '#' + item.number + ' ' + (item.title || '');
     row.appendChild(link);
-
     var status = document.createElement('span');
     status.className = 'ticket-status';
     status.textContent = item.status || 'open';
     row.appendChild(status);
-
     container.appendChild(row);
   });
 }
 
+// --- Main render ---
 function render(data) {
   var displayTitle = (data.title || data.feature || 'Progress') + ' Roadmap';
   document.getElementById('title').textContent = displayTitle;
   document.title = displayTitle;
 
-  // Render environment info (once)
   if (data.environment) renderEnv(data.environment);
 
   var badge = document.getElementById('status-badge');
@@ -801,6 +854,8 @@ function render(data) {
   var done = steps.filter(function(s) { return s.status === 'complete'; }).length;
   var total = steps.length;
   var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  debugLog('render: status=' + data.status + ' steps=' + total + ' done=' + done + ' control_state=' + (data.control_state || 'none'));
 
   document.getElementById('progress-label').textContent = done + ' / ' + total + ' steps';
   document.getElementById('progress-pct').textContent = pct + '%';
@@ -818,23 +873,13 @@ function render(data) {
       valSpan.className = 'eta-value';
       valSpan.textContent = eta.text;
       etaEl.appendChild(valSpan);
-      if (eta.avgText) {
-        etaEl.appendChild(document.createTextNode('  \u00B7  ' + eta.avgText));
-      }
+      if (eta.avgText) etaEl.appendChild(document.createTextNode('  \u00B7  ' + eta.avgText));
     }
   } else if (data.status === 'complete') {
-    // Show total elapsed time
-    var firstStart = null;
-    var lastEnd = null;
+    var firstStart = null, lastEnd = null;
     steps.forEach(function(s) {
-      if (s.started_at) {
-        var t = new Date(s.started_at).getTime();
-        if (!firstStart || t < firstStart) firstStart = t;
-      }
-      if (s.completed_at) {
-        var t2 = new Date(s.completed_at).getTime();
-        if (!lastEnd || t2 > lastEnd) lastEnd = t2;
-      }
+      if (s.started_at) { var t = new Date(s.started_at).getTime(); if (!firstStart || t < firstStart) firstStart = t; }
+      if (s.completed_at) { var t2 = new Date(s.completed_at).getTime(); if (!lastEnd || t2 > lastEnd) lastEnd = t2; }
     });
     if (firstStart && lastEnd) {
       etaEl.appendChild(document.createTextNode('Completed in '));
@@ -845,7 +890,7 @@ function render(data) {
     }
   }
 
-  // Size steps pane based on longest step name
+  // Size steps pane
   var paneSteps = document.getElementById('pane-steps');
   var stepsWidth = measureStepWidth(steps);
   paneSteps.style.width = stepsWidth + 'px';
@@ -859,12 +904,15 @@ function render(data) {
     if (step.status === 'in_progress') activeIndex = i;
   });
 
-  // Scroll active step into view
   if (activeIndex >= 0) {
     var activeEl = document.getElementById('step-' + activeIndex);
-    if (activeEl) {
-      activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Log individual step statuses
+  if (steps.length > 0) {
+    var stepSummary = steps.map(function(s, i) { return (i + 1) + ':' + s.status; }).join(' ');
+    debugLog('steps: ' + stepSummary);
   }
 
   // Render issues & PRs
@@ -874,7 +922,7 @@ function render(data) {
   renderTickets(document.getElementById('issues'), issues, 'issue');
   renderTickets(document.getElementById('prs'), prs, 'pr');
 
-  // Render events — merge server events with local events by timestamp
+  // Render events
   var serverEvents = (data.events || []).map(function(e) {
     var cls = '';
     if (e.message && e.message.indexOf('Stop received') >= 0) cls = 'event-msg-error';
@@ -895,7 +943,6 @@ function render(data) {
     ]);
     eventsEl.appendChild(row);
   });
-
   var eventsScroll = document.getElementById('events-scroll');
   eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
@@ -919,9 +966,11 @@ function render(data) {
       statusEl.textContent = 'Stopped. You can close this window.';
       footerEl.className = 'footer';
       showStopOverlay();
+      debugLog('overlay: showing stop (user stop)');
     } else {
       statusEl.textContent = 'Agent stopped with an error. Check the terminal for details.';
       footerEl.className = 'footer error';
+      debugLog('overlay: error state (not user stop)');
     }
   } else {
     statusEl.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
@@ -933,16 +982,21 @@ function render(data) {
       statusEl.textContent = 'Stopping... agent is shutting down gracefully.';
       footerEl.className = 'footer error';
       showStopOverlay();
+      debugLog('overlay: showing stop (graceful shutdown)');
     } else if (data.control_state === 'pause') {
       if (!document.getElementById('pause-overlay').classList.contains('visible')) {
         document.getElementById('pause-overlay').classList.add('visible');
+        debugLog('overlay: showing pause');
       }
       document.getElementById('btn-resume').disabled = false;
     } else {
       // No active control — clear all overlays
-      document.getElementById('stop-overlay').classList.remove('visible');
-      document.getElementById('completion-overlay').classList.remove('visible');
-      document.getElementById('pause-overlay').classList.remove('visible');
+      var cleared = [];
+      ['stop-overlay', 'completion-overlay', 'pause-overlay'].forEach(function(id) {
+        var ov = document.getElementById(id);
+        if (ov.classList.contains('visible')) { ov.classList.remove('visible'); cleared.push(id); }
+      });
+      if (cleared.length) debugLog('overlay: cleared ' + cleared.join(', '));
     }
   }
 }
@@ -954,46 +1008,32 @@ function showCompletionOverlay(steps) {
   var title = document.getElementById('title').textContent;
   document.getElementById('completion-text').textContent = title + ' \u2014 Complete';
 
-  // Total elapsed
-  var firstStart = null;
-  var lastEnd = null;
+  var firstStart = null, lastEnd = null;
   steps.forEach(function(s) {
-    if (s.started_at) {
-      var t = new Date(s.started_at).getTime();
-      if (!firstStart || t < firstStart) firstStart = t;
-    }
-    if (s.completed_at) {
-      var t2 = new Date(s.completed_at).getTime();
-      if (!lastEnd || t2 > lastEnd) lastEnd = t2;
-    }
+    if (s.started_at) { var t = new Date(s.started_at).getTime(); if (!firstStart || t < firstStart) firstStart = t; }
+    if (s.completed_at) { var t2 = new Date(s.completed_at).getTime(); if (!lastEnd || t2 > lastEnd) lastEnd = t2; }
   });
   var sub = steps.length + ' steps';
-  if (firstStart && lastEnd) {
-    sub += ' in ' + formatDuration(lastEnd - firstStart);
-  }
+  if (firstStart && lastEnd) sub += ' in ' + formatDuration(lastEnd - firstStart);
   document.getElementById('completion-subtext').textContent = sub;
 
-  // Small delay so the final progress update renders first
-  setTimeout(function() {
-    overlay.classList.add('visible');
-  }, 500);
+  setTimeout(function() { overlay.classList.add('visible'); debugLog('overlay: completion visible'); }, 500);
 }
 
 function showStopOverlay() {
   var overlay = document.getElementById('stop-overlay');
   if (overlay.classList.contains('visible')) return;
-  setTimeout(function() {
-    overlay.classList.add('visible');
-  }, 300);
+  setTimeout(function() { overlay.classList.add('visible'); debugLog('overlay: stop visible'); }, 300);
 }
 
 function addLocalEvent(message, colorClass) {
   localEvents.push({ time: new Date().toISOString(), message: message, colorClass: colorClass || '' });
-  // Force a re-render to include the new local event
+  debugLog('localEvent: ' + message);
   if (lastJson) render(JSON.parse(lastJson));
 }
 
 async function sendControl(action) {
+  debugLog('sendControl: ' + action);
   var payload = JSON.stringify({ action: action, time: new Date().toISOString() });
   try {
     await fetch('control.json', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: payload });
@@ -1002,12 +1042,11 @@ async function sendControl(action) {
 
     if (action === 'pause') {
       addLocalEvent('Pause requested \u2014 waiting for agent to pause after current operation', 'event-msg-warn');
-      // Show overlay after a short delay to let the agent finish its current operation
       setTimeout(function() {
         if (currentControl === 'pause') {
           document.getElementById('pause-overlay').classList.add('visible');
-          // Enable resume button now that pause is in effect
           document.getElementById('btn-resume').disabled = false;
+          debugLog('overlay: pause visible (timeout)');
         }
       }, 3000);
     } else if (action === 'resume') {
@@ -1018,6 +1057,7 @@ async function sendControl(action) {
     }
   } catch (e) {
     document.getElementById('control-status').textContent = 'Failed to send \u2014 server may be down';
+    debugLog('sendControl ERROR: ' + e.message);
   }
 }
 
@@ -1050,29 +1090,32 @@ function hideControls() {
   document.getElementById('controls').style.display = 'none';
 }
 
+// --- Polling ---
 async function poll() {
   try {
     var resp = await fetch('progress.json?t=' + Date.now());
     if (!resp.ok) {
       document.getElementById('footer-status').textContent = 'Waiting for progress data...';
+      debugLog('poll: not ok (status ' + resp.status + ')');
       return;
     }
     var text = await resp.text();
     if (text === lastJson) return;
+    debugLog('poll: new data (' + text.length + ' bytes)');
     lastJson = text;
     render(JSON.parse(text));
   } catch (e) {
     document.getElementById('footer-status').textContent = 'Waiting for progress data...';
+    debugLog('poll: error ' + e.message);
   }
 }
 
+debugLog('Dashboard loaded, starting poll');
 poll();
 var mainInterval = setInterval(function() { poll(); }, POLL_INTERVAL);
 var terminated = false;
 
-// Watch for terminal status. Once complete/error, stop main polling
-// but keep a slow heartbeat. If the dashboard restarts (status goes
-// back to running), do a full page reload to get a clean slate.
+// Heartbeat: detect terminal status, slow poll, detect restarts
 setInterval(function() {
   if (!lastJson) return;
   try {
@@ -1081,13 +1124,13 @@ setInterval(function() {
     if (done && !terminated) {
       terminated = true;
       clearInterval(mainInterval);
+      debugLog('heartbeat: terminal status (' + data.status + '), main polling stopped');
     }
     if (terminated && !done) {
-      // Dashboard restarted — reload for clean state
+      debugLog('heartbeat: restart detected, reloading page');
       location.reload();
     }
   } catch(e) {}
-  // If terminated, keep fetching so we detect restarts
   if (terminated) poll();
 }, 3000);
 </script>
