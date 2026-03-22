@@ -24,4 +24,4 @@ Run the listing script to show all active roadmaps with progress and description
 python3 "${CLAUDE_SKILL_DIR}/references/list-roadmaps"
 ```
 
-Print the output as-is. No other actions needed.
+The script output is shown directly. Do not repeat it.

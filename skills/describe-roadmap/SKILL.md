@@ -24,6 +24,6 @@ Run the script to display detailed roadmap info. If there are multiple active ro
 python3 "${CLAUDE_SKILL_DIR}/references/describe-roadmap" $ARGUMENTS
 ```
 
-Print the output as-is.
+The script output is shown directly. Do not repeat it.
 
-After the output, the script prints "Run /implement-roadmap now? [y/N]". If the user answers yes, run `/implement-roadmap` for that feature. Otherwise, stop.
+The script ends with "Run /implement-roadmap now? [y/N]". If the user answers yes, run `/implement-roadmap` for that feature. Otherwise, stop.
