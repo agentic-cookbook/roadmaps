@@ -125,6 +125,11 @@ def find_dashboards():
             except Exception:
                 pass
 
+        env = data.get("environment", {})
+        repo = env.get("repo", "unknown")
+        # repo is like "org/repo-name" — take just the repo name
+        repo_name = repo.split("/")[-1] if "/" in repo else repo
+
         dashboards.append({
             "title": title,
             "status": status,
@@ -132,6 +137,7 @@ def find_dashboards():
             "url": url,
             "alive": alive,
             "dir": str(d),
+            "repo": repo_name,
         })
 
     return dashboards
@@ -184,22 +190,29 @@ def cmd_list(projects_dir):
 
 
 def cmd_list_dashboards():
-    """List all dashboard URLs."""
+    """List all dashboard URLs, grouped by project."""
     dashboards = find_dashboards()
 
     if not dashboards:
         print("No dashboards found.")
         return
 
+    # Group by repo
+    by_repo = {}
     for d in dashboards:
-        # Show actual state: if progress.json says running but server is dead, show "not running"
-        display_status = d["status"]
-        if not d["alive"] and d["status"] == "running":
-            display_status = "not running"
-        color = status_color(display_status)
-        alive_indicator = "\033[32m\u25CF\033[0m" if d["alive"] else "\033[90m\u25CB\033[0m"
-        url_str = d["url"] or "no port"
-        print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{display_status}{reset_color()}")
+        by_repo.setdefault(d["repo"], []).append(d)
+
+    for repo_name in sorted(by_repo.keys()):
+        print(f"\033[1m{repo_name}\033[0m")
+        for d in by_repo[repo_name]:
+            display_status = d["status"]
+            if not d["alive"] and d["status"] == "running":
+                display_status = "not running"
+            color = status_color(display_status)
+            alive_indicator = "\033[32m\u25CF\033[0m" if d["alive"] else "\033[90m\u25CB\033[0m"
+            url_str = d["url"] or "no port"
+            print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{display_status}{reset_color()}")
+        print()
 
 
 def cmd_open_dashboards():
