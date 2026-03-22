@@ -303,10 +303,26 @@ def cmd_init(args):
     elif shutil.which("xdg-open"):
         subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # Quick check — if server died instantly, warn but don't block
-    time.sleep(0.2)
+    # Quick check — if server died instantly, retry with a new port
+    time.sleep(0.3)
     if proc.poll() is not None:
-        print("WARNING: Server may have failed to start", file=sys.stderr)
+        print("Server failed on port {}, retrying with new port...".format(port), file=sys.stderr)
+        port = find_free_port()
+        port_file.write_text(str(port))
+        proc = subprocess.Popen(
+            [sys.executable, str(dash_dir / "server.py"), str(port), str(dash_dir)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        save_state(dash_dir, proc.pid, port)
+        url = f"http://127.0.0.1:{port}"
+        if sys.platform == "darwin":
+            subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        elif shutil.which("xdg-open"):
+            subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(0.2)
+        if proc.poll() is not None:
+            print("WARNING: Server failed to start on retry port {}".format(port), file=sys.stderr)
 
     # Print info for caller
     print(f"{dash_dir}")

@@ -27,13 +27,17 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         pass  # suppress request logs
 
 
+class ReuseAddrHTTPServer(http.server.HTTPServer):
+    allow_reuse_address = True
+
+
 def main():
     port = int(sys.argv[1])
     directory = sys.argv[2]
     os.chdir(directory)
     handler = DashboardHandler
     handler.directory = directory
-    server = http.server.HTTPServer(("127.0.0.1", port), handler)
+    server = ReuseAddrHTTPServer(("127.0.0.1", port), handler)
     server.serve_forever()
 
 
