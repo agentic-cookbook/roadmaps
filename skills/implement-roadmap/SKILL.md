@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "4"
+version: "5"
 description: "Implement a planned feature from its Roadmap autonomously in the background. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v4
+   > implement-roadmap v5
 
 2. Print the agent version by running:
    ```bash
@@ -46,7 +46,15 @@ If no features are available:
 - List any "Not Ready" features and explain they need `/plan-roadmap` completed first
 - **STOP**
 
-Present a numbered list with a quit option:
+If exactly **one** feature is available, auto-select it. Print:
+
+```
+Auto-selecting: <FeatureName> — <M>/<N> steps complete
+```
+
+Then proceed directly to Step 2.
+
+If **multiple** features are available, present a numbered list with a quit option:
 
 ```
 Available roadmaps:
@@ -63,9 +71,16 @@ Which roadmap? (number or q)
 
 If the user chooses `q`, **STOP** — do not launch anything.
 
-## Step 2: Print Agent Version
+## Step 2: Print Versions
 
-Before launching, print the agent version so the user knows what's running:
+Before launching, print both versions so the user knows what's running:
+
+```
+implement-roadmap v5
+implement-roadmap-agent v<agent_version>
+```
+
+Get the agent version by running:
 
 ```bash
 grep -m1 'version:' ~/.claude/agents/implement-roadmap-agent.md

@@ -127,6 +127,7 @@ You can continue working in the current session while the agent runs. For intera
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v5 | 2026-03-21 | Auto-select when only one roadmap available; print both skill and agent version when launching |
 | v4 | 2026-03-21 | Print both skill and agent version on --version |
 | v3 | 2026-03-21 | Print implement-roadmap-agent version before launching |
 | v2 | 2026-03-21 | List available roadmaps with quit option when called without arguments; accept feature name as argument |
