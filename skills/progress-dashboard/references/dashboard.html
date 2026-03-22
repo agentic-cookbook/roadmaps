@@ -237,12 +237,23 @@
     white-space: nowrap;
   }
   .step-detail {
-    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.7rem;
     color: var(--text-muted);
     margin-top: 0.2rem;
+    background: rgba(0,0,0,0.2);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.2rem;
   }
   .step-detail a { color: var(--accent); text-decoration: none; }
   .step-detail a:hover { text-decoration: underline; }
+  .step-status-debug {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-top: 0.15rem;
+  }
   .step-time {
     flex-shrink: 0;
     font-size: 0.7rem;
@@ -301,23 +312,38 @@
     flex-shrink: 0;
   }
 
-  /* --- Events section (fills remaining space) --- */
+  /* --- Events section (resizable) --- */
   .events-section {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    min-height: 80px;
+  }
+  .events-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    cursor: ns-resize;
+    user-select: none;
+  }
+  .events-toolbar .pane-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    flex: 1;
   }
 
   /* --- Events --- */
   .event {
-    font-size: 0.75rem;
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.7rem;
     color: var(--text-muted);
     padding: 0.2rem 0;
     display: flex;
     gap: 0.6rem;
   }
-  .event-time { flex-shrink: 0; font-family: monospace; font-size: 0.7rem; }
+  .event-time { flex-shrink: 0; font-size: 0.65rem; }
   .event-msg { color: var(--text); }
   .event-msg-warn { color: var(--yellow); }
   .event-msg-error { color: var(--red); }
@@ -350,55 +376,19 @@
     accent-color: var(--accent);
   }
 
-  /* --- Overlays (scoped to steps pane) --- */
-  .steps-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(13, 17, 23, 0.7);
-    display: flex;
-    flex-direction: column;
+  /* --- Inline status indicator (next to title) --- */
+  .title-status {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    z-index: 10;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-    border-radius: 0.5rem;
+    gap: 0.4rem;
+    margin-left: 0.75rem;
+    font-size: 1.1rem;
+    vertical-align: middle;
   }
-  .steps-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
+  .title-status-text {
+    font-size: 0.8rem;
+    font-weight: 500;
   }
-  .overlay-icon {
-    font-size: 4rem;
-    line-height: 1;
-    margin-bottom: 0.5rem;
-  }
-  .overlay-icon-green { color: var(--green); filter: drop-shadow(0 0 20px rgba(63, 185, 80, 0.4)); }
-  .overlay-icon-red { filter: drop-shadow(0 0 20px rgba(248, 81, 73, 0.4)); }
-  .overlay-icon-yellow { color: var(--yellow); filter: drop-shadow(0 0 20px rgba(210, 153, 34, 0.4)); }
-  .overlay-text {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-  .overlay-subtext {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-  }
-  .overlay-resume-btn {
-    margin-top: 0.75rem;
-    padding: 0.5rem 1.5rem;
-    border-radius: 0.375rem;
-    border: 2px solid var(--green);
-    background: rgba(63, 185, 80, 0.1);
-    color: var(--green);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .overlay-resume-btn:hover { background: rgba(63, 185, 80, 0.25); }
 
   /* --- Debug panel --- */
   .debug-section {
@@ -477,7 +467,7 @@
   <div class="top-bar">
     <header>
       <div class="header-row">
-        <h1 id="title">Loading...</h1>
+        <h1 id="title">Loading...<span id="title-status" class="title-status"></span></h1>
         <span id="status-badge" class="badge badge-waiting">waiting</span>
       </div>
       <div id="env-info" class="env-info"></div>
@@ -510,26 +500,11 @@
         <div class="pane-scroll" id="steps-scroll">
           <ul id="steps" class="steps"></ul>
         </div>
-        <!-- Overlays scoped to steps pane -->
-        <div id="completion-overlay" class="steps-overlay">
-          <div class="overlay-icon overlay-icon-green">&check;</div>
-          <div class="overlay-text" style="color:var(--green)" id="completion-text">Complete</div>
-          <div class="overlay-subtext" id="completion-subtext"></div>
-        </div>
-        <div id="stop-overlay" class="steps-overlay">
-          <div class="overlay-icon overlay-icon-red">&#x1F6D1;</div>
-          <div class="overlay-text" style="color:var(--red)">Stopped</div>
-          <div class="overlay-subtext" id="stop-subtext">Agent has been stopped</div>
-        </div>
-        <div id="pause-overlay" class="steps-overlay">
-          <div class="overlay-icon overlay-icon-yellow">&#x23F8;</div>
-          <div class="overlay-text" style="color:var(--yellow)">Paused</div>
-          <button class="overlay-resume-btn" onclick="sendControl('resume')">Resume</button>
-        </div>
+        <!-- No overlays — status shown inline next to title -->
       </div>
       <!-- Debug panel (hidden by default) -->
       <div id="debug-panel" class="debug-section" style="display:none">
-        <div class="debug-toolbar">
+        <div class="debug-toolbar" id="debug-toolbar">
           <span class="pane-header">Debug Log</span>
           <button onclick="copyDebugLog()">Copy</button>
           <button onclick="downloadDebugLog()">Download</button>
@@ -548,8 +523,10 @@
           <div id="prs"></div>
         </div>
       </div>
-      <div class="events-section">
-        <div class="pane-header">Event Log</div>
+      <div class="events-section" id="events-section">
+        <div class="events-toolbar" id="events-toolbar">
+          <span class="pane-header">Event Log</span>
+        </div>
         <div class="pane-scroll" id="events-scroll">
           <div id="events"></div>
         </div>
@@ -560,7 +537,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v17</span>
+    <span class="footer-version">v19</span>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -625,10 +602,10 @@ function toggleDebug() {
   }
 }
 
-// --- Debug panel resize ---
-(function() {
-  var panel = document.getElementById('debug-panel');
-  var toolbar = panel.querySelector('.debug-toolbar');
+// --- Resizable panel helper ---
+function makeResizable(panelId, toolbarId) {
+  var panel = document.getElementById(panelId);
+  var toolbar = document.getElementById(toolbarId);
   var dragging = false;
   var startY, startH;
 
@@ -648,6 +625,7 @@ function toggleDebug() {
     if (newH < 60) newH = 60;
     if (newH > window.innerHeight * 0.6) newH = window.innerHeight * 0.6;
     panel.style.height = newH + 'px';
+    panel.style.flex = 'none';
   });
 
   document.addEventListener('mouseup', function() {
@@ -656,7 +634,12 @@ function toggleDebug() {
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   });
-})();
+}
+
+makeResizable('events-section', 'events-toolbar');
+
+// --- Debug panel resize (uses same helper, toolbar ID added below) ---
+makeResizable('debug-panel', 'debug-toolbar');
 
 function copyDebugLog() {
   navigator.clipboard.writeText(debugEntries.join('\n')).then(function() {
@@ -731,6 +714,11 @@ function buildStepEl(step, index, isPaused) {
   var bodyChildren = [
     el('div', { className: 'step-title', textContent: 'Step ' + (index + 1) + ': ' + (step.name || '') })
   ];
+
+  // In debug mode, show the raw status value
+  if (debugEnabled) {
+    bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
+  }
 
   if (step.detail) {
     bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
@@ -988,31 +976,52 @@ function render(data) {
   var eventsScroll = document.getElementById('events-scroll');
   if (isScrolledToBottom(eventsScroll)) eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
-  // Footer and overlays
+  // Footer and inline status indicator (no overlays)
   var footerEl = document.getElementById('poll-status');
   var statusEl = document.getElementById('footer-status');
+  var titleStatus = document.getElementById('title-status');
+  while (titleStatus.firstChild) titleStatus.removeChild(titleStatus.firstChild);
+
+  function setTitleStatus(icon, text, color) {
+    var iconSpan = document.createElement('span');
+    iconSpan.textContent = icon;
+    iconSpan.style.color = color;
+    var textSpan = document.createElement('span');
+    textSpan.className = 'title-status-text';
+    textSpan.style.color = color;
+    textSpan.textContent = text;
+    titleStatus.appendChild(iconSpan);
+    titleStatus.appendChild(textSpan);
+  }
+
   if (data.status === 'complete') {
-    statusEl.textContent = 'Done. You can close this window.';
+    var firstStart = null, lastEnd = null;
+    steps.forEach(function(s) {
+      if (s.started_at) { var t = new Date(s.started_at).getTime(); if (!firstStart || t < firstStart) firstStart = t; }
+      if (s.completed_at) { var t2 = new Date(s.completed_at).getTime(); if (!lastEnd || t2 > lastEnd) lastEnd = t2; }
+    });
+    var elapsed = (firstStart && lastEnd) ? ' in ' + formatDuration(lastEnd - firstStart) : '';
+    setTitleStatus('\u2713', 'Complete' + elapsed, 'var(--green)');
+    statusEl.textContent = 'Done.';
     footerEl.className = 'footer';
     hideControls();
-    document.getElementById('pause-overlay').classList.remove('visible');
-    showCompletionOverlay(steps);
+    debugLog('status: complete' + elapsed);
   } else if (data.status === 'error') {
     hideControls();
-    document.getElementById('pause-overlay').classList.remove('visible');
     var wasUserStop = false;
     (data.events || []).forEach(function(e) {
       if (e.message && e.message.indexOf('Stopped by user') >= 0) wasUserStop = true;
     });
     if (wasUserStop || currentControl === 'stop') {
-      statusEl.textContent = 'Stopped. You can close this window.';
+      setTitleStatus('\uD83D\uDED1', 'Stopped', 'var(--red)');
+      statusEl.textContent = 'Stopped.';
       footerEl.className = 'footer';
-      showStopOverlay();
-      debugLog('overlay: showing stop (user stop)');
+      debugLog('status: stopped by user');
     } else {
-      statusEl.textContent = 'Agent stopped with an error. Check the terminal for details.';
+      setTitleStatus('\u2717', 'Error', 'var(--red)');
+      statusEl.textContent = 'Agent stopped with an error.';
       footerEl.className = 'footer error';
-      debugLog('overlay: error state (not user stop)');
+      debugLog('status: error');
     }
   } else {
     statusEl.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
@@ -1020,52 +1029,16 @@ function render(data) {
 
     if (data.control_state === 'stop') {
       hideControls();
-      document.getElementById('pause-overlay').classList.remove('visible');
+      setTitleStatus('\uD83D\uDED1', 'Stopping\u2026', 'var(--red)');
       statusEl.textContent = 'Stopping... agent is shutting down gracefully.';
       footerEl.className = 'footer error';
-      showStopOverlay();
-      debugLog('overlay: showing stop (graceful shutdown)');
+      debugLog('status: stopping');
     } else if (data.control_state === 'pause') {
-      if (!document.getElementById('pause-overlay').classList.contains('visible')) {
-        document.getElementById('pause-overlay').classList.add('visible');
-        debugLog('overlay: showing pause');
-      }
+      setTitleStatus('\u23F8', 'Paused', 'var(--yellow)');
       document.getElementById('btn-resume').disabled = false;
-    } else {
-      // No active control — clear all overlays
-      var cleared = [];
-      ['stop-overlay', 'completion-overlay', 'pause-overlay'].forEach(function(id) {
-        var ov = document.getElementById(id);
-        if (ov.classList.contains('visible')) { ov.classList.remove('visible'); cleared.push(id); }
-      });
-      if (cleared.length) debugLog('overlay: cleared ' + cleared.join(', '));
+      debugLog('status: paused');
     }
   }
-}
-
-function showCompletionOverlay(steps) {
-  var overlay = document.getElementById('completion-overlay');
-  if (overlay.classList.contains('visible')) return;
-
-  var title = document.getElementById('title').textContent;
-  document.getElementById('completion-text').textContent = title + ' \u2014 Complete';
-
-  var firstStart = null, lastEnd = null;
-  steps.forEach(function(s) {
-    if (s.started_at) { var t = new Date(s.started_at).getTime(); if (!firstStart || t < firstStart) firstStart = t; }
-    if (s.completed_at) { var t2 = new Date(s.completed_at).getTime(); if (!lastEnd || t2 > lastEnd) lastEnd = t2; }
-  });
-  var sub = steps.length + ' steps';
-  if (firstStart && lastEnd) sub += ' in ' + formatDuration(lastEnd - firstStart);
-  document.getElementById('completion-subtext').textContent = sub;
-
-  setTimeout(function() { overlay.classList.add('visible'); debugLog('overlay: completion visible'); }, 500);
-}
-
-function showStopOverlay() {
-  var overlay = document.getElementById('stop-overlay');
-  if (overlay.classList.contains('visible')) return;
-  setTimeout(function() { overlay.classList.add('visible'); debugLog('overlay: stop visible'); }, 300);
 }
 
 function addLocalEvent(message, colorClass) {
@@ -1086,14 +1059,11 @@ async function sendControl(action) {
       addLocalEvent('Pause requested \u2014 waiting for agent to pause after current operation', 'event-msg-warn');
       setTimeout(function() {
         if (currentControl === 'pause') {
-          document.getElementById('pause-overlay').classList.add('visible');
           document.getElementById('btn-resume').disabled = false;
-          debugLog('overlay: pause visible (timeout)');
         }
       }, 3000);
     } else if (action === 'resume') {
       addLocalEvent('Resume requested', 'event-msg-success');
-      document.getElementById('pause-overlay').classList.remove('visible');
     } else if (action === 'stop') {
       addLocalEvent('Stop requested \u2014 waiting for graceful shutdown', 'event-msg-error');
     }

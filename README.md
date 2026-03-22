@@ -270,6 +270,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v16 | 2026-03-22 | Remove overlays — inline status next to title; debug mode shows step states; monospace logs; resizable event log; terminal-style step detail |
 | v15 | 2026-03-22 | Stop polling on complete; smart autoscroll (only if at bottom); resizable debug panel via drag |
 | v14 | 2026-03-22 | Debug mode checkbox with copyable log panel; overlays scoped to steps pane only |
 | v13 | 2026-03-21 | Add `next-step` command — mechanically returns lowest non-Complete step number from roadmap file |
