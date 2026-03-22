@@ -200,6 +200,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v5 | 2026-03-21 | Fix step selection: pick first non-complete step, so interrupted steps resume correctly |
 | v4 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
 | v3 | 2026-03-21 | Strengthen sequential step enforcement — never work on two steps at once |
 | v2 | 2026-03-21 | Enforce sequential step ordering — always pick lowest-numbered Not Started step |
@@ -363,6 +364,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v7 | 2026-03-21 | Fix step selection: pick first non-complete step (not just "Not Started"), so interrupted steps resume correctly |
 | v6 | 2026-03-21 | Guard completion section: check-control before completion, must use Stopped Summary if stopped |
 | v5 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
 | v4 | 2026-03-21 | Strengthen sequential step enforcement — CRITICAL rule block requiring full step completion before starting next |

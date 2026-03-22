@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "4"
+version: "5"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v4
+> implement-roadmap-interactively v5
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -152,9 +152,9 @@ Loop for each step in the Roadmap. **Run a control check before every sub-step**
 
 ### Step 1: Pick Next Step
 
-**Control check.** Read the Roadmap file. Find the **lowest-numbered** step with status "Not Started". **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.** If all steps are complete, proceed to the Completion phase.
+**Control check.** Read the Roadmap file. Find the **lowest-numbered** step whose status is NOT "Complete" (this includes "Not Started" and "In Progress" from a previous interrupted run). **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.** If all steps are complete, proceed to the Completion phase.
 
-**If the step's Type is `Manual`**: Skip it — print a message telling the user that step N is a manual step assigned to them, and move to the next "Not Started" step. Do not attempt to implement manual steps.
+**If the step's Type is `Manual`**: Skip it — print a message telling the user that step N is a manual step assigned to them, and move to the next non-complete step. Do not attempt to implement manual steps.
 
 ### Step 2: Update Status
 
