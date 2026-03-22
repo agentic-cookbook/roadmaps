@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""List active roadmaps with step summaries and execution state.
+
+Scans .claude/Features/Active-Roadmaps/ and prints a compact summary
+of each roadmap: overall status, progress, and per-step state.
+
+Usage:
+    list-roadmaps
+"""
+
+import re
+import sys
+from pathlib import Path
+
+ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
+
+
+def parse_header(content):
+    """Extract roadmap-level fields from the header."""
+    name_m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
+    status_m = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
+    phase_m = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
+    created_m = re.search(r"\*\*Created\*\*:\s*(.+)", content)
+    return {
+        "name": name_m.group(1).strip() if name_m else "Unknown",
+        "status": status_m.group(1).strip() if status_m else "Unknown",
+        "phase": phase_m.group(1).strip() if phase_m else "Unknown",
+        "created": created_m.group(1).strip() if created_m else "Unknown",
+    }
+
+
+def parse_steps(content):
+    """Extract all steps with their status and description."""
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+    steps = []
+    for i, match in enumerate(matches):
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        block = content[block_start:block_end]
+        status_m = re.search(r"^\s*-\s*\*\*Status\*\*:\s*(.*)", block, re.MULTILINE)
+        status = status_m.group(1).strip() if status_m else "Not Started"
+        steps.append({
+            "num": int(match.group(1)),
+            "desc": match.group(2).strip(),
+            "status": status,
+        })
+    return steps
+
+
+STATUS_ICONS = {
+    "complete": "+",
+    "in progress": "~",
+    "blocked": "!",
+    "not started": "-",
+}
+
+
+def icon_for(status):
+    return STATUS_ICONS.get(status.lower(), "?")
+
+
+def print_roadmap(path):
+    """Print a single roadmap summary."""
+    content = path.read_text()
+    header = parse_header(content)
+    steps = parse_steps(content)
+
+    counts = {}
+    for s in steps:
+        key = s["status"].lower()
+        counts[key] = counts.get(key, 0) + 1
+
+    complete = counts.get("complete", 0)
+    total = len(steps)
+
+    print(f"  {header['name']}")
+    print(f"  Status: {header['status']}  |  Phase: {header['phase']}  |  Created: {header['created']}")
+    print(f"  Progress: {complete}/{total} steps complete", end="")
+    parts = []
+    for label in ["in progress", "blocked", "not started"]:
+        if counts.get(label, 0) > 0:
+            parts.append(f"{counts[label]} {label}")
+    if parts:
+        print(f"  ({', '.join(parts)})")
+    else:
+        print()
+
+    print()
+    for s in steps:
+        print(f"    [{icon_for(s['status'])}] Step {s['num']}: {s['desc']}")
+    print()
+
+
+def main():
+    if not ACTIVE_DIR.exists():
+        print("No active roadmaps directory found.")
+        print(f"Expected: {ACTIVE_DIR}")
+        sys.exit(0)
+
+    roadmaps = sorted(ACTIVE_DIR.glob("*-FeatureRoadmap.md"))
+    if not roadmaps:
+        print("No active roadmaps found.")
+        sys.exit(0)
+
+    print()
+    for i, path in enumerate(roadmaps):
+        if i > 0:
+            print("  " + "-" * 56)
+            print()
+        print_roadmap(path)
+
+
+if __name__ == "__main__":
+    main()

@@ -235,6 +235,28 @@ No arguments, no prompts, no approvals. Just run it and it creates everything.
 
 ---
 
+### /list-roadmaps
+
+Lists all active roadmaps with a compact summary of each: overall status, progress counts, and per-step execution state.
+
+**What it does:** Scans `.claude/Features/Active-Roadmaps/` and prints each roadmap's name, status, phase, creation date, step-by-step listing with status icons (`[+]` complete, `[~]` in progress, `[!]` blocked, `[-]` not started), and aggregate progress.
+
+**Usage:**
+
+```
+/list-roadmaps
+```
+
+No arguments needed.
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-22 | Initial release — scans active roadmaps, prints step summaries with status icons |
+
+---
+
 ### /progress-dashboard
 
 Reusable live progress dashboard that any agent or skill can use to show real-time step-by-step progress in the browser. Opens a local web page that polls a JSON file for updates.
