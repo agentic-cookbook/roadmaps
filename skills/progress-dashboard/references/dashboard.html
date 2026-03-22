@@ -403,7 +403,8 @@
   /* --- Debug panel --- */
   .debug-section {
     flex-shrink: 0;
-    max-height: 200px;
+    height: 200px;
+    min-height: 60px;
     display: flex;
     flex-direction: column;
     border-top: 1px solid var(--border);
@@ -415,6 +416,8 @@
     gap: 0.4rem;
     padding: 0.3rem 0;
     flex-shrink: 0;
+    cursor: ns-resize;
+    user-select: none;
   }
   .debug-toolbar .pane-header {
     margin-bottom: 0;
@@ -423,6 +426,7 @@
     flex: 1;
   }
   .debug-toolbar button {
+    cursor: pointer;
     padding: 0.15rem 0.5rem;
     border-radius: 0.25rem;
     border: 1px solid var(--border);
@@ -556,7 +560,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v16</span>
+    <span class="footer-version">v17</span>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -585,16 +589,21 @@ var debugEntries = [];
 var debugEnabled = false;
 
 // --- Debug logging ---
+function isScrolledToBottom(el) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 10;
+}
+
 function debugLog(msg) {
   var ts = new Date().toISOString().substr(11, 12);
   var entry = ts + ' ' + msg;
   debugEntries.push(entry);
   if (debugEnabled) {
     var logEl = document.getElementById('debug-log');
+    var atBottom = isScrolledToBottom(logEl);
     var line = document.createElement('div');
     line.textContent = entry;
     logEl.appendChild(line);
-    logEl.scrollTop = logEl.scrollHeight;
+    if (atBottom) logEl.scrollTop = logEl.scrollHeight;
   }
 }
 
@@ -615,6 +624,39 @@ function toggleDebug() {
     debugLog('Debug mode enabled (' + debugEntries.length + ' buffered entries)');
   }
 }
+
+// --- Debug panel resize ---
+(function() {
+  var panel = document.getElementById('debug-panel');
+  var toolbar = panel.querySelector('.debug-toolbar');
+  var dragging = false;
+  var startY, startH;
+
+  toolbar.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'BUTTON') return;
+    dragging = true;
+    startY = e.clientY;
+    startH = panel.offsetHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    var newH = startH - (e.clientY - startY);
+    if (newH < 60) newH = 60;
+    if (newH > window.innerHeight * 0.6) newH = window.innerHeight * 0.6;
+    panel.style.height = newH + 'px';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
 
 function copyDebugLog() {
   navigator.clipboard.writeText(debugEntries.join('\n')).then(function() {
@@ -944,7 +986,7 @@ function render(data) {
     eventsEl.appendChild(row);
   });
   var eventsScroll = document.getElementById('events-scroll');
-  eventsScroll.scrollTop = eventsScroll.scrollHeight;
+  if (isScrolledToBottom(eventsScroll)) eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
   // Footer and overlays
   var footerEl = document.getElementById('poll-status');
@@ -1114,24 +1156,35 @@ debugLog('Dashboard loaded, starting poll');
 poll();
 var mainInterval = setInterval(function() { poll(); }, POLL_INTERVAL);
 var terminated = false;
+var completedFully = false;
 
-// Heartbeat: detect terminal status, slow poll, detect restarts
-setInterval(function() {
+// Heartbeat: detect terminal status, stop polling, detect restarts
+var heartbeatInterval = setInterval(function() {
   if (!lastJson) return;
   try {
     var data = JSON.parse(lastJson);
-    var done = data.status === 'complete' || data.status === 'error';
+    var isComplete = data.status === 'complete';
+    var isError = data.status === 'error';
+    var done = isComplete || isError;
     if (done && !terminated) {
       terminated = true;
       clearInterval(mainInterval);
       debugLog('heartbeat: terminal status (' + data.status + '), main polling stopped');
+      if (isComplete) {
+        // Fully complete — stop all polling
+        completedFully = true;
+        clearInterval(heartbeatInterval);
+        debugLog('heartbeat: complete — all polling stopped');
+        return;
+      }
     }
     if (terminated && !done) {
       debugLog('heartbeat: restart detected, reloading page');
       location.reload();
     }
   } catch(e) {}
-  if (terminated) poll();
+  // Keep slow poll on error (for restart detection), but not on complete
+  if (terminated && !completedFully) poll();
 }, 3000);
 </script>
 </body>

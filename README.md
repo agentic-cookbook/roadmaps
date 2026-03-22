@@ -270,6 +270,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v15 | 2026-03-22 | Stop polling on complete; smart autoscroll (only if at bottom); resizable debug panel via drag |
 | v14 | 2026-03-22 | Debug mode checkbox with copyable log panel; overlays scoped to steps pane only |
 | v13 | 2026-03-21 | Add `next-step` command — mechanically returns lowest non-Complete step number from roadmap file |
 | v12 | 2026-03-21 | Reset in-progress steps to not_started on error/stop — no stale spinners |
