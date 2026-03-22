@@ -314,7 +314,8 @@
 
   /* --- Events section (resizable, pinned to bottom) --- */
   .events-section {
-    flex: 1;
+    flex: none;
+    height: 25vh;
     display: flex;
     flex-direction: column;
     min-height: 80px;
@@ -540,7 +541,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v20</span>
+    <span class="footer-version">v21</span>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -603,6 +604,8 @@ function toggleDebug() {
     logEl.scrollTop = logEl.scrollHeight;
     debugLog('Debug mode enabled (' + debugEntries.length + ' buffered entries)');
   }
+  // Force re-render to toggle debug info in steps
+  if (lastJson) render(JSON.parse(lastJson));
 }
 
 // --- Resizable panel helper ---
