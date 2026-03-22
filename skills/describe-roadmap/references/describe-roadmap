@@ -15,6 +15,8 @@ import re
 import sys
 from pathlib import Path
 
+VERSION = "3"
+
 ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
 DEFS_DIR = Path(".claude/Features/FeatureDefinitions")
 
@@ -156,10 +158,18 @@ def print_roadmap(path):
     complete = counts.get("complete", 0)
     total = len(steps)
 
+    # Version
+    print(f"\n  describe-roadmap v{VERSION}\n")
+
     # Header
-    print(f"\n  {header['name']}")
+    print(f"  {header['name']}")
     print(f"  {'=' * len(header['name'])}")
     print(f"  Status: {header.get('status', '?')}  |  Phase: {header.get('phase', '?')}  |  Created: {header.get('created', '?')}")
+
+    # Dashboard
+    dashboard_url = get_dashboard_url()
+    if dashboard_url:
+        print(f"  Dashboard: {dashboard_url}")
 
     # Goal
     goal = get_goal(header["name"])
@@ -184,10 +194,6 @@ def print_roadmap(path):
         pr = f"  PR: {s['pr']}" if s['pr'] and s['pr'] != "_TBD_" else ""
         deps = f"  deps: {s['dependencies']}" if s['dependencies'] != "None" else ""
         print(f"    [{icon_for(s['status'])}] {s['num']}. {s['desc']}  ({s['complexity']}){issue}{pr}{deps}")
-
-    dashboard_url = get_dashboard_url()
-    if dashboard_url:
-        print(f"  Dashboard: {dashboard_url}")
 
     print()
 

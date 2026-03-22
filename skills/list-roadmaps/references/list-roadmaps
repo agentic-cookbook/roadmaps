@@ -14,6 +14,8 @@ import re
 import sys
 from pathlib import Path
 
+VERSION = "4"
+
 ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
 DEFS_DIR = Path(".claude/Features/FeatureDefinitions")
 
@@ -96,7 +98,9 @@ def main():
         print("No active roadmaps found.")
         sys.exit(0)
 
-    print()
+    dashboard_url = get_dashboard_url()
+
+    print(f"\n  list-roadmaps v{VERSION}\n")
     for path in roadmaps:
         name, status, total, counts = parse_roadmap(path)
         complete = counts.get("complete", 0)
@@ -117,11 +121,9 @@ def main():
         goal = get_goal(name)
         if goal:
             print(f"    {goal}")
+        if dashboard_url:
+            print(f"    Dashboard: {dashboard_url}")
         print()
-
-    dashboard_url = get_dashboard_url()
-    if dashboard_url:
-        print(f"  Dashboard: {dashboard_url}")
 
 
 if __name__ == "__main__":
