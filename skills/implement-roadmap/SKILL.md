@@ -62,9 +62,16 @@ python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "<roadmap_path>"
 ```
 
 This outputs JSON. Parse it:
-- If `"action": "done"` — all steps are complete. Print summary and **exit the loop**.
+
 - If `"action": "implement"` — continue with 3b.
 - If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
+- If `"action": "done"` — all steps are complete. **Immediately run the completion commands:**
+  ```bash
+  python3 "$DASH_CLI" complete
+  python3 "$DASH_CLI" shutdown
+  ```
+  Print: `All steps complete for <feature_name>.`
+  Then **STOP**.
 
 ### 3b: Print Step Info
 
@@ -110,16 +117,6 @@ Print: `Step <N> complete.`
 
 Then **go back to 3a** to get the next step.
 
-## Step 4: Completion
+## Note
 
-When the loop exits (all steps done):
-
-```bash
-python3 "$DASH_CLI" complete
-python3 "$DASH_CLI" shutdown
-```
-
-Print:
-```
-All steps complete for <feature_name>.
-```
+Step 4 (completion) is handled inline in step 3a when the coordinator returns `"action": "done"`. There is no separate completion step.
