@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""List active roadmaps with step summaries and execution state.
+"""List active roadmaps with progress and description.
 
-Scans .claude/Features/Active-Roadmaps/ and prints a compact summary
-of each roadmap: overall status, progress, and per-step state.
+Scans .claude/Features/Active-Roadmaps/ and prints a concise summary
+of each roadmap: progress bar, counts, and goal from the Feature Definition.
 
 Usage:
     list-roadmaps
@@ -13,89 +13,58 @@ import sys
 from pathlib import Path
 
 ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
+DEFS_DIR = Path(".claude/Features/FeatureDefinitions")
 
 
-def parse_header(content):
-    """Extract roadmap-level fields from the header."""
+def parse_roadmap(path):
+    """Extract name, status, and step counts from a roadmap file."""
+    content = path.read_text()
     name_m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
+    name = name_m.group(1).strip() if name_m else path.stem.replace("-FeatureRoadmap", "")
+
     status_m = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
-    phase_m = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
-    created_m = re.search(r"\*\*Created\*\*:\s*(.+)", content)
-    return {
-        "name": name_m.group(1).strip() if name_m else "Unknown",
-        "status": status_m.group(1).strip() if status_m else "Unknown",
-        "phase": phase_m.group(1).strip() if phase_m else "Unknown",
-        "created": created_m.group(1).strip() if created_m else "Unknown",
-    }
+    status = status_m.group(1).strip() if status_m else "Unknown"
 
-
-def parse_steps(content):
-    """Extract all steps with their status and description."""
     step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
     matches = list(step_pattern.finditer(content))
-    steps = []
+    counts = {"complete": 0, "in progress": 0, "blocked": 0, "not started": 0}
     for i, match in enumerate(matches):
         block_start = match.end()
         block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
         block = content[block_start:block_end]
-        status_m = re.search(r"^\s*-\s*\*\*Status\*\*:\s*(.*)", block, re.MULTILINE)
-        status = status_m.group(1).strip() if status_m else "Not Started"
-        steps.append({
-            "num": int(match.group(1)),
-            "desc": match.group(2).strip(),
-            "status": status,
-        })
-    return steps
+        s_m = re.search(r"^\s*-\s*\*\*Status\*\*:\s*(.*)", block, re.MULTILINE)
+        s = s_m.group(1).strip().lower() if s_m else "not started"
+        counts[s] = counts.get(s, 0) + 1
+
+    return name, status, len(matches), counts
 
 
-STATUS_ICONS = {
-    "complete": "+",
-    "in progress": "~",
-    "blocked": "!",
-    "not started": "-",
-}
+def get_goal(feature_name):
+    """Read the Goal and Purpose section from the Feature Definition."""
+    def_path = DEFS_DIR / f"{feature_name}-FeatureDefinition.md"
+    if not def_path.exists():
+        return None
+    content = def_path.read_text()
+    goal_m = re.search(
+        r"## Goal and Purpose\s*\n+(.+?)(?:\n\n|\n##|\Z)",
+        content, re.DOTALL,
+    )
+    if not goal_m:
+        return None
+    first_line = goal_m.group(1).strip().split("\n")[0].strip()
+    if len(first_line) > 120:
+        first_line = first_line[:117] + "..."
+    return first_line
 
 
-def icon_for(status):
-    return STATUS_ICONS.get(status.lower(), "?")
-
-
-def print_roadmap(path):
-    """Print a single roadmap summary."""
-    content = path.read_text()
-    header = parse_header(content)
-    steps = parse_steps(content)
-
-    counts = {}
-    for s in steps:
-        key = s["status"].lower()
-        counts[key] = counts.get(key, 0) + 1
-
-    complete = counts.get("complete", 0)
-    total = len(steps)
-
-    print(f"  {header['name']}")
-    print(f"  Status: {header['status']}  |  Phase: {header['phase']}  |  Created: {header['created']}")
-    print(f"  Progress: {complete}/{total} steps complete", end="")
-    parts = []
-    for label in ["in progress", "blocked", "not started"]:
-        if counts.get(label, 0) > 0:
-            parts.append(f"{counts[label]} {label}")
-    if parts:
-        print(f"  ({', '.join(parts)})")
-    else:
-        print()
-
-    print()
-    for s in steps:
-        print(f"    [{icon_for(s['status'])}] Step {s['num']}: {s['desc']}")
-    print()
+def progress_bar(complete, total, width=20):
+    filled = round(width * complete / total) if total else 0
+    return "[" + "#" * filled + "-" * (width - filled) + "]"
 
 
 def main():
     if not ACTIVE_DIR.exists():
-        print("No active roadmaps directory found.")
-        print(f"Expected: {ACTIVE_DIR}")
+        print("No active roadmaps found.")
         sys.exit(0)
 
     roadmaps = sorted(ACTIVE_DIR.glob("*-FeatureRoadmap.md"))
@@ -104,11 +73,27 @@ def main():
         sys.exit(0)
 
     print()
-    for i, path in enumerate(roadmaps):
-        if i > 0:
-            print("  " + "-" * 56)
+    for path in roadmaps:
+        name, status, total, counts = parse_roadmap(path)
+        complete = counts.get("complete", 0)
+        bar = progress_bar(complete, total)
+
+        remaining = []
+        for label, key in [("in progress", "in progress"), ("blocked", "blocked"), ("remaining", "not started")]:
+            n = counts.get(key, 0)
+            if n:
+                remaining.append(f"{n} {label}")
+
+        print(f"  {name}  {bar}  {complete}/{total} done", end="")
+        if remaining:
+            print(f"  ({', '.join(remaining)})")
+        else:
             print()
-        print_roadmap(path)
+
+        goal = get_goal(name)
+        if goal:
+            print(f"    {goal}")
+        print()
 
 
 if __name__ == "__main__":

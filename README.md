@@ -237,9 +237,7 @@ No arguments, no prompts, no approvals. Just run it and it creates everything.
 
 ### /list-roadmaps
 
-Lists all active roadmaps with a compact summary of each: overall status, progress counts, and per-step execution state.
-
-**What it does:** Scans `.claude/Features/Active-Roadmaps/` and prints each roadmap's name, status, phase, creation date, step-by-step listing with status icons (`[+]` complete, `[~]` in progress, `[!]` blocked, `[-]` not started), and aggregate progress.
+Lists all active roadmaps with progress bar, step counts, and a one-line description from the Feature Definition.
 
 **Usage:**
 
@@ -253,6 +251,7 @@ No arguments needed.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2 | 2026-03-22 | Concise output — progress bar, counts, goal summary from Feature Definition |
 | v1 | 2026-03-22 | Initial release — scans active roadmaps, prints step summaries with status icons |
 
 ---
