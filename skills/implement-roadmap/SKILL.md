@@ -1,8 +1,9 @@
 ---
 name: implement-roadmap
-version: "9"
+version: "10"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and launches a worker agent for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 *), Bash(ls *), Bash(grep *), Bash(cat *), Bash(mkdir *), Bash(gh *), Bash(git *), Bash(claude *)
 ---
 
 ## Version Check
@@ -10,7 +11,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v9
+   > implement-roadmap v10
 
 2. Print the worker agent version by running:
    ```bash
@@ -56,3 +57,5 @@ The coordinator handles everything:
 - Completion summary
 
 You do not need to do anything else. The coordinator runs to completion.
+
+**Do NOT modify the coordinator script, the worker agent, or any skill files.** Your only job is to run the coordinator. If it fails, report the error — do not attempt to fix the coordinator code.
