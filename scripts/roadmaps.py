@@ -154,7 +154,7 @@ def status_color(status):
         return "\033[33m"  # yellow
     elif s == "complete":
         return "\033[32m"  # green
-    elif s in ("error", "stopped"):
+    elif s in ("error", "stopped", "not running"):
         return "\033[31m"  # red
     return "\033[90m"  # gray
 
@@ -192,10 +192,14 @@ def cmd_list_dashboards():
         return
 
     for d in dashboards:
-        color = status_color(d["status"])
+        # Show actual state: if progress.json says running but server is dead, show "not running"
+        display_status = d["status"]
+        if not d["alive"] and d["status"] == "running":
+            display_status = "not running"
+        color = status_color(display_status)
         alive_indicator = "\033[32m\u25CF\033[0m" if d["alive"] else "\033[90m\u25CB\033[0m"
         url_str = d["url"] or "no port"
-        print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{d['status']}{reset_color()}")
+        print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{display_status}{reset_color()}")
 
 
 def cmd_open_dashboards():
