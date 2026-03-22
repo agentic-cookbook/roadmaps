@@ -186,7 +186,7 @@ find_openclaw_agents_dir() {
 # --- Remove Renamed Extensions ---
 
 RENAMED_SKILLS=(plan-feature implement-feature implement-roadmap)
-RENAMED_AGENTS=(implement-feature-auto.md implement-roadmap-auto.md)
+RENAMED_AGENTS=(implement-feature-auto.md implement-roadmap-auto.md implement-roadmap-agent.md)
 
 remove_renamed_extensions() {
     echo ""

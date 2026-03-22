@@ -1,0 +1,274 @@
+#!/usr/bin/env python3
+"""Deterministic coordinator for implementing feature roadmaps.
+
+Reads the roadmap file, determines the next step via regex (no LLM),
+then launches `claude --agent implement-step-agent` for that step.
+Repeats until all steps are complete.
+
+Usage:
+    coordinator <roadmap-path> [feature-name]
+    coordinator --scan                  # auto-find and select roadmap
+
+The coordinator handles:
+  - Step selection (deterministic, regex-based)
+  - Dashboard lifecycle (init, load-roadmap, begin-step, finish-step)
+  - Launching the worker agent for each step
+  - Completion summary
+"""
+
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+# --- Roadmap parsing ---
+
+def parse_step_fields(block):
+    """Extract key-value pairs from lines like '- **Key**: value'."""
+    fields = {}
+    for line in block.splitlines():
+        m = re.match(r"^\s*-\s*\*\*(.+?)\*\*:\s*(.*)", line)
+        if m:
+            fields[m.group(1).strip()] = m.group(2).strip()
+    return fields
+
+
+def next_step(roadmap_path):
+    """Return the next non-Complete step as a dict, or None if all done."""
+    content = Path(roadmap_path).read_text()
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+
+    for i, match in enumerate(matches):
+        step_num = int(match.group(1))
+        step_desc = match.group(2).strip()
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        block = content[block_start:block_end]
+        fields = parse_step_fields(block)
+        status = fields.get("Status", "Not Started").strip()
+
+        if status.lower() != "complete":
+            return {
+                "step": step_num,
+                "description": step_desc,
+                "status": status,
+                "issue": fields.get("GitHub Issue", ""),
+                "type": fields.get("Type", "Auto"),
+                "complexity": fields.get("Complexity", ""),
+            }
+    return None
+
+
+def count_steps(roadmap_path):
+    """Count total and complete steps."""
+    content = Path(roadmap_path).read_text()
+    step_pattern = re.compile(r"^### Step (\d+):", re.MULTILINE)
+    total = len(step_pattern.findall(content))
+    complete = len(re.findall(r"^\- \*\*Status\*\*:\s*Complete", content, re.MULTILINE | re.IGNORECASE))
+    return total, complete
+
+
+def find_roadmaps(base=".claude/Features/Active-Roadmaps"):
+    """Find all active roadmaps with Phase: Ready."""
+    roadmaps = []
+    base_path = Path(base)
+    if not base_path.exists():
+        return roadmaps
+    for f in sorted(base_path.glob("*-FeatureRoadmap.md")):
+        content = f.read_text()
+        phase_match = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
+        status_match = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
+        phase = phase_match.group(1) if phase_match else "Ready"
+        status = status_match.group(1).strip() if status_match else "Not Started"
+        if phase == "Ready" and status.lower() != "complete":
+            name_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
+            name = name_match.group(1).strip() if name_match else f.stem.replace("-FeatureRoadmap", "")
+            total, complete = count_steps(str(f))
+            roadmaps.append({"name": name, "path": str(f), "total": total, "complete": complete})
+    return roadmaps
+
+
+# --- Dashboard integration ---
+
+def find_dash_cli():
+    """Find the dash CLI if installed."""
+    candidates = [
+        Path.home() / ".claude" / "skills" / "progress-dashboard" / "references" / "dash",
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    return None
+
+
+def dash(cli_path, *args):
+    """Run a dash CLI command. Returns stdout or None on failure."""
+    try:
+        result = subprocess.run(
+            [sys.executable, cli_path] + list(args),
+            capture_output=True, text=True, timeout=10,
+        )
+        return result.stdout.strip() if result.returncode == 0 else None
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+
+
+# --- Worker agent ---
+
+def launch_worker(step, roadmap_path, feature_name):
+    """Launch implement-step-agent for a single step."""
+    prompt = (
+        f"Implement step {step['step']} of the {feature_name} feature.\n"
+        f"\n"
+        f"Step {step['step']}: {step['description']}\n"
+        f"GitHub Issue: {step['issue']}\n"
+        f"Complexity: {step['complexity']}\n"
+        f"Roadmap file: {roadmap_path}\n"
+        f"Feature Definition: .claude/Features/FeatureDefinitions/{feature_name}-FeatureDefinition.md\n"
+        f"\n"
+        f"Implement ONLY this step. When done, update the roadmap to mark this step Complete, "
+        f"then return. Do not implement any other step."
+    )
+
+    result = subprocess.run(
+        ["claude", "--agent", "implement-step-agent", "-p", prompt],
+    )
+    return result.returncode == 0
+
+
+# --- Main ---
+
+def main():
+    args = sys.argv[1:]
+
+    # Resolve roadmap
+    roadmap_path = None
+    feature_name = None
+
+    if len(args) >= 1 and args[0] == "--scan":
+        # Auto-find mode
+        pass
+    elif len(args) >= 1 and not args[0].startswith("-"):
+        roadmap_path = args[0]
+        feature_name = args[1] if len(args) >= 2 else None
+    # else: auto-scan
+
+    if not roadmap_path:
+        roadmaps = find_roadmaps()
+        if len(roadmaps) == 0:
+            print("No available roadmaps found. Run /plan-roadmap first.", file=sys.stderr)
+            sys.exit(1)
+        elif len(roadmaps) == 1:
+            roadmap_path = roadmaps[0]["path"]
+            feature_name = roadmaps[0]["name"]
+            total, complete = roadmaps[0]["total"], roadmaps[0]["complete"]
+            print(f"Auto-selecting: {feature_name} ({complete}/{total} steps complete)")
+        else:
+            print("Available roadmaps:")
+            for i, r in enumerate(roadmaps):
+                print(f"  {i + 1}. {r['name']} — {r['complete']}/{r['total']} steps complete")
+            print(f"  q. Quit")
+            try:
+                choice = input("\nWhich roadmap? ")
+            except EOFError:
+                print("No input available (non-interactive mode). Pass roadmap path as argument.", file=sys.stderr)
+                sys.exit(1)
+            if choice.lower() == "q":
+                sys.exit(0)
+            idx = int(choice) - 1
+            roadmap_path = roadmaps[idx]["path"]
+            feature_name = roadmaps[idx]["name"]
+
+    if not Path(roadmap_path).exists():
+        print(f"Roadmap not found: {roadmap_path}", file=sys.stderr)
+        sys.exit(1)
+
+    if not feature_name:
+        name_match = re.search(r"^# Feature Roadmap:\s*(.+)", Path(roadmap_path).read_text(), re.MULTILINE)
+        feature_name = name_match.group(1).strip() if name_match else Path(roadmap_path).stem.replace("-FeatureRoadmap", "")
+
+    total, complete = count_steps(roadmap_path)
+    print(f"\n{'='*60}")
+    print(f"  Implementing: {feature_name}")
+    print(f"  Roadmap: {roadmap_path}")
+    print(f"  Progress: {complete}/{total} steps complete")
+    print(f"{'='*60}\n")
+
+    # Dashboard setup
+    dash_cli = find_dash_cli()
+    if dash_cli:
+        dash(dash_cli, "init", feature_name)
+        dash(dash_cli, "load-roadmap", roadmap_path)
+        print("  Dashboard: started\n")
+    else:
+        print("  Dashboard: not available\n")
+
+    # Main loop
+    completed_steps = []
+    while True:
+        step = next_step(roadmap_path)
+        if step is None:
+            break
+
+        if step["type"].lower() == "manual":
+            print(f"  Step {step['step']}: {step['description']} — MANUAL (skipping)")
+            if dash_cli:
+                dash(dash_cli, "log", f"Step {step['step']} is manual — skipping")
+            continue
+
+        print(f"\n{'—'*60}")
+        print(f"  Step {step['step']}: {step['description']}")
+        print(f"  Issue: {step['issue']}  |  Complexity: {step['complexity']}  |  Status: {step['status']}")
+        print(f"{'—'*60}")
+
+        # Dashboard: begin step
+        if dash_cli:
+            dash(dash_cli, "begin-step", str(step["step"]))
+
+        # Launch worker
+        success = launch_worker(step, roadmap_path, feature_name)
+
+        if not success:
+            print(f"\n  Step {step['step']} FAILED. Stopping.")
+            if dash_cli:
+                dash(dash_cli, "step-error", str(step["step"]), "Worker agent failed")
+                dash(dash_cli, "shutdown")
+            sys.exit(1)
+
+        # Verify step was marked Complete
+        updated = next_step(roadmap_path)
+        if updated and updated["step"] == step["step"]:
+            print(f"\n  WARNING: Step {step['step']} was not marked Complete by the worker.")
+            print(f"  The worker may have failed to update the roadmap. Stopping.")
+            if dash_cli:
+                dash(dash_cli, "step-error", str(step["step"]), "Step not marked Complete")
+                dash(dash_cli, "shutdown")
+            sys.exit(1)
+
+        # Dashboard: finish step
+        if dash_cli:
+            dash(dash_cli, "finish-step", str(step["step"]))
+
+        completed_steps.append(step)
+        total, complete = count_steps(roadmap_path)
+        print(f"\n  Step {step['step']} complete. Progress: {complete}/{total}")
+
+    # Completion
+    total, complete = count_steps(roadmap_path)
+    print(f"\n{'='*60}")
+    print(f"  COMPLETE: {feature_name}")
+    print(f"  Steps: {complete}/{total}")
+    for s in completed_steps:
+        print(f"    Step {s['step']}: {s['description']}")
+    print(f"{'='*60}\n")
+
+    if dash_cli:
+        dash(dash_cli, "complete")
+        dash(dash_cli, "shutdown")
+
+
+if __name__ == "__main__":
+    main()
