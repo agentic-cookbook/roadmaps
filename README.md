@@ -113,26 +113,33 @@ Pass issue numbers, or `all` to include every open issue.
 
 ### /implement-roadmap
 
-Launches the `implement-roadmap-agent` in the background to autonomously implement a feature from its Roadmap. Scans available roadmaps, lets you pick one (or auto-selects if only one), and runs the agent.
+Uses a deterministic Python coordinator for step selection and launches `implement-step-agent` for each step. The coordinator reads the roadmap file with regex (no LLM judgment) and passes the exact step number to the worker agent.
 
 **Usage:**
 
 ```
 /implement-roadmap
+/implement-roadmap MyFeature
 ```
 
-You can continue working in the current session while the agent runs. For interactive step-by-step control, use `/implement-roadmap-interactively` instead.
+**How it works:**
+
+1. Coordinator (Python, deterministic) reads the roadmap, finds first non-Complete step
+2. Launches `claude --agent implement-step-agent "Implement step N..."`
+3. Worker agent implements ONE step, creates PR, merges, updates roadmap
+4. Coordinator verifies completion, moves to next step
+5. Repeats until all steps done
+
+For interactive step-by-step control with checkpoints, use `/implement-roadmap-interactively` instead.
 
 **Changelog:**
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v7 | 2026-03-22 | Python coordinator + single-step worker agent — deterministic step selection, no LLM skipping |
 | v6 | 2026-03-22 | Run agent in foreground by default; `-b`/`--background` flag for background mode |
 | v5 | 2026-03-21 | Auto-select when only one roadmap available; print both skill and agent version when launching |
-| v4 | 2026-03-21 | Print both skill and agent version on --version |
-| v3 | 2026-03-21 | Print implement-roadmap-agent version before launching |
-| v2 | 2026-03-21 | List available roadmaps with quit option when called without arguments; accept feature name as argument |
-| v1 | 2026-03-21 | Initial release — background launcher for implement-roadmap-agent |
+| v1 | 2026-03-21 | Initial release |
 
 ---
 
@@ -354,56 +361,28 @@ If no path is given, the skill looks for a skill or agent in the current directo
 
 ## Agents
 
-### implement-roadmap-agent
+### implement-step-agent
 
-Autonomous version of `/implement-roadmap-interactively`. Runs the same implementation workflow — worktrees, PRs, reviews, merges — without stopping for user input.
-
-**How it differs from the skill:**
-
-| | /implement-roadmap-interactively (skill) | implement-roadmap-agent (agent) |
-|---|---|---|
-| **Interaction** | Interactive — pauses at checkpoints for your acknowledgment | Autonomous — logs summaries and continues |
-| **Feature selection** | You choose from a menu | Feature name passed in the task prompt |
-| **Permissions** | Inherits session permissions | `bypassPermissions` — no prompts |
-| **Isolation** | Runs in your session | Runs in its own git worktree |
-| **Use case** | You want to supervise each step | Fire and forget |
+Single-step worker agent. Receives one step number and its details in the prompt, implements it (worktree, PR, review, merge), updates the roadmap, and returns. Used by the `/implement-roadmap` coordinator.
 
 **Usage:**
 
-Tell Claude to use the agent:
-
-```
-Use the implement-roadmap-agent agent to implement FeatureX
-```
-
-Or invoke directly:
+Called by the coordinator script — not typically invoked directly. But can be:
 
 ```bash
-claude --agent implement-roadmap-agent "Implement FeatureX"
+claude --agent implement-step-agent "Implement step 1 of MyFeature. Step 1: Description. Issue: #17. Roadmap: path/to/roadmap.md"
 ```
-
-Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 **Key rules:**
 
-- Same one-step-one-PR discipline as the interactive skill
-- Same review requirements — every PR gets code review and security review
-- Same concurrency lock — acquires on start, releases on completion or error
-- On failure: logs the error, releases the lock, and stops (never retries silently)
+- Implements ONLY the step in its prompt — cannot skip or see other steps
+- One step = one worktree, one PR, one review, one merge
+- Updates the roadmap status to Complete when done
+- On failure: logs the error and returns
 
 **Changelog:**
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v12 | 2026-03-22 | Inline bash grep/awk for step selection — self-enclosed, no external scripts |
-| v11 | 2026-03-22 | Standalone `next-step` script in agents/ — deterministic step selection via regex, no dashboard dependency |
-| v10 | 2026-03-22 | Print next-step output for visibility; require echo of command result |
-| v9 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |
-| v8 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
-| v7 | 2026-03-21 | Fix step selection: pick first non-complete step (not just "Not Started"), so interrupted steps resume correctly |
-| v6 | 2026-03-21 | Guard completion section: check-control before completion, must use Stopped Summary if stopped |
-| v5 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
-| v4 | 2026-03-21 | Strengthen sequential step enforcement — CRITICAL rule block requiring full step completion before starting next |
-| v3 | 2026-03-21 | Print stopped summary with progress when user stops the agent, showing completed vs remaining steps |
-| v2 | 2026-03-21 | Enforce sequential step ordering — always pick lowest-numbered Not Started step |
+| v1 | 2026-03-22 | Initial release — single-step worker, replaces the multi-step implement-roadmap-agent |
 | v1 | 2026-03-21 | Initial release — autonomous implementation agent with bypassPermissions, worktree isolation, and error-handling-with-lock-release |
