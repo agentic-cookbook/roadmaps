@@ -258,6 +258,7 @@ No arguments needed.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v3 | 2026-03-22 | Show dashboard URL when dashboard is running |
 | v2 | 2026-03-22 | Concise output — progress bar, counts, goal summary from Feature Definition |
 | v1 | 2026-03-22 | Initial release — scans active roadmaps, prints step summaries with status icons |
 
@@ -278,6 +279,7 @@ Shows detailed info about a single active roadmap — goal, progress, and all st
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2 | 2026-03-22 | Show dashboard URL when dashboard is running |
 | v1 | 2026-03-22 | Initial release — detailed roadmap view with selection and implement prompt |
 
 ---
