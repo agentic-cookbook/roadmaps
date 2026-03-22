@@ -498,6 +498,10 @@ def cmd_error(args):
 
     message = " ".join(args) if args else "Unknown error"
     data["status"] = "error"
+    for step in data.get("steps", []):
+        if step["status"] == "in_progress":
+            step["status"] = "not_started"
+            step["updated_at"] = now_iso()
     add_event(data, f"Error: {message}")
     write_progress(dash_dir, data)
 

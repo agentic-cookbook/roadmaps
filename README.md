@@ -265,6 +265,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v12 | 2026-03-21 | Reset in-progress steps to not_started on error/stop — no stale spinners |
 | v11 | 2026-03-21 | Clear stale steps/issues/PRs on restart — `load-roadmap` repopulates from roadmap file |
 | v10 | 2026-03-21 | Fix overlay + port: clear `control_state` and events on restart; resolve macOS `/var` vs `/private/var` symlink; clear all overlays when no active control |
 | v9 | 2026-03-21 | Fix port stability: wait for old server to die before reusing port; remove bind test |
