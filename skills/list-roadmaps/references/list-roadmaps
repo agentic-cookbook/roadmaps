@@ -83,6 +83,12 @@ def get_goal(feature_name):
     return first_line
 
 
+def hyperlink(url, text=None):
+    """Format a clickable terminal hyperlink using OSC 8."""
+    label = text or url
+    return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
+
+
 def progress_bar(complete, total, width=20):
     filled = round(width * complete / total) if total else 0
     return "[" + "#" * filled + "-" * (width - filled) + "]"
@@ -122,7 +128,7 @@ def main():
         if goal:
             print(f"    {goal}")
         if dashboard_url:
-            print(f"    Dashboard: {dashboard_url}")
+            print(f"    Dashboard: {hyperlink(dashboard_url)}")
         print()
 
 

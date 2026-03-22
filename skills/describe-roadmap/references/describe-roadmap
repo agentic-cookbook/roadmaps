@@ -142,6 +142,12 @@ def select_roadmap(roadmaps, arg=None):
         sys.exit(1)
 
 
+def hyperlink(url, text=None):
+    """Format a clickable terminal hyperlink using OSC 8."""
+    label = text or url
+    return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
+
+
 def icon_for(status):
     return STATUS_ICONS.get(status.lower(), "?")
 
@@ -169,7 +175,7 @@ def print_roadmap(path):
     # Dashboard
     dashboard_url = get_dashboard_url()
     if dashboard_url:
-        print(f"  Dashboard: {dashboard_url}")
+        print(f"  Dashboard: {hyperlink(dashboard_url)}")
 
     # Goal
     goal = get_goal(header["name"])

@@ -115,6 +115,12 @@ def get_dashboard_url():
     return None
 
 
+def hyperlink(url, text=None):
+    """Format a clickable terminal hyperlink using OSC 8."""
+    label = text or url
+    return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
+
+
 def find_dash_cli():
     """Find the dash CLI if installed."""
     candidates = [
@@ -226,7 +232,7 @@ def main():
         dash(dash_cli, "load-roadmap", roadmap_path)
         url = get_dashboard_url()
         if url:
-            print(f"  Dashboard: {url}\n")
+            print(f"  Dashboard: {hyperlink(url)}\n")
         else:
             print("  Dashboard: started\n")
     else:
