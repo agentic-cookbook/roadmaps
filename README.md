@@ -200,6 +200,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v7 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |
 | v6 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
 | v5 | 2026-03-21 | Fix step selection: pick first non-complete step, so interrupted steps resume correctly |
 | v4 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
@@ -266,6 +267,7 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v13 | 2026-03-21 | Add `next-step` command — mechanically returns lowest non-Complete step number from roadmap file |
 | v12 | 2026-03-21 | Reset in-progress steps to not_started on error/stop — no stale spinners |
 | v11 | 2026-03-21 | Clear stale steps/issues/PRs on restart — `load-roadmap` repopulates from roadmap file |
 | v10 | 2026-03-21 | Fix overlay + port: clear `control_state` and events on restart; resolve macOS `/var` vs `/private/var` symlink; clear all overlays when no active control |
@@ -366,6 +368,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v9 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |
 | v8 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
 | v7 | 2026-03-21 | Fix step selection: pick first non-complete step (not just "Not Started"), so interrupted steps resume correctly |
 | v6 | 2026-03-21 | Guard completion section: check-control before completion, must use Stopped Summary if stopped |

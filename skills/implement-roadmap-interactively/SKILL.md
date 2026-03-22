@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "6"
+version: "7"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v6
+> implement-roadmap-interactively v7
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -152,17 +152,17 @@ Loop for each step in the Roadmap. **Run a control check before every sub-step**
 
 ### Step 1: Pick Next Step
 
-**Control check.** Then select the next step using this **MECHANICAL RULE** — no judgment, no exceptions:
+**Control check.** Then run this command to get the next step number:
 
-1. Read the roadmap file
-2. Find every `### Step N:` header
-3. For each step, read its `- **Status**:` field — this is the ONLY field that determines step selection
-4. Select the step with the **LOWEST number** whose `**Status**:` is NOT `Complete`
-5. Implement THAT step
+```bash
+python3 "$DASH_CLI" next-step ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+```
 
-**DO NOT** skip steps because you think the work was already done outside the roadmap. **DO NOT** look at the description to decide whether it needs work. The `**Status**:` field is the **SOLE source of truth**. If it says `Not Started`, you implement it — period.
+This prints the step number to implement (e.g., `1`). If it prints `DONE`, all steps are complete — proceed to the Completion phase.
 
-**CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.** If all steps are complete, proceed to the Completion phase.
+**You MUST implement the step number returned by this command.** Do not override it. Do not skip ahead. The command reads the `**Status**:` field and returns the lowest-numbered non-Complete step.
+
+**CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.**
 
 **If the step's Type is `Manual`**: Skip it — print a message telling the user that step N is a manual step assigned to them, and move to the next non-complete step. Do not attempt to implement manual steps.
 

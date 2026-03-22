@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "8"
+version: "9"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v8
+> implement-roadmap-agent v9
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -137,20 +137,19 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 **CRITICAL: STRICTLY SEQUENTIAL EXECUTION.** You MUST complete each step fully (PR merged, issue closed, `finish-step` called) before beginning the next one. Never start Step N+1 until Step N is finished. Never run steps in parallel. Never begin implementation of a later step while an earlier step is in progress.
 
-**STEP SELECTION — MECHANICAL RULE (no judgment, no exceptions):**
+**STEP SELECTION — USE THE `next-step` COMMAND:**
 
-1. Read the roadmap file
-2. Find every `### Step N:` header
-3. For each step, read its `- **Status**:` field — this is the ONLY field that determines step selection
-4. Select the step with the **LOWEST number** whose `**Status**:` is NOT `Complete`
-5. Implement THAT step
+Run this command to get the next step number:
 
-**DO NOT** skip steps because you think the work was already done outside the roadmap.
-**DO NOT** look at the step description to decide whether it needs work.
-**DO NOT** consider code changes made in other sessions or by other means.
-The `**Status**:` field is the **SOLE source of truth**. If it says `Not Started`, you implement it — period. Even if the description says "fix X" and X appears to already be fixed.
+```bash
+python3 "$DASH_CLI" next-step ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+```
 
-Repeat until all steps are complete.
+This prints the step number to implement (e.g., `1`). If it prints `DONE`, all steps are complete — proceed to the COMPLETION section.
+
+**You MUST implement the step number returned by this command.** Do not override it. Do not skip ahead. Do not use your own judgment about which step to work on. The command reads the `**Status**:` field of every step in the roadmap file and returns the lowest-numbered step that is not `Complete`. Run it before each step.
+
+Repeat until the command returns `DONE`.
 
 **If the step's Type is `Manual`**: Skip it — log that step N is a manual step assigned to the developer, update the dashboard if running (`python3 "$DASH_CLI" log "Step N is manual — skipping"`), and continue to the next step. Do not attempt to implement manual steps.
 

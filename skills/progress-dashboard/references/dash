@@ -890,8 +890,39 @@ def cmd_finish_step(args):
     write_progress(dash_dir, data)
 
 
+def cmd_next_step(args):
+    """Parse a roadmap file and print the lowest-numbered non-Complete step."""
+    if len(args) < 1:
+        print("Usage: dash next-step <path-to-roadmap.md>", file=sys.stderr)
+        sys.exit(1)
+
+    roadmap_path = Path(args[0])
+    if not roadmap_path.exists():
+        print(f"ERROR: Roadmap not found: {roadmap_path}", file=sys.stderr)
+        sys.exit(1)
+
+    content = roadmap_path.read_text()
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+
+    for match in matches:
+        step_num = int(match.group(1))
+        step_desc = match.group(2).strip()
+        block_start = match.end()
+        block_end = matches[matches.index(match) + 1].start() if matches.index(match) + 1 < len(matches) else len(content)
+        block = content[block_start:block_end]
+        fields = parse_step_fields(block)
+        status = fields.get("Status", "Not Started").strip().lower()
+        if status != "complete":
+            print(f"{step_num}")
+            return
+
+    print("DONE")
+
+
 COMMANDS = {
     # New high-level commands
+    "next-step": cmd_next_step,
     "load-roadmap": cmd_load_roadmap,
     "begin-step": cmd_begin_step,
     "pr-created": cmd_pr_created,
