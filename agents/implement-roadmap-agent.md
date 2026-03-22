@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "9"
+version: "10"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v9
+> implement-roadmap-agent v10
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -137,17 +137,18 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 **CRITICAL: STRICTLY SEQUENTIAL EXECUTION.** You MUST complete each step fully (PR merged, issue closed, `finish-step` called) before beginning the next one. Never start Step N+1 until Step N is finished. Never run steps in parallel. Never begin implementation of a later step while an earlier step is in progress.
 
-**STEP SELECTION — USE THE `next-step` COMMAND:**
+**STEP SELECTION — USE THE `next-step` COMMAND (mandatory, no exceptions):**
 
-Run this command to get the next step number:
+Before each step, run this command and **print its output**:
 
 ```bash
-python3 "$DASH_CLI" next-step ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+NEXT=$(python3 "$DASH_CLI" next-step ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md") && echo "next-step returned: $NEXT"
 ```
 
-This prints the step number to implement (e.g., `1`). If it prints `DONE`, all steps are complete — proceed to the COMPLETION section.
+- If it prints a number (e.g., `1`), implement THAT step.
+- If it prints `DONE`, all steps are complete — proceed to the COMPLETION section.
 
-**You MUST implement the step number returned by this command.** Do not override it. Do not skip ahead. Do not use your own judgment about which step to work on. The command reads the `**Status**:` field of every step in the roadmap file and returns the lowest-numbered step that is not `Complete`. Run it before each step.
+**You MUST implement the exact step number returned.** This command mechanically reads the `**Status**:` field in the roadmap file using regex — it has no LLM judgment. You may not override, skip, or reorder. If it says `1`, you do step 1, even if you believe step 1 is already done.
 
 Repeat until the command returns `DONE`.
 

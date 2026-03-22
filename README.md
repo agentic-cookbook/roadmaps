@@ -127,6 +127,7 @@ You can continue working in the current session while the agent runs. For intera
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v6 | 2026-03-22 | Run agent in foreground by default; `-b`/`--background` flag for background mode |
 | v5 | 2026-03-21 | Auto-select when only one roadmap available; print both skill and agent version when launching |
 | v4 | 2026-03-21 | Print both skill and agent version on --version |
 | v3 | 2026-03-21 | Print implement-roadmap-agent version before launching |
@@ -368,6 +369,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v10 | 2026-03-22 | Print next-step output for visibility; require echo of command result |
 | v9 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |
 | v8 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
 | v7 | 2026-03-21 | Fix step selection: pick first non-complete step (not just "Not Started"), so interrupted steps resume correctly |

@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "5"
+version: "6"
 description: "Implement a planned feature from its Roadmap autonomously in the background. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v5
+   > implement-roadmap v6
 
 2. Print the agent version by running:
    ```bash
@@ -25,15 +25,19 @@ Then stop. Do not continue with the rest of the skill.
 
 # Implement Roadmap
 
-Launch the `implement-roadmap-agent` in the background to autonomously implement a feature from its Roadmap.
+Launch the `implement-roadmap-agent` to autonomously implement a feature from its Roadmap. Runs in **foreground** by default. Pass `-b` or `--background` to run in the background.
+
+## Step 0: Parse Arguments
+
+Check if `$ARGUMENTS` contains `-b` or `--background`. If so, set `BACKGROUND=true` and remove the flag from arguments. Otherwise `BACKGROUND=false`. The remaining arguments (after removing the flag) are the feature name, if any.
 
 ## Step 1: Resolve Feature
 
-### If `$ARGUMENTS` names a feature:
+### If remaining arguments name a feature:
 
 Look for a matching `*-FeatureRoadmap.md` in `.claude/Features/Active-Roadmaps/`. If found and `Phase` is `Ready` and `Status` is not `Complete`, use it. Otherwise report the error and **STOP**.
 
-### If `$ARGUMENTS` is empty:
+### If remaining arguments are empty:
 
 Scan `.claude/Features/Active-Roadmaps/` for all `*-FeatureRoadmap.md` files. Parse each for feature name, `**Status**:`, and `**Phase**:`.
 
@@ -88,23 +92,21 @@ grep -m1 'version:' ~/.claude/agents/implement-roadmap-agent.md
 
 ## Step 3: Launch Agent
 
-Launch the `implement-roadmap-agent` in the background using the Agent tool:
+Launch the `implement-roadmap-agent` using the Agent tool:
 
 - **subagent_type**: `implement-roadmap-agent`
-- **run_in_background**: `true`
+- **run_in_background**: `BACKGROUND` (true if `-b`/`--background` was passed, false otherwise)
 - **prompt**: `Implement the <FeatureName> feature. Roadmap: .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md`
 
-Print:
+If running in background, print:
 
 ```
 Launched implement-roadmap-agent for <FeatureName> in the background.
+You can continue working. You'll be notified when the agent completes.
+```
 
-The agent will:
-  - Work through each roadmap step autonomously
-  - Create worktrees, PRs, run reviews, and merge
-  - Open the progress dashboard (if installed)
+If running in foreground, print:
 
-You can continue working in this session. You'll be notified when the agent completes.
-
-For interactive step-by-step control instead, use: /implement-roadmap-interactively
+```
+Launching implement-roadmap-agent for <FeatureName>...
 ```
