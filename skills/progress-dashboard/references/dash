@@ -237,6 +237,9 @@ def cmd_init(args):
         data["status"] = "running"
         data["title"] = title
         data.pop("control_state", None)
+        data["steps"] = []
+        data["issues"] = []
+        data["prs"] = []
         data["events"] = [{"time": now_iso(), "message": "Dashboard restarted"}]
         write_progress(dash_dir, data)
         print(f"Reusing existing dashboard for {title}", file=sys.stderr)
