@@ -1,0 +1,183 @@
+#!/usr/bin/env python3
+"""Show detailed info about a single active roadmap.
+
+If multiple roadmaps exist, prints a numbered list for selection.
+If only one exists, shows it directly. Prints all roadmap metadata,
+the goal from the Feature Definition, and every step with full details.
+
+Usage:
+    describe-roadmap [feature-name]
+"""
+
+import re
+import sys
+from pathlib import Path
+
+ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
+DEFS_DIR = Path(".claude/Features/FeatureDefinitions")
+
+STATUS_ICONS = {
+    "complete": "+",
+    "in progress": "~",
+    "blocked": "!",
+    "not started": "-",
+}
+
+
+def find_roadmaps():
+    if not ACTIVE_DIR.exists():
+        return []
+    return sorted(ACTIVE_DIR.glob("*-FeatureRoadmap.md"))
+
+
+def parse_header(content):
+    fields = {}
+    for key in ["Status", "Phase", "Created", "Implementing"]:
+        m = re.search(rf"\*\*{key}\*\*:\s*(.+)", content)
+        if m:
+            fields[key.lower()] = m.group(1).strip()
+    name_m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
+    fields["name"] = name_m.group(1).strip() if name_m else "Unknown"
+    return fields
+
+
+def parse_steps(content):
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+    steps = []
+    for i, match in enumerate(matches):
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        block = content[block_start:block_end]
+        fields = {}
+        for line in block.splitlines():
+            m = re.match(r"^\s*-\s*\*\*(.+?)\*\*:\s*(.*)", line)
+            if m:
+                fields[m.group(1).strip()] = m.group(2).strip()
+        steps.append({
+            "num": int(match.group(1)),
+            "desc": match.group(2).strip(),
+            "status": fields.get("Status", "Not Started"),
+            "issue": fields.get("GitHub Issue", ""),
+            "type": fields.get("Type", "Auto"),
+            "complexity": fields.get("Complexity", ""),
+            "dependencies": fields.get("Dependencies", "None"),
+            "pr": fields.get("PR", "_TBD_"),
+        })
+    return steps
+
+
+def get_goal(feature_name):
+    def_path = DEFS_DIR / f"{feature_name}-FeatureDefinition.md"
+    if not def_path.exists():
+        return None
+    content = def_path.read_text()
+    goal_m = re.search(
+        r"## Goal and Purpose\s*\n+(.+?)(?:\n\n|\n##|\Z)",
+        content, re.DOTALL,
+    )
+    if not goal_m:
+        return None
+    return goal_m.group(1).strip()
+
+
+def select_roadmap(roadmaps, arg=None):
+    if arg:
+        for r in roadmaps:
+            name = r.stem.replace("-FeatureRoadmap", "")
+            if arg.lower() in name.lower():
+                return r
+        print(f"No roadmap matching '{arg}' found.")
+        sys.exit(1)
+
+    if len(roadmaps) == 1:
+        return roadmaps[0]
+
+    print("\nActive roadmaps:\n")
+    for i, r in enumerate(roadmaps):
+        content = r.read_text()
+        header = parse_header(content)
+        steps = parse_steps(content)
+        complete = sum(1 for s in steps if s["status"].lower() == "complete")
+        print(f"  {i + 1}. {header['name']}  ({complete}/{len(steps)} done)")
+    print(f"  q. Quit")
+
+    try:
+        choice = input("\nWhich roadmap? ")
+    except EOFError:
+        print("No input available. Pass feature name as argument.", file=sys.stderr)
+        sys.exit(1)
+    if choice.lower() == "q":
+        sys.exit(0)
+    try:
+        idx = int(choice) - 1
+        return roadmaps[idx]
+    except (ValueError, IndexError):
+        print("Invalid choice.")
+        sys.exit(1)
+
+
+def icon_for(status):
+    return STATUS_ICONS.get(status.lower(), "?")
+
+
+def print_roadmap(path):
+    content = path.read_text()
+    header = parse_header(content)
+    steps = parse_steps(content)
+
+    counts = {}
+    for s in steps:
+        key = s["status"].lower()
+        counts[key] = counts.get(key, 0) + 1
+    complete = counts.get("complete", 0)
+    total = len(steps)
+
+    # Header
+    print(f"\n  {header['name']}")
+    print(f"  {'=' * len(header['name'])}")
+    print(f"  Status: {header.get('status', '?')}  |  Phase: {header.get('phase', '?')}  |  Created: {header.get('created', '?')}")
+
+    # Goal
+    goal = get_goal(header["name"])
+    if goal:
+        print(f"\n  {goal}")
+
+    # Progress
+    filled = round(20 * complete / total) if total else 0
+    bar = "[" + "#" * filled + "-" * (20 - filled) + "]"
+    parts = []
+    for label, key in [("in progress", "in progress"), ("blocked", "blocked"), ("remaining", "not started")]:
+        n = counts.get(key, 0)
+        if n:
+            parts.append(f"{n} {label}")
+    extra = f"  ({', '.join(parts)})" if parts else ""
+    print(f"\n  {bar}  {complete}/{total} done{extra}")
+
+    # Steps
+    print(f"\n  Steps:")
+    for s in steps:
+        issue = f"  {s['issue']}" if s['issue'] else ""
+        pr = f"  PR: {s['pr']}" if s['pr'] and s['pr'] != "_TBD_" else ""
+        deps = f"  deps: {s['dependencies']}" if s['dependencies'] != "None" else ""
+        print(f"    [{icon_for(s['status'])}] {s['num']}. {s['desc']}  ({s['complexity']}){issue}{pr}{deps}")
+
+    print()
+
+
+def main():
+    roadmaps = find_roadmaps()
+    if not roadmaps:
+        print("No active roadmaps found.")
+        sys.exit(0)
+
+    arg = sys.argv[1] if len(sys.argv) > 1 else None
+    path = select_roadmap(roadmaps, arg)
+    print_roadmap(path)
+
+    # Prompt
+    print("  Run /implement-roadmap now? [y/N]")
+
+
+if __name__ == "__main__":
+    main()

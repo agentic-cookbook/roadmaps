@@ -263,6 +263,25 @@ No arguments needed.
 
 ---
 
+### /describe-roadmap
+
+Shows detailed info about a single active roadmap — goal, progress, and all steps with status, complexity, issues, PRs, and dependencies. If multiple roadmaps exist, prompts to choose one. Offers to run `/implement-roadmap` at the end.
+
+**Usage:**
+
+```
+/describe-roadmap
+/describe-roadmap DashboardBugfixes
+```
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-22 | Initial release — detailed roadmap view with selection and implement prompt |
+
+---
+
 ### /progress-dashboard
 
 Reusable live progress dashboard that any agent or skill can use to show real-time step-by-step progress in the browser. Opens a local web page that polls a JSON file for updates.
