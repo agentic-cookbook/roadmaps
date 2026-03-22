@@ -247,6 +247,14 @@
   }
   .step-detail a { color: var(--accent); text-decoration: none; }
   .step-detail a:hover { text-decoration: underline; }
+  .step-tag-manual {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--yellow);
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
   .step-status-debug {
     font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
     font-size: 0.6rem;
@@ -553,14 +561,14 @@ var STATUS_ICONS = {
   in_progress: null,
   complete: '\u2713',
   error: '\u2717',
-  skipped: '\u2014'
+  skipped: '\u2713'
 };
 var STATUS_COLORS = {
   not_started: 'var(--text-muted)',
   in_progress: 'var(--yellow)',
   complete: 'var(--green)',
   error: 'var(--red)',
-  skipped: 'var(--text-muted)'
+  skipped: 'var(--yellow)'
 };
 
 var lastJson = '';
@@ -718,9 +726,13 @@ function buildStepEl(step, index, isPaused) {
     iconEl.textContent = STATUS_ICONS[step.status] || '\u25CB';
   }
 
-  var bodyChildren = [
-    el('div', { className: 'step-title', textContent: 'Step ' + (index + 1) + ': ' + (step.name || '') })
-  ];
+  var titleDiv = el('div', { className: 'step-title' }, [
+    document.createTextNode('Step ' + (index + 1) + ': ' + (step.name || ''))
+  ]);
+  if (step.type && step.type.toLowerCase() === 'manual') {
+    titleDiv.appendChild(el('span', { className: 'step-tag-manual', textContent: '(Manual)' }));
+  }
+  var bodyChildren = [titleDiv];
 
   // Always show issue link (from step data)
   if (step.issue_number) {

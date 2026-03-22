@@ -716,9 +716,15 @@ def cmd_load_roadmap(args):
         fields = parse_step_fields(block)
         status = map_status(fields.get("Status", "Not Started"))
 
+        step_type = fields.get("Type", "Auto")
+        # Mark manual steps as skipped
+        if step_type.lower() == "manual" and status == "not_started":
+            status = "skipped"
+
         step = {
             "name": step_desc,
             "status": status,
+            "type": step_type,
             "detail": fields.get("Description"),
             "links": [],
             "started_at": now_iso() if status in ("in_progress", "complete") else None,
