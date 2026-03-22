@@ -229,6 +229,29 @@ remove_renamed_extensions() {
     fi
 }
 
+# --- CLI Scripts Removal ---
+
+remove_cli_scripts() {
+    echo ""
+    echo "--- CLI Scripts ---"
+
+    local scripts_dir="$SCRIPT_DIR/scripts"
+    [ -d "$scripts_dir" ] || return
+
+    for script in "$scripts_dir"/*.py; do
+        [ -f "$script" ] || continue
+        local name
+        name=$(basename "$script" .py)
+        for bin_dir in "/usr/local/bin" "$HOME/.local/bin"; do
+            local target="$bin_dir/$name"
+            if [ -L "$target" ]; then
+                rm -f "$target"
+                echo "  [removed] $name from $bin_dir"
+            fi
+        done
+    done
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -240,6 +263,7 @@ main() {
     remove_renamed_extensions
     remove_skills "$SKILLS_DIR" "Claude Skills"
     remove_agents "$AGENTS_DIR" "Claude Agents"
+    remove_cli_scripts
 
     local openclaw_dir
     openclaw_dir=$(find_openclaw_skills_dir)

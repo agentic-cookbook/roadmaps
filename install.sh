@@ -557,6 +557,42 @@ verify_dash_cli() {
     fi
 }
 
+# --- CLI Scripts Installation ---
+
+install_cli_scripts() {
+    echo ""
+    echo "--- CLI Scripts ---"
+
+    local scripts_dir="$SCRIPT_DIR/scripts"
+    if [ ! -d "$scripts_dir" ]; then
+        echo "  [skip] No scripts directory"
+        return
+    fi
+
+    local bin_dir="/usr/local/bin"
+    if [ ! -d "$bin_dir" ] || [ ! -w "$bin_dir" ]; then
+        bin_dir="$HOME/.local/bin"
+        mkdir -p "$bin_dir"
+    fi
+
+    for script in "$scripts_dir"/*.py; do
+        [ -f "$script" ] || continue
+        local name
+        name=$(basename "$script" .py)
+        local target="$bin_dir/$name"
+
+        if [ -L "$target" ] && [ "$(readlink "$target")" = "$script" ]; then
+            echo "  [ok] $name -> $target (symlink)"
+        else
+            if [ -e "$target" ]; then
+                rm -f "$target"
+            fi
+            ln -s "$script" "$target"
+            echo "  [symlinked] $name -> $target"
+        fi
+    done
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -585,6 +621,7 @@ main() {
     verify_dash_cli "$method"
     install_openclaw_skills "$method"
     install_openclaw_agents "$method"
+    install_cli_scripts
 
     echo ""
     echo "=== Done ==="
