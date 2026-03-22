@@ -136,6 +136,7 @@ For interactive step-by-step control with checkpoints, use `/implement-roadmap-i
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v9 | 2026-03-22 | Per-feature dashboard URL lookup by slug |
 | v8 | 2026-03-22 | Show dashboard URL on startup |
 | v7 | 2026-03-22 | Python coordinator + single-step worker agent — deterministic step selection, no LLM skipping |
 | v6 | 2026-03-22 | Run agent in foreground by default; `-b`/`--background` flag for background mode |
@@ -259,6 +260,7 @@ No arguments needed.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v5 | 2026-03-22 | Per-feature dashboard URL lookup by slug; clickable OSC 8 links |
 | v4 | 2026-03-22 | Print version on invocation; dashboard URL inline per roadmap |
 | v3 | 2026-03-22 | Show dashboard URL when dashboard is running |
 | v2 | 2026-03-22 | Concise output — progress bar, counts, goal summary from Feature Definition |
@@ -281,6 +283,7 @@ Shows detailed info about a single active roadmap — goal, progress, and all st
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4 | 2026-03-22 | Per-feature dashboard URL lookup by slug; clickable OSC 8 links |
 | v3 | 2026-03-22 | Print version on invocation; dashboard URL inline in header |
 | v2 | 2026-03-22 | Show dashboard URL when dashboard is running |
 | v1 | 2026-03-22 | Initial release — detailed roadmap view with selection and implement prompt |

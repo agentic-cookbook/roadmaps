@@ -12,34 +12,63 @@ Usage:
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "3"
+VERSION = "4"
 
 ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
 DEFS_DIR = Path(".claude/Features/FeatureDefinitions")
 
 
-def get_dashboard_url():
-    """Read the active dashboard URL from the state file, if running."""
-    tmpdir = os.environ.get("TMPDIR", "/tmp")
-    state_path = Path(tmpdir) / "progress-dashboard-active"
-    if not state_path.exists():
+def slugify(name):
+    return re.sub(r"[^a-zA-Z0-9_-]", "-", name).strip("-").lower()
+
+
+def get_dashboard_url_for(feature_name):
+    """Find the dashboard URL for a specific feature by its slug directory."""
+    tmpdir = Path(os.environ.get("TMPDIR", "/tmp")).resolve()
+    dash_dir = tmpdir / f"progress-dashboard-{slugify(feature_name)}"
+    port_file = dash_dir / "port"
+    if not port_file.exists():
         return None
     try:
-        state = json.loads(state_path.read_text())
-        port = state.get("port")
-        pid = state.get("pid")
-        if port and pid:
-            try:
-                os.kill(pid, 0)
-                return f"http://127.0.0.1:{port}"
-            except OSError:
-                return None
-    except (json.JSONDecodeError, KeyError):
+        port = int(port_file.read_text().strip())
+    except (ValueError, OSError):
         return None
+    if not (dash_dir / "progress.json").exists():
+        return None
+    # Check global state for pid match
+    state_path = tmpdir / "progress-dashboard-active"
+    if state_path.exists():
+        try:
+            state = json.loads(state_path.read_text())
+            if str(dash_dir) == state.get("dash_dir"):
+                pid = state.get("pid")
+                if pid:
+                    os.kill(pid, 0)
+                    return f"http://127.0.0.1:{port}"
+        except (json.JSONDecodeError, OSError):
+            pass
+    # Fallback: check if port is in use
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True, text=True, timeout=2,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return f"http://127.0.0.1:{port}"
+    except (OSError, subprocess.TimeoutExpired):
+        pass
     return None
+
+
+def hyperlink(url, text=None):
+    """Format a clickable terminal hyperlink using OSC 8."""
+    label = text or url
+    return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
+
 
 STATUS_ICONS = {
     "complete": "+",
@@ -142,12 +171,6 @@ def select_roadmap(roadmaps, arg=None):
         sys.exit(1)
 
 
-def hyperlink(url, text=None):
-    """Format a clickable terminal hyperlink using OSC 8."""
-    label = text or url
-    return f"\033]8;;{url}\033\\{label}\033]8;;\033\\"
-
-
 def icon_for(status):
     return STATUS_ICONS.get(status.lower(), "?")
 
@@ -173,7 +196,7 @@ def print_roadmap(path):
     print(f"  Status: {header.get('status', '?')}  |  Phase: {header.get('phase', '?')}  |  Created: {header.get('created', '?')}")
 
     # Dashboard
-    dashboard_url = get_dashboard_url()
+    dashboard_url = get_dashboard_url_for(header["name"])
     if dashboard_url:
         print(f"  Dashboard: {hyperlink(dashboard_url)}")
 
