@@ -370,6 +370,27 @@ install_claude_agents() {
             install_agent "$agent_file" "$AGENTS_DIR" "$method"
         fi
     done
+
+    # Install agent scripts (non-.md executable files)
+    for script_file in "$SCRIPT_DIR/agents"/*; do
+        [ -f "$script_file" ] || continue
+        [[ "$script_file" == *.md ]] && continue
+        local script_name
+        script_name=$(basename "$script_file")
+        local target="$AGENTS_DIR/$script_name"
+        local existing
+        existing=$(detect_agent_install_method "$target")
+
+        if [ "$existing" = "$method" ]; then
+            echo "  [ok] $script_name ($existing)"
+        else
+            if [ "$existing" != "none" ]; then
+                echo "  [reinstall] $script_name ($existing -> $method)"
+                rm -f "$target"
+            fi
+            install_agent "$script_file" "$AGENTS_DIR" "$method"
+        fi
+    done
 }
 
 # --- OpenClaw Skills Installation ---

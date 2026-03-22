@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "7"
+version: "8"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v7
+> implement-roadmap-interactively v8
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -152,15 +152,17 @@ Loop for each step in the Roadmap. **Run a control check before every sub-step**
 
 ### Step 1: Pick Next Step
 
-**Control check.** Then run this command to get the next step number:
+**Control check.** Then run the `next-step` script to determine which step to implement:
 
 ```bash
-python3 "$DASH_CLI" next-step ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+python3 "$HOME/.claude/agents/next-step" ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
 ```
 
-This prints the step number to implement (e.g., `1`). If it prints `DONE`, all steps are complete — proceed to the Completion phase.
+This prints JSON like: `{"step": 1, "description": "...", "status": "Not Started", "issue": "#17", ...}`
 
-**You MUST implement the step number returned by this command.** Do not override it. Do not skip ahead. The command reads the `**Status**:` field and returns the lowest-numbered non-Complete step.
+Or if all steps are complete: `{"done": true}` — proceed to the Completion phase.
+
+**You MUST implement the step number in the `"step"` field.** The script reads the `**Status**:` field with regex — no LLM judgment. Implement whatever step it returns, even if you believe it's already done.
 
 **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.**
 

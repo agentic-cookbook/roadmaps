@@ -201,6 +201,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v8 | 2026-03-22 | Use standalone `next-step` script for step selection — no dashboard dependency |
 | v7 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |
 | v6 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
 | v5 | 2026-03-21 | Fix step selection: pick first non-complete step, so interrupted steps resume correctly |
@@ -370,6 +371,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v11 | 2026-03-22 | Standalone `next-step` script in agents/ — deterministic step selection via regex, no dashboard dependency |
 | v10 | 2026-03-22 | Print next-step output for visibility; require echo of command result |
 | v9 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |
 | v8 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |

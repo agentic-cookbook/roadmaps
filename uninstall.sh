@@ -102,7 +102,7 @@ remove_skills() {
 find_installed_agents() {
     local target_dir="$1"
     local found=()
-    for agent_file in "$SCRIPT_DIR/agents"/*.md; do
+    for agent_file in "$SCRIPT_DIR/agents"/*; do
         [ -f "$agent_file" ] || continue
         local agent_name
         agent_name=$(basename "$agent_file")
