@@ -549,7 +549,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v21</span>
+    <span class="footer-version">v22</span>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -1151,22 +1151,52 @@ function hideControls() {
 }
 
 // --- Polling ---
+var consecutiveErrors = 0;
+var pollSlowed = false;
+
 async function poll() {
   try {
     var resp = await fetch('progress.json?t=' + Date.now());
     if (!resp.ok) {
+      consecutiveErrors++;
       document.getElementById('footer-status').textContent = 'Waiting for progress data...';
       debugLog('poll: not ok (status ' + resp.status + ')');
+      maybeSlowPoll();
       return;
     }
     var text = await resp.text();
+    consecutiveErrors = 0;
+    if (pollSlowed) {
+      // Server is back — restore fast polling
+      pollSlowed = false;
+      clearInterval(mainInterval);
+      mainInterval = setInterval(function() { poll(); }, POLL_INTERVAL);
+      debugLog('poll: server back, restored fast polling');
+    }
     if (text === lastJson) return;
     debugLog('poll: new data (' + text.length + ' bytes)');
     lastJson = text;
     render(JSON.parse(text));
   } catch (e) {
-    document.getElementById('footer-status').textContent = 'Waiting for progress data...';
-    debugLog('poll: error ' + e.message);
+    consecutiveErrors++;
+    document.getElementById('footer-status').textContent = 'Server not responding (' + consecutiveErrors + ' failures)';
+    if (consecutiveErrors <= 3) debugLog('poll: error ' + e.message);
+    maybeSlowPoll();
+  }
+}
+
+function maybeSlowPoll() {
+  // After 10 consecutive failures (~15s), slow to 5s polling
+  // After 60 failures (~5min), stop polling entirely
+  if (consecutiveErrors >= 60 && !terminated) {
+    clearInterval(mainInterval);
+    document.getElementById('footer-status').textContent = 'Server down. Polling stopped.';
+    debugLog('poll: stopped after ' + consecutiveErrors + ' failures');
+  } else if (consecutiveErrors >= 10 && !pollSlowed) {
+    pollSlowed = true;
+    clearInterval(mainInterval);
+    mainInterval = setInterval(function() { poll(); }, 5000);
+    debugLog('poll: slowed to 5s after ' + consecutiveErrors + ' failures');
   }
 }
 
