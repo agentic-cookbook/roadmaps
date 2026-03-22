@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "11"
+version: "12"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v11
+   > implement-roadmap v12
 
 2. Print the worker agent version by running:
    ```bash
@@ -65,12 +65,33 @@ This outputs JSON. Parse it:
 
 - If `"action": "implement"` — continue with 3b.
 - If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
-- If `"action": "done"` — all steps are complete. **Immediately run the completion commands:**
+- If `"action": "done"` — all steps are complete. **Run the completion sequence immediately:**
+
+  **Archive the roadmap:**
+  ```bash
+  # Set Status to Complete in the roadmap file
+  sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' "<roadmap_path>"
+
+  # Move to Completed-Roadmaps
+  mkdir -p .claude/Features/Completed-Roadmaps
+  git mv "<roadmap_path>" ".claude/Features/Completed-Roadmaps/$(basename <roadmap_path>)"
+
+  # Update Feature Definition status
+  sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' ".claude/Features/FeatureDefinitions/<feature_name>-FeatureDefinition.md"
+
+  # Commit
+  git add -A .claude/Features/
+  git commit -m "docs: complete feature <feature_name> — archive roadmap"
+  git push
+  ```
+
+  **Notify dashboard and stop:**
   ```bash
   python3 "$DASH_CLI" complete
   python3 "$DASH_CLI" shutdown
   ```
-  Print: `All steps complete for <feature_name>.`
+
+  Print: `All steps complete for <feature_name>. Roadmap archived.`
   Then **STOP**.
 
 ### 3b: Print Step Info
@@ -117,6 +138,3 @@ Print: `Step <N> complete.`
 
 Then **go back to 3a** to get the next step.
 
-## Note
-
-Step 4 (completion) is handled inline in step 3a when the coordinator returns `"action": "done"`. There is no separate completion step.
