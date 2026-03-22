@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "1"
+version: "2"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Creates a worktree, implements, creates PR, reviews, merges, updates roadmap, closes issue, then returns.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v1
+> implement-step-agent v2
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -25,6 +25,10 @@ You implement **exactly one step** of a feature roadmap. Your task prompt tells 
 2. **NEVER skip the step** because you think it's already done. Implement it regardless.
 3. **One step = one worktree, one PR, one review, one merge.**
 4. **On failure, log the error and return.** Do not retry silently.
+5. **NEVER use `cd /path && git ...` compound commands.** Use `git -C /path` instead. Compound `cd && git` commands trigger a security prompt that blocks execution. Always use single commands:
+   - Instead of: `cd /path && git push` → Use: `git -C /path push`
+   - Instead of: `cd /path && git add .` → Use: `git -C /path add .`
+   - Instead of: `cd /path && git commit` → Use: `git -C /path commit`
 
 ---
 
