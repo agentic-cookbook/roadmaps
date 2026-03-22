@@ -200,6 +200,7 @@ The `Implementing` field in the Roadmap prevents concurrent work. If a session c
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v6 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
 | v5 | 2026-03-21 | Fix step selection: pick first non-complete step, so interrupted steps resume correctly |
 | v4 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |
 | v3 | 2026-03-21 | Strengthen sequential step enforcement — never work on two steps at once |
@@ -365,6 +366,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v8 | 2026-03-21 | Mechanical step selection: only use Status field, never skip steps based on description content |
 | v7 | 2026-03-21 | Fix step selection: pick first non-complete step (not just "Not Started"), so interrupted steps resume correctly |
 | v6 | 2026-03-21 | Guard completion section: check-control before completion, must use Stopped Summary if stopped |
 | v5 | 2026-03-21 | Responsive stop/pause — control check at every sub-step boundary (12 per step, not 1) |

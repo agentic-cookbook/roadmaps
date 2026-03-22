@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "7"
+version: "8"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v7
+> implement-roadmap-agent v8
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -137,7 +137,20 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 **CRITICAL: STRICTLY SEQUENTIAL EXECUTION.** You MUST complete each step fully (PR merged, issue closed, `finish-step` called) before beginning the next one. Never start Step N+1 until Step N is finished. Never run steps in parallel. Never begin implementation of a later step while an earlier step is in progress.
 
-Pick the **lowest-numbered** step whose status is NOT "Complete" and implement it. This includes steps marked "Not Started" or "In Progress" (from a previous interrupted run). Repeat until all steps are complete.
+**STEP SELECTION — MECHANICAL RULE (no judgment, no exceptions):**
+
+1. Read the roadmap file
+2. Find every `### Step N:` header
+3. For each step, read its `- **Status**:` field — this is the ONLY field that determines step selection
+4. Select the step with the **LOWEST number** whose `**Status**:` is NOT `Complete`
+5. Implement THAT step
+
+**DO NOT** skip steps because you think the work was already done outside the roadmap.
+**DO NOT** look at the step description to decide whether it needs work.
+**DO NOT** consider code changes made in other sessions or by other means.
+The `**Status**:` field is the **SOLE source of truth**. If it says `Not Started`, you implement it — period. Even if the description says "fix X" and X appears to already be fixed.
+
+Repeat until all steps are complete.
 
 **If the step's Type is `Manual`**: Skip it — log that step N is a manual step assigned to the developer, update the dashboard if running (`python3 "$DASH_CLI" log "Step N is manual — skipping"`), and continue to the next step. Do not attempt to implement manual steps.
 
