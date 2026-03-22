@@ -515,6 +515,47 @@ remove_renamed_extensions() {
     fi
 }
 
+# --- Verify dash CLI ---
+# The dash CLI inside progress-dashboard/references/ must be executable and
+# match the installed version (symlink or copy).
+
+verify_dash_cli() {
+    local method="$1"
+    local dash_installed="$SKILLS_DIR/progress-dashboard/references/dash"
+    local dash_repo="$SCRIPT_DIR/skills/progress-dashboard/references/dash"
+
+    echo ""
+    echo "--- Verify dash CLI ---"
+
+    if [ ! -f "$dash_repo" ]; then
+        echo "  [skip] No dash CLI in repo"
+        return
+    fi
+
+    if [ ! -f "$dash_installed" ]; then
+        echo "  [error] dash CLI not found at $dash_installed"
+        return
+    fi
+
+    # If copy method, ensure it matches the repo version
+    if [ "$method" = "copy" ]; then
+        if ! diff -q "$dash_repo" "$dash_installed" > /dev/null 2>&1; then
+            cp "$dash_repo" "$dash_installed"
+            echo "  [updated] dash CLI (copy was stale)"
+        else
+            echo "  [ok] dash CLI (copy matches repo)"
+        fi
+    else
+        echo "  [ok] dash CLI (via symlinked skill dir)"
+    fi
+
+    # Ensure executable
+    if [ ! -x "$dash_installed" ]; then
+        chmod +x "$dash_installed"
+        echo "  [fixed] dash CLI now executable"
+    fi
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -540,6 +581,7 @@ main() {
     remove_renamed_extensions
     install_claude_skills "$method"
     install_claude_agents "$method"
+    verify_dash_cli "$method"
     install_openclaw_skills "$method"
     install_openclaw_agents "$method"
 
