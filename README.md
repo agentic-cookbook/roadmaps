@@ -136,6 +136,7 @@ For interactive step-by-step control with checkpoints, use `/implement-roadmap-i
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v8 | 2026-03-22 | Show dashboard URL on startup |
 | v7 | 2026-03-22 | Python coordinator + single-step worker agent — deterministic step selection, no LLM skipping |
 | v6 | 2026-03-22 | Run agent in foreground by default; `-b`/`--background` flag for background mode |
 | v5 | 2026-03-21 | Auto-select when only one roadmap available; print both skill and agent version when launching |
