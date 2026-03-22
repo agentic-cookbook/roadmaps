@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-agent
-version: "11"
+version: "12"
 description: Autonomously implement a planned feature from its Roadmap. Runs all steps without user interaction — worktrees, PRs, reviews, and merges.
 permissionMode: bypassPermissions
 isolation: worktree
@@ -12,7 +12,7 @@ skills:
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-roadmap-agent v11
+> implement-roadmap-agent v12
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -137,24 +137,28 @@ Read `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md` to
 
 **CRITICAL: STRICTLY SEQUENTIAL EXECUTION.** You MUST complete each step fully (PR merged, issue closed, `finish-step` called) before beginning the next one. Never start Step N+1 until Step N is finished. Never run steps in parallel. Never begin implementation of a later step while an earlier step is in progress.
 
-**STEP SELECTION — RUN THE `next-step` SCRIPT (mandatory, no exceptions):**
+**STEP SELECTION — RUN THIS BASH COMMAND (mandatory, no exceptions):**
 
-Before each step, run the `next-step` script that lives alongside this agent:
+Before each step, run this command to find the next step number. It reads the roadmap file with grep — no LLM judgment:
 
 ```bash
-python3 "$HOME/.claude/agents/next-step" ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+grep -n '^\- \*\*Status\*\*:' ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" | grep -iv complete | head -1
 ```
 
-This prints a JSON object like: `{"step": 1, "description": "Fix step ordering display", "status": "Not Started", "issue": "#17", "type": "Auto", "complexity": "M"}`
+This prints a line like: `20:- **Status**: Not Started`
 
-Or if all steps are complete: `{"done": true}`
+The line number tells you which step it belongs to. To find the step number, look at the `### Step N:` header above that line:
 
-**Rules:**
-- If `"done": true`, proceed to the COMPLETION section.
-- Otherwise, implement the step number in the `"step"` field. **This is not optional.** The script reads the `**Status**:` field in the roadmap with regex — no LLM judgment. You implement whatever step number it returns, even if you believe that step is already done.
-- Run this script before EVERY step. Do not cache or remember previous results.
+```bash
+ROADMAP=".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" && LINE=$(grep -n '^\- \*\*Status\*\*:' "$ROADMAP" | grep -iv complete | head -1 | cut -d: -f1) && if [ -z "$LINE" ]; then echo "DONE"; else awk -v line="$LINE" 'NR<=line && /^### Step [0-9]+:/{last=$0} END{print last}' "$ROADMAP"; fi
+```
 
-Repeat until the script returns `{"done": true}`.
+- If output is `DONE`, all steps are complete — proceed to the COMPLETION section.
+- Otherwise it prints the step header like `### Step 1: Fix step ordering display`. Implement THAT step.
+
+**You MUST implement the step this command returns.** It mechanically finds the first non-Complete status in the file. You may not override, skip, or reorder. Run it before EVERY step.
+
+Repeat until the command returns `DONE`.
 
 **If the step's Type is `Manual`**: Skip it — log that step N is a manual step assigned to the developer, update the dashboard if running (`python3 "$DASH_CLI" log "Step N is manual — skipping"`), and continue to the next step. Do not attempt to implement manual steps.
 

@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "8"
+version: "9"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v8
+> implement-roadmap-interactively v9
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -152,17 +152,16 @@ Loop for each step in the Roadmap. **Run a control check before every sub-step**
 
 ### Step 1: Pick Next Step
 
-**Control check.** Then run the `next-step` script to determine which step to implement:
+**Control check.** Then run this command to find the next step. It uses grep — no LLM judgment:
 
 ```bash
-python3 "$HOME/.claude/agents/next-step" ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+ROADMAP=".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" && LINE=$(grep -n '^\- \*\*Status\*\*:' "$ROADMAP" | grep -iv complete | head -1 | cut -d: -f1) && if [ -z "$LINE" ]; then echo "DONE"; else awk -v line="$LINE" 'NR<=line && /^### Step [0-9]+:/{last=$0} END{print last}' "$ROADMAP"; fi
 ```
 
-This prints JSON like: `{"step": 1, "description": "...", "status": "Not Started", "issue": "#17", ...}`
+- If output is `DONE`, all steps are complete — proceed to the Completion phase.
+- Otherwise it prints the step header like `### Step 1: Fix step ordering display`. Implement THAT step.
 
-Or if all steps are complete: `{"done": true}` — proceed to the Completion phase.
-
-**You MUST implement the step number in the `"step"` field.** The script reads the `**Status**:` field with regex — no LLM judgment. Implement whatever step it returns, even if you believe it's already done.
+**You MUST implement the step this command returns.** It finds the first non-Complete status in the file. You may not skip or reorder.
 
 **CRITICAL: Always execute steps strictly in order — complete Step N fully (PR merged, issue closed, `finish-step` called) before beginning Step N+1. Never work on two steps at once.**
 
