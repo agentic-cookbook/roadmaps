@@ -3,7 +3,6 @@ name: implement-roadmap
 version: "11"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python3 *), Bash(ls *), Bash(grep *), Bash(cat *), Bash(mkdir *), Bash(gh *), Bash(git *), Agent
 ---
 
 ## Version Check
