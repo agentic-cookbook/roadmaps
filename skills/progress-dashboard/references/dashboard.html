@@ -312,17 +312,20 @@
     flex-shrink: 0;
   }
 
-  /* --- Events section (resizable) --- */
+  /* --- Events section (resizable, pinned to bottom) --- */
   .events-section {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 80px;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
   }
   .events-toolbar {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    padding: 0.3rem 0;
     flex-shrink: 0;
     cursor: ns-resize;
     user-select: none;
@@ -467,7 +470,7 @@
   <div class="top-bar">
     <header>
       <div class="header-row">
-        <h1 id="title">Loading...<span id="title-status" class="title-status"></span></h1>
+        <h1 id="title">Loading... <span id="title-status" class="title-status"></span></h1>
         <span id="status-badge" class="badge badge-waiting">waiting</span>
       </div>
       <div id="env-info" class="env-info"></div>
@@ -537,7 +540,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">v19</span>
+    <span class="footer-version">v20</span>
   </div>
 
   <span id="measure" class="measure"></span>
@@ -650,9 +653,10 @@ function copyDebugLog() {
 function downloadDebugLog() {
   var blob = new Blob([debugEntries.join('\n')], { type: 'text/plain' });
   var url = URL.createObjectURL(blob);
+  var titleText = document.getElementById('title').firstChild.textContent.trim().replace(/\s+/g, '-');
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'dashboard-debug-' + new Date().toISOString().replace(/[:.]/g, '-') + '.log';
+  a.download = titleText + '-' + new Date().toISOString().replace(/[:.]/g, '-') + '.log';
   a.click();
   URL.revokeObjectURL(url);
   debugLog('Log downloaded');
@@ -715,22 +719,44 @@ function buildStepEl(step, index, isPaused) {
     el('div', { className: 'step-title', textContent: 'Step ' + (index + 1) + ': ' + (step.name || '') })
   ];
 
-  // In debug mode, show the raw status value
-  if (debugEnabled) {
-    bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
+  // Always show issue link (from step data)
+  if (step.issue_number) {
+    var issueText = 'Issue #' + step.issue_number;
+    if (step.issue_title) issueText += ': ' + step.issue_title;
+    var issueLink = el('a', { href: step.issue_url || '#', textContent: issueText });
+    bodyChildren.push(el('div', { className: 'step-detail' }, [issueLink]));
+  }
+
+  // Always show PR link if present
+  if (step.pr_number) {
+    var prText = 'PR #' + step.pr_number;
+    if (step.pr_title) prText += ': ' + step.pr_title;
+    var prLink = el('a', { href: step.pr_url || '#', textContent: prText });
+    bodyChildren.push(el('div', { className: 'step-detail' }, [prLink]));
   }
 
   if (step.detail) {
     bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
   }
 
+  // Additional links (not issue/PR which are shown above)
   if (step.links && step.links.length > 0) {
-    var linksDiv = el('div', { className: 'step-detail' });
-    step.links.forEach(function(link, li) {
-      if (li > 0) linksDiv.appendChild(document.createTextNode(' \u00B7 '));
-      linksDiv.appendChild(el('a', { href: link.url, textContent: link.label }));
+    var extraLinks = step.links.filter(function(l) {
+      return l.label.indexOf('Issue #') !== 0 && l.label.indexOf('PR #') !== 0;
     });
-    bodyChildren.push(linksDiv);
+    if (extraLinks.length > 0) {
+      var linksDiv = el('div', { className: 'step-detail' });
+      extraLinks.forEach(function(link, li) {
+        if (li > 0) linksDiv.appendChild(document.createTextNode(' \u00B7 '));
+        linksDiv.appendChild(el('a', { href: link.url, textContent: link.label }));
+      });
+      bodyChildren.push(linksDiv);
+    }
+  }
+
+  // Debug info at end of step
+  if (debugEnabled) {
+    bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
   }
 
   var stepChildren = [iconEl, el('div', { className: 'step-body' }, bodyChildren)];
@@ -871,7 +897,14 @@ function renderTickets(container, items, type) {
 // --- Main render ---
 function render(data) {
   var displayTitle = (data.title || data.feature || 'Progress') + ' Roadmap';
-  document.getElementById('title').textContent = displayTitle;
+  // Set title text without wiping the title-status span
+  var titleEl = document.getElementById('title');
+  var titleTextNode = titleEl.firstChild;
+  if (titleTextNode && titleTextNode.nodeType === 3) {
+    titleTextNode.textContent = displayTitle;
+  } else {
+    titleEl.insertBefore(document.createTextNode(displayTitle), titleEl.firstChild);
+  }
   document.title = displayTitle;
 
   if (data.environment) renderEnv(data.environment);

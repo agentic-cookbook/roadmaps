@@ -159,7 +159,39 @@ dash step-link 2 "Issue #51" "https://github.com/example/widget-system/issues/51
 dash step-complete 2
 echo "[step 2] Done"
 echo ""
-pause 3
+pause 2
+
+# --- PAUSE/RESUME demo ---
+echo "[control] Simulating pause..."
+dash event "Pause received by agent"
+python3 "$DASH_CLI" check-control > /dev/null  # clear any stale control
+# Write pause control directly to simulate user clicking Pause
+DASH_DIR_PATH=$(python3 "$DASH_CLI" dir)
+echo '{"action":"pause","time":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$DASH_DIR_PATH/control.json"
+# Update progress.json with pause state
+python3 -c "
+import json, pathlib
+p = pathlib.Path('$DASH_DIR_PATH/progress.json')
+d = json.loads(p.read_text())
+d['control_state'] = 'pause'
+p.write_text(json.dumps(d, indent=2))
+"
+echo "[control] Paused for 5 seconds..."
+pause 5
+
+echo "[control] Resuming..."
+python3 -c "
+import json, pathlib
+p = pathlib.Path('$DASH_DIR_PATH/progress.json')
+d = json.loads(p.read_text())
+d.pop('control_state', None)
+p.write_text(json.dumps(d, indent=2))
+"
+rm -f "$DASH_DIR_PATH/control.json"
+dash event "Resume received by agent"
+echo "[control] Resumed"
+echo ""
+pause 2
 
 # --- STEP 3 ---
 echo "[step 3] Starting: API endpoints and integration tests"

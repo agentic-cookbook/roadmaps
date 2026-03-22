@@ -725,7 +725,11 @@ def cmd_load_roadmap(args):
             "completed_at": now_iso() if status == "complete" else None,
             "updated_at": now_iso() if status != "not_started" else None,
             "issue_number": None,
+            "issue_url": None,
+            "issue_title": None,
             "pr_number": None,
+            "pr_url": None,
+            "pr_title": None,
         }
 
         # Parse issue
@@ -734,6 +738,8 @@ def cmd_load_roadmap(args):
         if issue_num:
             step["issue_number"] = issue_num
             issue_url = f"{repo_url}/issues/{issue_num}" if repo_url else None
+            step["issue_url"] = issue_url
+            step["issue_title"] = f"Step {step_num}: {step_desc}"
             step["links"].append({"label": f"Issue #{issue_num}", "url": issue_url})
             issue_status = "closed" if status == "complete" else (
                 "in_progress" if status == "in_progress" else "open"
@@ -751,11 +757,13 @@ def cmd_load_roadmap(args):
             pr_num = extract_number(pr_ref, "pull")
             if pr_num:
                 step["pr_number"] = pr_num
+                step["pr_title"] = f"Step {step_num}: {step_desc}"
                 pr_url = f"{repo_url}/pull/{pr_num}" if repo_url else None
                 # Try to extract URL from the field if it's a full URL
                 url_match = re.search(r"(https?://\S+)", pr_ref)
                 if url_match:
                     pr_url = url_match.group(1)
+                step["pr_url"] = pr_url
                 pr_status = "merged" if status == "complete" else "open"
                 step["links"].append({"label": f"PR #{pr_num}", "url": pr_url})
                 prs.append({
@@ -831,8 +839,10 @@ def cmd_pr_created(args):
     pr_url = args[2]
     step, _ = get_step(data, step_num)
 
-    # Store PR number on step
+    # Store PR info on step
     step["pr_number"] = pr_number
+    step["pr_url"] = pr_url
+    step["pr_title"] = f"Step {step_num}: {step['name']}"
     step["updated_at"] = now_iso()
 
     # Add link to step (avoid duplicates)
