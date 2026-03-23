@@ -164,6 +164,10 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .archive-btn:hover { border-color: var(--accent); color: var(--text); }
+  .card-pr-link {
+    font-size: 0.75rem; color: var(--accent); text-decoration: none;
+  }
+  .card-pr-link:hover { text-decoration: underline; }
   .empty { color: var(--text-muted); text-align: center; padding: 3rem; }
 
   /* --- Footer pinned to bottom --- */
@@ -543,6 +547,16 @@ function renderRoadmaps(roadmaps) {
         title: 'Archive this roadmap',
         onclick: function(ev) { archiveRoadmap(r.id, ev); }
       }, 'Archive'));
+    }
+
+    if (r.prs && r.prs.length > 0) {
+      var pr = r.prs[0];
+      var prLink = el('a', {
+        href: pr.url || '#',
+        className: 'card-pr-link',
+        onclick: function(ev) { ev.stopPropagation(); }
+      }, 'PR #' + pr.number);
+      footerRightItems.push(prLink);
     }
 
     var footerRight = el('div', { className: 'footer-right' }, footerRightItems);
