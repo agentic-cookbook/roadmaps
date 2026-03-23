@@ -171,7 +171,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v14</span>
+  <span>Dashboard Service v15</span>
 </div>
 
 <script>
@@ -444,16 +444,8 @@ function renderRoadmaps(roadmaps) {
 
 async function loadRoadmaps() {
   try {
-    var resp = await fetch(API + '/roadmaps');
-    var roadmaps = await resp.json();
-    var details = await Promise.all(roadmaps.map(async function(r) {
-      try {
-        var detail = await fetch(API + '/roadmaps/' + encodeURIComponent(r.id));
-        if (!detail.ok) return r;
-        return await detail.json();
-      } catch (e) { return r; }
-    }));
-    allRoadmaps = details;
+    var resp = await fetch(API + '/roadmaps?detail=true');
+    allRoadmaps = await resp.json();
     renderRoadmaps(allRoadmaps);
   } catch (e) {
     document.getElementById('subtitle').textContent = 'Failed to load roadmaps';

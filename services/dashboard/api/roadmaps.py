@@ -13,7 +13,15 @@ def list_roadmaps():
     archived = request.args.get("archived")
     if archived is not None:
         archived = archived.lower() in ("1", "true", "yes")
-    return jsonify(models.list_roadmaps(g.db, state=state, status=status, archived=archived))
+    detail = request.args.get("detail", "").lower() in ("1", "true", "yes")
+    roadmaps = models.list_roadmaps(g.db, state=state, status=status, archived=archived)
+    if detail:
+        for r in roadmaps:
+            r["steps"] = models.list_steps(g.db, r["id"])
+            r["issues"] = models.list_issues(g.db, r["id"])
+            r["prs"] = models.list_prs(g.db, r["id"])
+            r["events"] = models.list_runtime_events(g.db, r["id"])
+    return jsonify(roadmaps)
 
 
 @api.route("/roadmaps", methods=["POST"])
