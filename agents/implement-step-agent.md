@@ -79,7 +79,11 @@ Run the test suite from the Feature Definition's verification strategy:
 In the roadmap file:
 - Mark this step's `**Status**:` as `Complete`
 - Update the progress table
-- Commit and push
+- Commit (do not push — the coordinator pushes the branch at the end):
+  ```bash
+  git -C <worktree_path> add <roadmap_file>
+  git -C <worktree_path> commit -m "docs: mark step <N> complete (#<issue>)"
+  ```
 
 ### 6. Comment on Issue
 
