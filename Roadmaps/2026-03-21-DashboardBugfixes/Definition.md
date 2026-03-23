@@ -1,10 +1,17 @@
+---
+id: ec8698e3-93b6-4a92-ab66-3125a09147d3
+created: 2026-03-21
+modified: 2026-03-23
+author: Mike Fullerton <mike@mikefullerton.com>
+change-history:
+  - date: 2026-03-23
+    author: Mike Fullerton <mike@mikefullerton.com>
+    summary: Migrated to per-directory File Record structure
+---
+
 # Feature Definition: DashboardBugfixes
 
-**Created**: 2026-03-21
-**ID**: ec8698e3-93b6-4a92-ab66-3125a09147d3
-**Author**: Mike Fullerton <mike@mikefullerton.com>
 **Status**: In Progress
-**Completion Date**: _TBD_
 
 ## Goal and Purpose
 
