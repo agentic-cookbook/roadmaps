@@ -5,7 +5,7 @@ Uses only stdlib (urllib) — no third-party dependencies.
 Configuration (in priority order):
     1. DASHBOARD_URL environment variable
     2. ~/.claude/dashboard.conf (INI-style: url = http://...)
-    3. Default: http://localhost:5111
+    3. Default: http://localhost:8888
 
 Usage:
     from dashboard_client import DashboardClient
@@ -52,7 +52,7 @@ def _default_url():
                 return line.split("=", 1)[1].strip().rstrip("/")
 
     # 3. Default
-    return "http://localhost:5111"
+    return "http://localhost:8888"
 
 
 class DashboardClient:

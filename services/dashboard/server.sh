@@ -6,7 +6,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PID_FILE="${HOME}/.claude/dashboard.pid"
-PORT="${DASHBOARD_PORT:-5111}"
+PORT="${DASHBOARD_PORT:-8888}"
 LOG_FILE="${HOME}/.claude/dashboard.log"
 
 # Parse --port argument

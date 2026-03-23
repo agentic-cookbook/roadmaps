@@ -8,7 +8,7 @@ from flask import Flask, g, jsonify, send_from_directory
 from . import db
 from .api import init_app
 
-DEFAULT_PORT = 5111
+DEFAULT_PORT = 8888
 
 
 def create_app():
