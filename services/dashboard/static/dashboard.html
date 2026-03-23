@@ -201,6 +201,8 @@
   .controls button.btn-resume:hover { background: rgba(63,185,80,0.1); }
   .controls button.btn-stop { border-color: var(--red); color: var(--red); }
   .controls button.btn-stop:hover { background: rgba(248,81,73,0.1); }
+  .controls button.btn-archive { border-color: var(--text-muted); color: var(--text-muted); }
+  .controls button.btn-archive:hover { background: rgba(139,148,158,0.1); }
   .control-status {
     font-size: 0.7rem;
     color: var(--yellow);
@@ -579,6 +581,7 @@
           <button id="btn-pause" class="btn-pause" onclick="sendControl('pause')">Pause</button>
           <button id="btn-resume" class="btn-resume" onclick="sendControl('resume')" style="display:none">Resume</button>
           <button id="btn-stop" class="btn-stop" onclick="sendControl('stop')">Stop</button>
+          <button id="btn-archive" class="btn-archive" onclick="archiveRoadmap()" style="display:none">Archive</button>
         </div>
       </div>
     </div>
@@ -627,7 +630,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v6</span>
+    <span class="footer-version">Dashboard Service v7</span>
   </div>
 </div><!-- /main-wrap -->
 
@@ -1193,6 +1196,15 @@ function addLocalEvent(message, colorClass) {
 }
 
 // --- Control buttons -> API POST ---
+async function archiveRoadmap() {
+  try {
+    await fetch(API + '/roadmaps/' + roadmapId + '/archive', { method: 'POST' });
+    loadData();
+  } catch (e) {
+    debugLog('archiveRoadmap ERROR: ' + e.message);
+  }
+}
+
 async function sendControl(action) {
   debugLog('sendControl: ' + action);
   try {
@@ -1229,12 +1241,27 @@ function updateControlButtons() {
   var controlStatus = document.getElementById('control-status');
   var controlsDiv = document.getElementById('controls');
 
-  // Hide all controls when complete or idle
-  if (lastData && (lastData.state === 'Complete' || lastData.status === 'complete' ||
-      (lastData.status === 'idle' && lastData.state !== 'Ready' && lastData.state !== 'Implementing'))) {
-    controlsDiv.style.display = 'none';
+  var btnArchive = document.getElementById('btn-archive');
+  var isComplete = lastData && (lastData.state === 'Complete' || lastData.status === 'complete');
+  var isIdle = lastData && lastData.status === 'idle' && lastData.state !== 'Ready' && lastData.state !== 'Implementing';
+  var isArchived = lastData && (lastData.archived === 1 || lastData.archived === true);
+
+  // Show Archive button for complete non-archived roadmaps, hide run controls
+  if (isComplete || isIdle) {
+    btnPause.style.display = 'none';
+    btnResume.style.display = 'none';
+    btnStop.style.display = 'none';
+    controlStatus.textContent = '';
+    if (isComplete && !isArchived) {
+      btnArchive.style.display = '';
+      controlsDiv.style.display = '';
+    } else {
+      btnArchive.style.display = 'none';
+      controlsDiv.style.display = 'none';
+    }
     return;
   }
+  btnArchive.style.display = 'none';
   controlsDiv.style.display = '';
 
   if (currentControl === 'pause') {
