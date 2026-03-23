@@ -114,15 +114,28 @@ def _read_service_id(dash_dir):
 def _get_active_roadmap_id():
     """Get the service roadmap ID for the current feature.
 
-    Reads from the per-feature dash directory's service-id file.
-    Each feature has its own dash_dir, so concurrent sessions
-    don't interfere with each other.
+    Resolution order:
+    1. DASH_FEATURE env var — explicit feature name, derives dash_dir from it.
+       This is the primary mechanism for concurrent sessions.
+    2. File-based state (progress-dashboard-active) — fallback for single sessions.
     """
-    dash_dir = get_dash_dir()
-    rid = _read_service_id(dash_dir)
-    if rid:
-        return rid
-    print("ERROR: No service roadmap ID. Run 'dash load-roadmap' first.", file=sys.stderr)
+    # 1. Explicit feature name from environment (set by the calling skill)
+    feature = os.environ.get("DASH_FEATURE")
+    if feature:
+        dash_dir = dash_dir_for(feature)
+        rid = _read_service_id(dash_dir)
+        if rid:
+            return rid
+
+    # 2. Fallback to global active pointer
+    state = load_state()
+    if state:
+        dash_dir = Path(state["dash_dir"])
+        rid = _read_service_id(dash_dir)
+        if rid:
+            return rid
+
+    print("ERROR: No service roadmap ID. Set DASH_FEATURE or run 'dash init' + 'dash load-roadmap'.", file=sys.stderr)
     sys.exit(1)
 
 

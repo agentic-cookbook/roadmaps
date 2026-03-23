@@ -126,9 +126,12 @@ Wait for the user to choose.
 If `DASH_CLI` was found in Step 0, initialize and load the roadmap:
 
 ```bash
+export DASH_FEATURE="<FeatureName>"
 python3 "$DASH_CLI" init "<FeatureName>"
 python3 "$DASH_CLI" load-roadmap "Roadmaps/<YYYY-MM-DD-FeatureName>/Roadmap.md"
 ```
+
+**IMPORTANT**: Always set `export DASH_FEATURE="<FeatureName>"` before ANY `dash` command. This ensures concurrent sessions don't interfere with each other.
 
 The `init` command opens the browser immediately. The `load-roadmap` command reads the roadmap markdown file and automatically populates all step names, GitHub issues, PRs, and completion status. You do NOT manually add steps, issues, or PRs — `load-roadmap` does it all.
 

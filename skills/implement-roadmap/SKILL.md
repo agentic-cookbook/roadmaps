@@ -46,8 +46,11 @@ This outputs JSON. Parse it:
 
 ```bash
 DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash"
+export DASH_FEATURE="<feature_name>"
 test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<feature_name>" && python3 "$DASH_CLI" load-roadmap "<roadmap_path>" || echo "Dashboard not available"
 ```
+
+**IMPORTANT**: Always set `export DASH_FEATURE="<feature_name>"` before ANY `dash` command. This ensures concurrent sessions don't interfere with each other. The `DASH_FEATURE` must be set in the shell so all subsequent `python3 "$DASH_CLI" ...` calls inherit it.
 
 ## Step 3: Implementation Loop
 
