@@ -376,13 +376,16 @@ function renderRoadmaps(roadmaps) {
     var statusClass = isRunning ? 'running' : isComplete ? 'card-complete' : r.status === 'error' ? 'error' : '';
     var cardClass = 'roadmap-card ' + statusClass + (isArchived ? ' archived-card' : '');
 
-    // Badge: show state, and only show status if it adds info beyond state
-    var stateClass = r.state === 'Ready' ? 'ready' : isComplete ? 'badge-complete' : '';
-    var badges = [el('span', { className: 'badge ' + stateClass }, r.state)];
-    // Only show status badge if it's different from what state implies
-    var statusImplied = isComplete ? 'complete' : 'idle';
-    if (r.status !== 'idle' && r.status !== statusImplied) {
-      badges.push(el('span', { className: 'badge ' + r.status }, r.status));
+    // Single badge: show the most useful status info
+    var badges = [];
+    if (isRunning) {
+      badges.push(el('span', { className: 'badge running' }, 'Running'));
+    } else if (r.status === 'error') {
+      badges.push(el('span', { className: 'badge error' }, 'Error'));
+    } else if (isComplete) {
+      badges.push(el('span', { className: 'badge badge-complete' }, 'Complete'));
+    } else {
+      badges.push(el('span', { className: 'badge ready' }, r.state));
     }
 
     var metaItems = [];
