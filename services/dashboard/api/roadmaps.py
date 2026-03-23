@@ -10,7 +10,10 @@ from .. import models
 def list_roadmaps():
     state = request.args.get("state")
     status = request.args.get("status")
-    return jsonify(models.list_roadmaps(g.db, state=state, status=status))
+    archived = request.args.get("archived")
+    if archived is not None:
+        archived = archived.lower() in ("1", "true", "yes")
+    return jsonify(models.list_roadmaps(g.db, state=state, status=status, archived=archived))
 
 
 @api.route("/roadmaps", methods=["POST"])
@@ -72,4 +75,20 @@ def shutdown_roadmap(roadmap_id):
     models.update_roadmap(g.db, roadmap_id, {"status": "idle"})
     from .sse import broadcast
     broadcast("roadmap_updated", {"roadmap_id": roadmap_id, "status": "idle"})
+    return jsonify({"ok": True})
+
+
+@api.route("/roadmaps/<roadmap_id>/archive", methods=["POST"])
+def archive_roadmap(roadmap_id):
+    models.update_roadmap(g.db, roadmap_id, {"archived": 1})
+    from .sse import broadcast
+    broadcast("roadmap_updated", {"roadmap_id": roadmap_id, "archived": 1})
+    return jsonify({"ok": True})
+
+
+@api.route("/roadmaps/<roadmap_id>/unarchive", methods=["POST"])
+def unarchive_roadmap(roadmap_id):
+    models.update_roadmap(g.db, roadmap_id, {"archived": 0})
+    from .sse import broadcast
+    broadcast("roadmap_updated", {"roadmap_id": roadmap_id, "archived": 0})
     return jsonify({"ok": True})

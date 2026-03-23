@@ -30,6 +30,7 @@ class TestInitDb:
             "state_transitions",
             "step_links",
             "steps",
+            "ui_preferences",
         ])
         assert table_names == expected
 
@@ -48,10 +49,10 @@ class TestInitDb:
 # ---------------------------------------------------------------------------
 
 class TestSchemaVersion:
-    def test_version_is_one(self, db_conn):
+    def test_version_is_current(self, db_conn):
         row = db_conn.execute("SELECT version FROM schema_version LIMIT 1").fetchone()
         assert row is not None
-        assert row["version"] == 1
+        assert row["version"] == db.SCHEMA_VERSION
 
 
 # ---------------------------------------------------------------------------

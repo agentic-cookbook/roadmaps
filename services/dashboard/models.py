@@ -18,7 +18,7 @@ def _uuid():
 # Roadmaps
 # ---------------------------------------------------------------------------
 
-def list_roadmaps(conn, state=None, status=None):
+def list_roadmaps(conn, state=None, status=None, archived=None):
     sql = "SELECT * FROM roadmaps WHERE 1=1"
     params = []
     if state:
@@ -27,7 +27,10 @@ def list_roadmaps(conn, state=None, status=None):
     if status:
         sql += " AND status = ?"
         params.append(status)
-    sql += " ORDER BY modified DESC"
+    if archived is not None:
+        sql += " AND archived = ?"
+        params.append(1 if archived else 0)
+    sql += " ORDER BY roadmap_number DESC"
     return [db.dict_from_row(r) for r in conn.execute(sql, params).fetchall()]
 
 
@@ -46,13 +49,14 @@ def get_roadmap(conn, roadmap_id):
 def create_roadmap(conn, data):
     rid = data.get("id") or _uuid()
     now = _now()
+    roadmap_number = data.get("roadmap_number") or db.next_roadmap_number(conn)
     conn.execute(
-        """INSERT INTO roadmaps (id, name, created, modified, author, state, status,
-           definition_id, repo, repo_url, branch, machine, worktree)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (rid, data["name"], data.get("created", now), now,
+        """INSERT INTO roadmaps (id, roadmap_number, name, created, modified, author, state, status,
+           archived, definition_id, repo, repo_url, branch, machine, worktree)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (rid, roadmap_number, data["name"], data.get("created", now), now,
          data.get("author"), data.get("state", "Created"), data.get("status", "idle"),
-         data.get("definition_id"), data.get("repo"), data.get("repo_url"),
+         0, data.get("definition_id"), data.get("repo"), data.get("repo_url"),
          data.get("branch"), data.get("machine"), data.get("worktree")),
     )
     conn.commit()
@@ -62,7 +66,7 @@ def create_roadmap(conn, data):
 def update_roadmap(conn, roadmap_id, data):
     fields = []
     params = []
-    allowed = ["name", "author", "state", "status", "definition_id",
+    allowed = ["name", "author", "state", "status", "archived", "definition_id",
                "repo", "repo_url", "branch", "machine", "worktree"]
     for key in allowed:
         if key in data:
@@ -419,3 +423,26 @@ def sync_roadmap(conn, roadmap_id, data):
             )
 
     conn.commit()
+
+
+# ---------------------------------------------------------------------------
+# UI Preferences
+# ---------------------------------------------------------------------------
+
+def get_preference(conn, key, default=None):
+    row = conn.execute("SELECT value FROM ui_preferences WHERE key = ?", (key,)).fetchone()
+    return row[0] if row else default
+
+
+def set_preference(conn, key, value):
+    conn.execute(
+        """INSERT INTO ui_preferences (key, value) VALUES (?, ?)
+           ON CONFLICT(key) DO UPDATE SET value = ?""",
+        (key, value, value),
+    )
+    conn.commit()
+
+
+def get_all_preferences(conn):
+    rows = conn.execute("SELECT key, value FROM ui_preferences").fetchall()
+    return {r[0]: r[1] for r in rows}

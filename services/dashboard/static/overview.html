@@ -24,27 +24,61 @@
     padding: 2rem;
   }
   h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-  .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .subtitle-row {
+    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;
+  }
+  .subtitle { color: var(--text-muted); font-size: 0.85rem; }
+  .refresh-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    width: 26px; height: 26px; border-radius: 6px; cursor: pointer;
+    font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
   .filters {
-    display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
   }
-  .filter-btn {
-    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
-    padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+  .filter-checkbox {
+    display: flex; align-items: center; gap: 0.35rem; cursor: pointer;
+    font-size: 0.8rem; color: var(--text-muted); user-select: none;
   }
-  .filter-btn.active { color: var(--accent); border-color: var(--accent); }
+  .filter-checkbox input { display: none; }
+  .filter-checkbox .check-box {
+    width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+  }
+  .filter-checkbox .check-mark {
+    display: none; color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 1;
+  }
+  .filter-checkbox input:checked ~ .check-box {
+    border-color: var(--accent); background: var(--accent);
+  }
+  .filter-checkbox input:checked ~ .check-box .check-mark { display: block; }
+  .filter-checkbox:hover .check-box { border-color: var(--accent); }
+  .filter-checkbox.running-cb input:checked ~ .check-box { background: var(--yellow); border-color: var(--yellow); }
+  .filter-checkbox.running-cb:hover .check-box { border-color: var(--yellow); }
+  .filter-checkbox.active-cb input:checked ~ .check-box { background: var(--accent); border-color: var(--accent); }
+  .filter-checkbox.active-cb:hover .check-box { border-color: var(--accent); }
+  .filter-checkbox.complete-cb input:checked ~ .check-box { background: var(--green); border-color: var(--green); }
+  .filter-checkbox.complete-cb:hover .check-box { border-color: var(--green); }
+  .filter-checkbox.archived-cb input:checked ~ .check-box { background: var(--text-muted); border-color: var(--text-muted); }
+  .filter-checkbox.archived-cb:hover .check-box { border-color: var(--text-muted); }
   .roadmap-list { display: flex; flex-direction: column; gap: 0.75rem; }
   .roadmap-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
     padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s;
+    position: relative;
   }
   .roadmap-card:hover { border-color: var(--accent); }
   .roadmap-card.running { border-left: 3px solid var(--yellow); }
   .roadmap-card.complete { border-left: 3px solid var(--green); }
   .roadmap-card.error { border-left: 3px solid var(--red); }
+  .roadmap-card.archived-card { opacity: 0.6; }
   .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
   .card-name { font-weight: 600; font-size: 1rem; }
-  .card-badges { display: flex; gap: 0.4rem; }
+  .card-number { color: var(--text-muted); font-weight: 500; font-size: 0.9rem; margin-right: 0.4rem; }
+  .card-badges { display: flex; gap: 0.4rem; align-items: center; }
   .badge {
     font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px;
     background: var(--border); color: var(--text-muted);
@@ -54,6 +88,9 @@
   .badge.error { background: rgba(248,81,73,0.2); color: var(--red); }
   .badge.ready { background: rgba(88,166,255,0.2); color: var(--accent); }
   .card-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .running-clock {
+    font-size: 0.75rem; color: var(--yellow); font-variant-numeric: tabular-nums;
+  }
   .progress-bar-bg {
     height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
   }
@@ -61,7 +98,17 @@
     height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s;
   }
   .progress-bar-fill.complete-fill { background: var(--green); }
-  .progress-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+  .card-footer-row {
+    display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;
+  }
+  .progress-text { font-size: 0.75rem; color: var(--text-muted); }
+  .archive-btn {
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px;
+    opacity: 0; transition: opacity 0.15s, color 0.15s;
+  }
+  .roadmap-card:hover .archive-btn { opacity: 1; }
+  .archive-btn:hover { color: var(--text); }
   .empty { color: var(--text-muted); text-align: center; padding: 3rem; }
   .footer {
     margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
@@ -75,40 +122,43 @@
 <body>
 
 <h1>Roadmap Dashboard</h1>
-<div class="subtitle" id="subtitle">Loading...</div>
-
-<div class="filters">
-  <button class="filter-btn active" data-filter="all">All</button>
-  <button class="filter-btn" data-filter="running">Running</button>
-  <button class="filter-btn" data-filter="active">Active</button>
-  <button class="filter-btn" data-filter="complete">Complete</button>
+<div class="subtitle-row">
+  <span class="subtitle" id="subtitle">Loading...</span>
+  <button class="refresh-btn" id="refresh-btn" title="Refresh"></button>
 </div>
+
+<div class="filters" id="filters"></div>
 
 <div class="roadmap-list" id="roadmap-list"></div>
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service</span>
+  <span>Dashboard Service v1</span>
 </div>
 
 <script>
-const API = '/api/v1';
-let allRoadmaps = [];
-let currentFilter = 'all';
+var API = '/api/v1';
+var allRoadmaps = [];
+var activeFilters = { running: true, active: true, complete: true, archived: false };
+var clockIntervals = [];
 
 // --- Safe DOM helpers ---
 
 function el(tag, attrs, children) {
-  const e = document.createElement(tag);
-  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+  var e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(function(pair) {
+    var k = pair[0], v = pair[1];
     if (k === 'className') e.className = v;
     else if (k === 'onclick') e.onclick = v;
+    else if (k === 'type') e.setAttribute('type', v);
+    else if (k === 'checked') { if (v) e.checked = true; }
+    else if (k === 'title') e.title = v;
     else if (k.startsWith('data')) e.setAttribute(k.replace(/([A-Z])/g, '-$1').toLowerCase(), v);
     else e.setAttribute(k, v);
   });
-  if (children) {
+  if (children !== undefined && children !== null) {
     if (typeof children === 'string') e.textContent = children;
-    else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(c); });
+    else if (Array.isArray(children)) children.forEach(function(c) { if (c) e.appendChild(c); });
     else e.appendChild(children);
   }
   return e;
@@ -116,19 +166,133 @@ function el(tag, attrs, children) {
 
 function text(s) { return document.createTextNode(s || ''); }
 
+// --- Filter checkboxes ---
+
+function buildFilters() {
+  var container = document.getElementById('filters');
+  container.replaceChildren();
+  var defs = [
+    { key: 'running', label: 'Running', cls: 'running-cb' },
+    { key: 'active', label: 'Active', cls: 'active-cb' },
+    { key: 'complete', label: 'Complete', cls: 'complete-cb' },
+    { key: 'archived', label: 'Archived', cls: 'archived-cb' }
+  ];
+  defs.forEach(function(d) {
+    var input = el('input', { type: 'checkbox', checked: activeFilters[d.key] });
+    var checkMark = el('span', { className: 'check-mark' }, '\u2713');
+    var checkBox = el('span', { className: 'check-box' }, [checkMark]);
+    var labelText = text(' ' + d.label);
+    var label = el('label', { className: 'filter-checkbox ' + d.cls }, [input, checkBox, labelText]);
+    label.addEventListener('click', function(ev) {
+      ev.preventDefault();
+      input.checked = !input.checked;
+      activeFilters[d.key] = input.checked;
+      renderRoadmaps(allRoadmaps);
+      savePreferences();
+    });
+    container.appendChild(label);
+  });
+}
+
+// --- Preferences ---
+
+function filtersToString() {
+  return Object.keys(activeFilters).filter(function(k) { return activeFilters[k]; }).join(',');
+}
+
+function stringToFilters(s) {
+  var obj = { running: false, active: false, complete: false, archived: false };
+  if (s) {
+    s.split(',').forEach(function(k) {
+      var key = k.trim();
+      if (key in obj) obj[key] = true;
+    });
+  }
+  return obj;
+}
+
+function savePreferences() {
+  fetch(API + '/preferences', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ overview_filters: filtersToString() })
+  }).catch(function() {});
+}
+
+async function loadPreferences() {
+  try {
+    var resp = await fetch(API + '/preferences');
+    var prefs = await resp.json();
+    if (prefs.overview_filters) {
+      activeFilters = stringToFilters(prefs.overview_filters);
+    }
+  } catch (e) {
+    // use defaults
+  }
+}
+
+// --- Running clock ---
+
+function clearClocks() {
+  clockIntervals.forEach(function(id) { clearInterval(id); });
+  clockIntervals = [];
+}
+
+function formatElapsed(ms) {
+  var totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  var hours = Math.floor(totalSeconds / 3600);
+  var minutes = Math.floor((totalSeconds % 3600) / 60);
+  var seconds = totalSeconds % 60;
+  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+  if (hours > 0) {
+    return pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+  }
+  return pad(minutes) + ':' + pad(seconds);
+}
+
+function startClock(elem, createdStr) {
+  var created = new Date(createdStr).getTime();
+  function tick() {
+    var now = Date.now();
+    elem.textContent = formatElapsed(now - created);
+  }
+  tick();
+  var id = setInterval(tick, 1000);
+  clockIntervals.push(id);
+}
+
+// --- Filter logic ---
+
+function matchesFilter(r) {
+  var isRunning = r.status === 'running';
+  var isArchived = r.archived === 1 || r.archived === true;
+  var isComplete = r.state === 'Complete' && !isArchived;
+  var isActive = r.state !== 'Complete' && !isArchived;
+
+  if (activeFilters.running && isRunning) return true;
+  if (activeFilters.active && isActive) return true;
+  if (activeFilters.complete && isComplete) return true;
+  if (activeFilters.archived && isArchived) return true;
+  return false;
+}
+
+// --- Archive ---
+
+function archiveRoadmap(id, ev) {
+  ev.stopPropagation();
+  fetch(API + '/roadmaps/' + id + '/archive', { method: 'POST' })
+    .then(function() { loadRoadmaps(); })
+    .catch(function() {});
+}
+
 // --- Rendering ---
 
 function renderRoadmaps(roadmaps) {
-  const list = document.getElementById('roadmap-list');
-  const filtered = roadmaps.filter(r => {
-    if (currentFilter === 'all') return true;
-    if (currentFilter === 'running') return r.status === 'running';
-    if (currentFilter === 'active') return !['Complete'].includes(r.state);
-    if (currentFilter === 'complete') return r.state === 'Complete';
-    return true;
-  });
+  clearClocks();
+  var list = document.getElementById('roadmap-list');
+  var filtered = roadmaps.filter(matchesFilter);
 
-  filtered.sort((a, b) => {
+  filtered.sort(function(a, b) {
     if (a.status === 'running' && b.status !== 'running') return -1;
     if (b.status === 'running' && a.status !== 'running') return 1;
     return (b.modified || '').localeCompare(a.modified || '');
@@ -137,54 +301,79 @@ function renderRoadmaps(roadmaps) {
   list.replaceChildren();
 
   if (filtered.length === 0) {
-    list.appendChild(el('div', {className: 'empty'}, 'No roadmaps match the current filter.'));
+    list.appendChild(el('div', { className: 'empty' }, 'No roadmaps match the current filter.'));
     return;
   }
 
-  filtered.forEach(r => {
-    const steps = r.steps || [];
-    const total = steps.length;
-    const complete = steps.filter(s => s.status === 'complete').length;
-    const pct = total > 0 ? Math.round(complete / total * 100) : 0;
-    const statusClass = r.status === 'running' ? 'running' : r.state === 'Complete' ? 'complete' : r.status === 'error' ? 'error' : '';
-    const fillClass = pct === 100 ? 'complete-fill' : '';
+  filtered.forEach(function(r) {
+    var steps = r.steps || [];
+    var total = steps.length;
+    var complete = steps.filter(function(s) { return s.status === 'complete'; }).length;
+    var pct = total > 0 ? Math.round(complete / total * 100) : 0;
+    var isArchived = r.archived === 1 || r.archived === true;
+    var statusClass = r.status === 'running' ? 'running' : r.state === 'Complete' ? 'complete' : r.status === 'error' ? 'error' : '';
+    var cardClass = 'roadmap-card ' + statusClass + (isArchived ? ' archived-card' : '');
+    var fillClass = pct === 100 ? 'complete-fill' : '';
 
-    const stateClass = r.state === 'Ready' ? 'ready' : r.state === 'Complete' ? 'complete' : '';
-    const badges = [el('span', {className: `badge ${stateClass}`}, r.state)];
+    var stateClass = r.state === 'Ready' ? 'ready' : r.state === 'Complete' ? 'complete' : '';
+    var badges = [el('span', { className: 'badge ' + stateClass }, r.state)];
     if (r.status !== 'idle') {
-      badges.push(el('span', {className: `badge ${r.status}`}, r.status));
+      badges.push(el('span', { className: 'badge ' + r.status }, r.status));
     }
 
-    const metaItems = [];
+    var metaItems = [];
     if (r.repo) metaItems.push(el('span', null, r.repo));
     if (r.author) metaItems.push(el('span', null, r.author));
 
-    const fill = el('div', {className: `progress-bar-fill ${fillClass}`});
+    if (r.status === 'running' && r.created) {
+      var clockSpan = el('span', { className: 'running-clock' });
+      startClock(clockSpan, r.created);
+      metaItems.push(clockSpan);
+    }
+
+    var fill = el('div', { className: 'progress-bar-fill ' + fillClass });
     fill.style.width = pct + '%';
 
-    const card = el('div', {className: `roadmap-card ${statusClass}`, onclick: () => { location.href = '/roadmap/' + r.id; }}, [
-      el('div', {className: 'card-header'}, [
-        el('span', {className: 'card-name'}, r.name),
-        el('div', {className: 'card-badges'}, badges),
+    var numberSpan = el('span', { className: 'card-number' }, r.roadmap_number ? '#' + r.roadmap_number : '');
+    var nameSpan = el('span', { className: 'card-name' }, r.name);
+    var nameGroup = el('span', null, [numberSpan, nameSpan]);
+
+    var footerChildren = [
+      el('span', { className: 'progress-text' }, complete + '/' + total + ' steps (' + pct + '%)')
+    ];
+
+    if (r.state === 'Complete' && !isArchived) {
+      var archBtn = el('button', {
+        className: 'archive-btn',
+        title: 'Archive this roadmap',
+        onclick: function(ev) { archiveRoadmap(r.id, ev); }
+      }, 'Archive');
+      footerChildren.push(archBtn);
+    }
+
+    var card = el('div', { className: cardClass, onclick: function() { location.href = '/roadmap/' + r.id; } }, [
+      el('div', { className: 'card-header' }, [
+        nameGroup,
+        el('div', { className: 'card-badges' }, badges),
       ]),
-      el('div', {className: 'card-meta'}, metaItems),
-      el('div', {className: 'progress-bar-bg'}, [fill]),
-      el('div', {className: 'progress-text'}, `${complete}/${total} steps (${pct}%)`),
+      el('div', { className: 'card-meta' }, metaItems),
+      el('div', { className: 'progress-bar-bg' }, [fill]),
+      el('div', { className: 'card-footer-row' }, footerChildren),
     ]);
     list.appendChild(card);
   });
 
-  document.getElementById('subtitle').textContent = `${roadmaps.length} roadmap${roadmaps.length !== 1 ? 's' : ''}`;
+  document.getElementById('subtitle').textContent = roadmaps.length + ' roadmap' + (roadmaps.length !== 1 ? 's' : '');
 }
 
 // --- Data fetching ---
 
 async function loadRoadmaps() {
   try {
-    const resp = await fetch(`${API}/roadmaps`);
-    const roadmaps = await resp.json();
-    allRoadmaps = await Promise.all(roadmaps.map(async r => {
-      const detail = await fetch(`${API}/roadmaps/${r.id}`);
+    var resp = await fetch(API + '/roadmaps');
+    var roadmaps = await resp.json();
+    allRoadmaps = await Promise.all(roadmaps.map(async function(r) {
+      var detail = await fetch(API + '/roadmaps/' + r.id);
       return detail.json();
     }));
     renderRoadmaps(allRoadmaps);
@@ -196,43 +385,43 @@ async function loadRoadmaps() {
 // --- SSE ---
 
 function connectSSE() {
-  const dot = document.getElementById('sse-dot');
-  const status = document.getElementById('sse-status');
-  const es = new EventSource(`${API}/events/stream`);
+  var dot = document.getElementById('sse-dot');
+  var status = document.getElementById('sse-status');
+  var es = new EventSource(API + '/events/stream');
 
-  es.onopen = () => {
+  es.onopen = function() {
     dot.className = 'status-dot connected';
     status.textContent = 'Connected';
   };
 
-  es.onerror = () => {
+  es.onerror = function() {
     dot.className = 'status-dot disconnected';
     status.textContent = 'Disconnected \u2014 retrying...';
   };
 
-  const eventTypes = ['roadmap_updated', 'roadmap_synced', 'roadmap_deleted',
-                      'step_updated', 'steps_updated', 'state_changed',
-                      'event_logged', 'control_changed'];
-  eventTypes.forEach(type => {
-    es.addEventListener(type, () => loadRoadmaps());
+  var eventTypes = ['roadmap_updated', 'roadmap_synced', 'roadmap_deleted',
+                    'step_updated', 'steps_updated', 'state_changed',
+                    'event_logged', 'control_changed'];
+  eventTypes.forEach(function(type) {
+    es.addEventListener(type, function() { loadRoadmaps(); });
   });
 }
 
-// --- Filters ---
+// --- Refresh button ---
 
-document.querySelectorAll('.filter-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    renderRoadmaps(allRoadmaps);
-  });
+document.getElementById('refresh-btn').textContent = '\u27F3';
+document.getElementById('refresh-btn').addEventListener('click', function() {
+  loadRoadmaps();
 });
 
 // --- Init ---
 
-loadRoadmaps();
-connectSSE();
+(async function init() {
+  await loadPreferences();
+  buildFilters();
+  loadRoadmaps();
+  connectSSE();
+})();
 </script>
 </body>
 </html>

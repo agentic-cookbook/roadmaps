@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from flask import Flask, g, jsonify, send_from_directory
+from flask import Flask, g, jsonify, request, send_from_directory
 
 from . import db
 from .api import init_app
@@ -32,6 +32,20 @@ def create_app():
     @app.route("/api/v1/health")
     def health():
         return jsonify({"status": "ok"})
+
+    # UI Preferences
+    @app.route("/api/v1/preferences", methods=["GET"])
+    def get_preferences():
+        from .models import get_all_preferences
+        return jsonify(get_all_preferences(g.db))
+
+    @app.route("/api/v1/preferences", methods=["PUT"])
+    def set_preferences():
+        from .models import set_preference
+        data = request.get_json(force=True)
+        for key, value in data.items():
+            set_preference(g.db, key, value)
+        return jsonify({"ok": True})
 
     # Serve overview page at root
     @app.route("/")
