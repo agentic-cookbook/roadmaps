@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "3"
+version: "4"
 description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
 disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), Bash(gh api *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(git status *), Bash(git diff *), Bash(git log *), Bash(cat *)
@@ -10,7 +10,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), B
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v3
+> plan-roadmap v4
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -71,28 +71,26 @@ If this fails, **STOP**. Tell the user to run `gh auth login` first.
 
 ### 0c: Create directory structure
 
-```bash
-mkdir -p Roadmaps/Definitions
-mkdir -p Roadmaps/Active
-mkdir -p Roadmaps/Completed
-mkdir -p Roadmaps/Completed
-```
-
-### 0d: Verify directories are writable
+The per-directory roadmap layout uses `Roadmaps/YYYY-MM-DD-<FeatureName>/` with subdirectories for state and history. The directory cannot be created until the feature name is known (Step 3), so this step only ensures the top-level `Roadmaps/` directory exists.
 
 ```bash
-touch Roadmaps/Definitions/.verify && rm Roadmaps/Definitions/.verify
-touch Roadmaps/Active/.verify && rm Roadmaps/Active/.verify
+mkdir -p Roadmaps
 ```
 
-If either fails, **STOP**. Tell the user the directory is not writable.
+### 0d: Verify directory is writable
+
+```bash
+touch Roadmaps/.verify && rm Roadmaps/.verify
+```
+
+If this fails, **STOP**. Tell the user the directory is not writable.
 
 ### 0e: Ensure `Roadmaps/` is tracked by git
 
-Run the following to check if git would ignore the Features directory:
+Run the following to check if git would ignore the Roadmaps directory:
 
 ```bash
-git check-ignore -q Roadmaps/Definitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
+git check-ignore -q Roadmaps/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
 ```
 
 If the output is `IGNORED`, the `.gitignore` (or a parent `.gitignore`) is excluding `Roadmaps/`. Fix this by appending negation rules to the repo-root `.gitignore`:
@@ -154,8 +152,8 @@ Here's what I heard:
 Proposed feature name: <FeatureName>
 
 If this looks right, I'll move to Planning and create:
-  - Roadmaps/Definitions/<FeatureName>-Definition.md
-  - Roadmaps/Active/<FeatureName>-Roadmap.md
+  - Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md
+  - Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
   - GitHub issues (one per implementation step)
 
 No implementation code will be written. Only planning documents.
@@ -211,9 +209,7 @@ For each step, fill in: Description, Type (Auto or Manual), Complexity estimate 
 - **Auto** — Claude can implement this step autonomously (code changes, tests, PRs).
 - **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, UI/UX decisions that need human judgment, app store submissions). The GitHub issue for manual steps will be assigned to the user.
 
-**Set the `Implementing` field to `No`.** This field is managed exclusively by `/implement-roadmap-interactively`.
-
-**Set the `Phase` field to `Planning`.** This field will be updated to `Ready` only after all planning artifacts (including GitHub issues) are complete.
+**Do NOT include `Implementing`, `Phase`, or `Status` fields in the Roadmap.** Lifecycle state is tracked solely via files in the `State/` directory.
 
 ### 5c: Present both drafts and request approval
 
@@ -237,33 +233,49 @@ Otherwise, tell me what to change in either document.
 - If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until "approved."
 - If the user says "approved": proceed to write both files.
 
-### 5e: Write both files
+### 5e: Create the roadmap directory and write both files
+
+Use today's date (YYYY-MM-DD) for the directory prefix:
+
+```bash
+mkdir -p "Roadmaps/YYYY-MM-DD-<FeatureName>/{State,History}"
+```
 
 Write the Feature Definition to:
 ```
-Roadmaps/Definitions/<FeatureName>-Definition.md
+Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md
 ```
 
 Write the Feature Roadmap to:
 ```
-Roadmaps/Active/<FeatureName>-Roadmap.md
+Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
 ```
 
-### 5f: Verify both files exist and have content
+### 5f: Create initial state files
+
+After writing both documents, create state marker files to record the lifecycle events:
 
 ```bash
-wc -l "Roadmaps/Definitions/<FeatureName>-Definition.md"
-head -5 "Roadmaps/Definitions/<FeatureName>-Definition.md"
-wc -l "Roadmaps/Active/<FeatureName>-Roadmap.md"
-head -5 "Roadmaps/Active/<FeatureName>-Roadmap.md"
+printf -- '---\nevent: created\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md"
+printf -- '---\nevent: planning\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md"
 ```
 
-If either file does not exist or is empty: **STOP. Tell the user. Re-attempt the write.**
-
-### 5g: Commit and push both files
+### 5g: Verify all files exist and have content
 
 ```bash
-git add "Roadmaps/Definitions/<FeatureName>-Definition.md" "Roadmaps/Active/<FeatureName>-Roadmap.md"
+wc -l "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md"
+head -5 "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md"
+wc -l "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md"
+head -5 "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md"
+ls "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"
+```
+
+If any file does not exist or is empty: **STOP. Tell the user. Re-attempt the write.**
+
+### 5h: Commit and push all files
+
+```bash
+git add "Roadmaps/YYYY-MM-DD-<FeatureName>/"
 git commit -m "docs: add Feature Definition and Roadmap for <FeatureName>"
 git push
 ```
@@ -287,8 +299,8 @@ cat > /tmp/gh-issue-body.md <<'EOF'
 ## Context
 
 Part of the <FeatureName> feature.
-Feature Definition: `Roadmaps/Definitions/<FeatureName>-Definition.md`
-Roadmap: `Roadmaps/Active/<FeatureName>-Roadmap.md`
+Feature Definition: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
+Roadmap: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 
 ## Step Details
 
@@ -338,15 +350,19 @@ For each step in the Roadmap file, replace the `{{REPO}}#{{ISSUE_NUMBER}}` place
 
 Read the Roadmap file back. Confirm that every step has a real issue number (not a placeholder). If any placeholder remains, fix it.
 
-### 6e: Update Phase to Ready
+### 6e: Create Ready state file
 
-All planning artifacts are now complete. Update the Roadmap's `Phase` field from `Planning` to `Ready`. This signals to `/implement-roadmap-interactively` that this feature is available for implementation.
-
-### 6f: Commit and push the updated Roadmap
+All planning artifacts are now complete. Create a `Ready` state file to signal that this feature is available for `/implement-roadmap`:
 
 ```bash
-git add "Roadmaps/Active/<FeatureName>-Roadmap.md"
-git commit -m "docs: add GitHub issue numbers to <FeatureName> Roadmap, set Phase to Ready"
+printf -- '---\nevent: ready\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md"
+```
+
+### 6f: Commit and push the updated Roadmap and state
+
+```bash
+git add "Roadmaps/YYYY-MM-DD-<FeatureName>/"
+git commit -m "docs: add GitHub issue numbers to <FeatureName> Roadmap, mark Ready"
 git push
 ```
 
@@ -360,22 +376,22 @@ Execute all of the following checks. **Every check must pass.**
 
 ```bash
 # Check Feature Definition exists and has content
-test -s "Roadmaps/Definitions/<FeatureName>-Definition.md" && echo "PASS: Feature Definition exists" || echo "FAIL: Feature Definition missing"
+test -s "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md" && echo "PASS: Feature Definition exists" || echo "FAIL: Feature Definition missing"
 ```
 
 ```bash
 # Check Roadmap exists and has content
-test -s "Roadmaps/Active/<FeatureName>-Roadmap.md" && echo "PASS: Roadmap exists" || echo "FAIL: Roadmap missing"
+test -s "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md" && echo "PASS: Roadmap exists" || echo "FAIL: Roadmap missing"
 ```
 
 ```bash
-# Check Implementing field is No
-grep -q "Implementing.*No" "Roadmaps/Active/<FeatureName>-Roadmap.md" && echo "PASS: Implementing is No" || echo "FAIL: Implementing field incorrect"
+# Check State/Ready file exists
+test -f "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"*"-Ready.md" && echo "PASS: Ready state exists" || echo "FAIL: Ready state missing"
 ```
 
 ```bash
-# Check Phase field is Ready
-grep -q "Phase.*Ready" "Roadmaps/Active/<FeatureName>-Roadmap.md" && echo "PASS: Phase is Ready" || echo "FAIL: Phase field incorrect"
+# Check State/ directory has Created, Planning, and Ready markers
+ls "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"
 ```
 
 ```bash
@@ -397,13 +413,13 @@ Print the complete summary, then ask:
 === PLANNING COMPLETE: <FeatureName> ===
 
 Feature Definition:
-  File: Roadmaps/Definitions/<FeatureName>-Definition.md
+  File: Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md
   Sections: <list key sections>
 
 Roadmap:
-  File: Roadmaps/Active/<FeatureName>-Roadmap.md
+  File: Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
   Steps: <N> total
-  Phase: Ready
+  State: Ready
   Estimated scope: <S/M/L breakdown>
   Dependencies: <summary>
 

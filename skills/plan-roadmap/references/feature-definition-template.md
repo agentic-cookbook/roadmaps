@@ -1,8 +1,14 @@
-# Feature Definition: {{FEATURE_NAME}}
+---
+id: "{{FEATURE_ID}}"
+created: "{{DATE}}"
+modified: "{{DATE}}"
+author: "{{AUTHOR}}"
+change-history:
+  - date: "{{DATE}}"
+    description: "Initial draft"
+---
 
-**Created**: {{DATE}}
-**Status**: Draft | Approved | In Progress | Complete
-**Completion Date**: _TBD_
+# Feature Definition: {{FEATURE_NAME}}
 
 ## Goal and Purpose
 

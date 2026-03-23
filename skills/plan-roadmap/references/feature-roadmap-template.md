@@ -1,11 +1,15 @@
-# Feature Roadmap: {{FEATURE_NAME}}
+---
+id: "{{ROADMAP_ID}}"
+created: "{{DATE}}"
+modified: "{{DATE}}"
+author: "{{AUTHOR}}"
+definition-id: "{{FEATURE_ID}}"
+change-history:
+  - date: "{{DATE}}"
+    description: "Initial draft"
+---
 
-**Feature Definition**: `Roadmaps/Definitions/{{FEATURE_NAME}}-Definition.md`
-**Created**: {{DATE}}
-**Status**: Not Started | In Progress | Complete
-**Implementing**: No
-**Phase**: Planning | Ready
-<!-- Phase: "Planning" = still being defined by /plan-roadmap, not ready for implementation. "Ready" = planning complete, available for /implement-roadmap-interactively. -->
+# Feature Roadmap: {{FEATURE_NAME}}
 
 ## Platform & Tools Summary
 
@@ -59,7 +63,6 @@ _Repeat for each step..._
 - [ ] All steps marked Complete
 - [ ] All GitHub issues closed
 - [ ] All PRs merged
-- [ ] Feature Definition updated with completion date and deviations
+- [ ] Feature Definition updated with deviations
 - [ ] Project docs updated (README, CHANGELOG, API docs as relevant)
 - [ ] Feature Summary written
-- [ ] Roadmap moved to Completed/
