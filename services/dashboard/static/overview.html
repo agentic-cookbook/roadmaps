@@ -6,27 +6,21 @@
 <title>Roadmap Dashboard</title>
 <style>
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-muted: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --yellow: #d29922;
-    --red: #f85149;
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 2rem;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; min-height: 100vh;
+    padding: 2rem 2rem 0 2rem;
   }
+  .main-content { flex: 1; }
   h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-  .subtitle-row {
-    display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;
-  }
+  .subtitle-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
   .subtitle { color: var(--text-muted); font-size: 0.85rem; }
   .refresh-btn {
     background: none; border: 1px solid var(--border); color: var(--text-muted);
@@ -35,9 +29,14 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .filters {
-    display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
+
+  /* --- Toolbar: filters left, sort+search right --- */
+  .toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;
   }
+  .filters { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+  .toolbar-right { display: flex; gap: 0.75rem; align-items: center; }
   .filter-checkbox {
     display: flex; align-items: center; gap: 0.35rem; cursor: pointer;
     font-size: 0.8rem; color: var(--text-muted); user-select: none;
@@ -51,9 +50,7 @@
   .filter-checkbox .check-mark {
     display: none; color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 1;
   }
-  .filter-checkbox input:checked ~ .check-box {
-    border-color: var(--accent); background: var(--accent);
-  }
+  .filter-checkbox input:checked ~ .check-box { border-color: var(--accent); background: var(--accent); }
   .filter-checkbox input:checked ~ .check-box .check-mark { display: block; }
   .filter-checkbox:hover .check-box { border-color: var(--accent); }
   .filter-checkbox.running-cb input:checked ~ .check-box { background: var(--yellow); border-color: var(--yellow); }
@@ -64,15 +61,28 @@
   .filter-checkbox.complete-cb:hover .check-box { border-color: var(--green); }
   .filter-checkbox.archived-cb input:checked ~ .check-box { background: var(--text-muted); border-color: var(--text-muted); }
   .filter-checkbox.archived-cb:hover .check-box { border-color: var(--text-muted); }
+
+  .sort-select {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+  }
+  .sort-select:focus { outline: none; border-color: var(--accent); }
+  .search-input {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 0.3rem 0.6rem; border-radius: 6px; font-size: 0.8rem; width: 160px;
+  }
+  .search-input::placeholder { color: var(--text-muted); }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+
+  /* --- Cards --- */
   .roadmap-list { display: flex; flex-direction: column; gap: 0.75rem; }
   .roadmap-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s;
-    position: relative;
+    padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s; position: relative;
   }
   .roadmap-card:hover { border-color: var(--accent); }
   .roadmap-card.running { border-left: 3px solid var(--yellow); }
-  .roadmap-card.complete { border-left: 3px solid var(--green); }
+  .roadmap-card.card-complete { border-left: 3px solid var(--green); }
   .roadmap-card.error { border-left: 3px solid var(--red); }
   .roadmap-card.archived-card { opacity: 0.6; }
   .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
@@ -84,24 +94,17 @@
     background: var(--border); color: var(--text-muted);
   }
   .badge.running { background: rgba(210,153,34,0.2); color: var(--yellow); }
-  .badge.complete { background: rgba(63,185,80,0.2); color: var(--green); }
+  .badge.badge-complete { background: rgba(63,185,80,0.2); color: var(--green); }
   .badge.error { background: rgba(248,81,73,0.2); color: var(--red); }
   .badge.ready { background: rgba(88,166,255,0.2); color: var(--accent); }
   .card-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-  .running-clock {
-    font-size: 0.75rem; color: var(--yellow); font-variant-numeric: tabular-nums;
-  }
-  .progress-bar-bg {
-    height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
-  }
-  .progress-bar-fill {
-    height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s;
-  }
+  .progress-bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
   .progress-bar-fill.complete-fill { background: var(--green); }
-  .card-footer-row {
-    display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;
-  }
+  .card-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem; }
   .progress-text { font-size: 0.75rem; color: var(--text-muted); }
+  .running-clock { font-size: 0.75rem; color: var(--yellow); font-variant-numeric: tabular-nums; }
+  .footer-right { display: flex; gap: 0.75rem; align-items: center; }
   .archive-btn {
     background: none; border: none; color: var(--text-muted); cursor: pointer;
     font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px;
@@ -110,8 +113,11 @@
   .roadmap-card:hover .archive-btn { opacity: 1; }
   .archive-btn:hover { color: var(--text); }
   .empty { color: var(--text-muted); text-align: center; padding: 3rem; }
+
+  /* --- Footer pinned to bottom --- */
   .footer {
-    margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; background: var(--bg);
+    padding: 0.75rem 0; margin-top: 2rem; border-top: 1px solid var(--border);
     font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;
   }
   .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
@@ -121,25 +127,43 @@
 </head>
 <body>
 
+<div class="main-content">
 <h1>Roadmap Dashboard</h1>
 <div class="subtitle-row">
   <span class="subtitle" id="subtitle">Loading...</span>
   <button class="refresh-btn" id="refresh-btn" title="Refresh"></button>
 </div>
 
-<div class="filters" id="filters"></div>
+<div class="toolbar">
+  <div class="filters" id="filters"></div>
+  <div class="toolbar-right">
+    <select class="sort-select" id="sort-select">
+      <option value="number_asc">#  Ascending</option>
+      <option value="number_desc"># Descending</option>
+      <option value="name_asc">Name A-Z</option>
+      <option value="name_desc">Name Z-A</option>
+      <option value="modified_desc">Recently Modified</option>
+      <option value="created_desc">Newest First</option>
+      <option value="created_asc">Oldest First</option>
+    </select>
+    <input class="search-input" id="search-input" type="text" placeholder="Filter by name...">
+  </div>
+</div>
 
 <div class="roadmap-list" id="roadmap-list"></div>
+</div>
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v1</span>
+  <span>Dashboard Service v2</span>
 </div>
 
 <script>
 var API = '/api/v1';
 var allRoadmaps = [];
 var activeFilters = { running: true, active: true, complete: true, archived: false };
+var currentSort = 'number_asc';
+var searchText = '';
 var clockIntervals = [];
 
 // --- Safe DOM helpers ---
@@ -150,10 +174,13 @@ function el(tag, attrs, children) {
     var k = pair[0], v = pair[1];
     if (k === 'className') e.className = v;
     else if (k === 'onclick') e.onclick = v;
+    else if (k === 'oninput') e.oninput = v;
+    else if (k === 'onchange') e.onchange = v;
     else if (k === 'type') e.setAttribute('type', v);
     else if (k === 'checked') { if (v) e.checked = true; }
     else if (k === 'title') e.title = v;
-    else if (k.startsWith('data')) e.setAttribute(k.replace(/([A-Z])/g, '-$1').toLowerCase(), v);
+    else if (k === 'value') e.value = v;
+    else if (k === 'placeholder') e.placeholder = v;
     else e.setAttribute(k, v);
   });
   if (children !== undefined && children !== null) {
@@ -163,8 +190,6 @@ function el(tag, attrs, children) {
   }
   return e;
 }
-
-function text(s) { return document.createTextNode(s || ''); }
 
 // --- Filter checkboxes ---
 
@@ -181,8 +206,9 @@ function buildFilters() {
     var input = el('input', { type: 'checkbox', checked: activeFilters[d.key] });
     var checkMark = el('span', { className: 'check-mark' }, '\u2713');
     var checkBox = el('span', { className: 'check-box' }, [checkMark]);
-    var labelText = text(' ' + d.label);
-    var label = el('label', { className: 'filter-checkbox ' + d.cls }, [input, checkBox, labelText]);
+    var label = el('label', { className: 'filter-checkbox ' + d.cls }, [
+      input, checkBox, document.createTextNode(' ' + d.label)
+    ]);
     label.addEventListener('click', function(ev) {
       ev.preventDefault();
       input.checked = !input.checked;
@@ -196,26 +222,14 @@ function buildFilters() {
 
 // --- Preferences ---
 
-function filtersToString() {
-  return Object.keys(activeFilters).filter(function(k) { return activeFilters[k]; }).join(',');
-}
-
-function stringToFilters(s) {
-  var obj = { running: false, active: false, complete: false, archived: false };
-  if (s) {
-    s.split(',').forEach(function(k) {
-      var key = k.trim();
-      if (key in obj) obj[key] = true;
-    });
-  }
-  return obj;
-}
-
 function savePreferences() {
+  var prefs = {
+    overview_filters: Object.keys(activeFilters).filter(function(k) { return activeFilters[k]; }).join(','),
+    overview_sort: currentSort
+  };
   fetch(API + '/preferences', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ overview_filters: filtersToString() })
+    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(prefs)
   }).catch(function() {});
 }
 
@@ -224,11 +238,16 @@ async function loadPreferences() {
     var resp = await fetch(API + '/preferences');
     var prefs = await resp.json();
     if (prefs.overview_filters) {
-      activeFilters = stringToFilters(prefs.overview_filters);
+      var obj = { running: false, active: false, complete: false, archived: false };
+      prefs.overview_filters.split(',').forEach(function(k) {
+        var key = k.trim(); if (key in obj) obj[key] = true;
+      });
+      activeFilters = obj;
     }
-  } catch (e) {
-    // use defaults
-  }
+    if (prefs.overview_sort) {
+      currentSort = prefs.overview_sort;
+    }
+  } catch (e) {}
 }
 
 // --- Running clock ---
@@ -239,36 +258,26 @@ function clearClocks() {
 }
 
 function formatElapsed(ms) {
-  var totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  var hours = Math.floor(totalSeconds / 3600);
-  var minutes = Math.floor((totalSeconds % 3600) / 60);
-  var seconds = totalSeconds % 60;
-  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-  if (hours > 0) {
-    return pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
-  }
-  return pad(minutes) + ':' + pad(seconds);
+  var t = Math.max(0, Math.floor(ms / 1000));
+  var h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+  var p = function(n) { return n < 10 ? '0' + n : '' + n; };
+  return h > 0 ? p(h) + ':' + p(m) + ':' + p(s) : p(m) + ':' + p(s);
 }
 
 function startClock(elem, createdStr) {
   var created = new Date(createdStr).getTime();
-  function tick() {
-    var now = Date.now();
-    elem.textContent = formatElapsed(now - created);
-  }
+  function tick() { elem.textContent = formatElapsed(Date.now() - created); }
   tick();
-  var id = setInterval(tick, 1000);
-  clockIntervals.push(id);
+  clockIntervals.push(setInterval(tick, 1000));
 }
 
-// --- Filter logic ---
+// --- Filter + sort logic ---
 
 function matchesFilter(r) {
   var isRunning = r.status === 'running';
   var isArchived = r.archived === 1 || r.archived === true;
   var isComplete = r.state === 'Complete' && !isArchived;
   var isActive = r.state !== 'Complete' && !isArchived;
-
   if (activeFilters.running && isRunning) return true;
   if (activeFilters.active && isActive) return true;
   if (activeFilters.complete && isComplete) return true;
@@ -276,13 +285,34 @@ function matchesFilter(r) {
   return false;
 }
 
+function matchesSearch(r) {
+  if (!searchText) return true;
+  return r.name.toLowerCase().indexOf(searchText.toLowerCase()) !== -1;
+}
+
+function sortRoadmaps(arr) {
+  var sorted = arr.slice();
+  sorted.sort(function(a, b) {
+    switch (currentSort) {
+      case 'number_asc': return (a.roadmap_number || 0) - (b.roadmap_number || 0);
+      case 'number_desc': return (b.roadmap_number || 0) - (a.roadmap_number || 0);
+      case 'name_asc': return a.name.localeCompare(b.name);
+      case 'name_desc': return b.name.localeCompare(a.name);
+      case 'modified_desc': return (b.modified || '').localeCompare(a.modified || '');
+      case 'created_desc': return (b.created || '').localeCompare(a.created || '');
+      case 'created_asc': return (a.created || '').localeCompare(b.created || '');
+      default: return (a.roadmap_number || 0) - (b.roadmap_number || 0);
+    }
+  });
+  return sorted;
+}
+
 // --- Archive ---
 
 function archiveRoadmap(id, ev) {
   ev.stopPropagation();
   fetch(API + '/roadmaps/' + id + '/archive', { method: 'POST' })
-    .then(function() { loadRoadmaps(); })
-    .catch(function() {});
+    .then(function() { loadRoadmaps(); }).catch(function() {});
 }
 
 // --- Rendering ---
@@ -290,13 +320,9 @@ function archiveRoadmap(id, ev) {
 function renderRoadmaps(roadmaps) {
   clearClocks();
   var list = document.getElementById('roadmap-list');
-  var filtered = roadmaps.filter(matchesFilter);
-
-  filtered.sort(function(a, b) {
-    if (a.status === 'running' && b.status !== 'running') return -1;
-    if (b.status === 'running' && a.status !== 'running') return 1;
-    return (b.modified || '').localeCompare(a.modified || '');
-  });
+  var filtered = sortRoadmaps(roadmaps.filter(function(r) {
+    return matchesFilter(r) && matchesSearch(r);
+  }));
 
   list.replaceChildren();
 
@@ -308,57 +334,60 @@ function renderRoadmaps(roadmaps) {
   filtered.forEach(function(r) {
     var steps = r.steps || [];
     var total = steps.length;
-    var complete = steps.filter(function(s) { return s.status === 'complete'; }).length;
-    var pct = total > 0 ? Math.round(complete / total * 100) : 0;
+    var done = steps.filter(function(s) { return s.status === 'complete'; }).length;
+    var pct = total > 0 ? Math.round(done / total * 100) : 0;
     var isArchived = r.archived === 1 || r.archived === true;
-    var statusClass = r.status === 'running' ? 'running' : r.state === 'Complete' ? 'complete' : r.status === 'error' ? 'error' : '';
+    var isComplete = r.state === 'Complete';
+    var isRunning = r.status === 'running';
+    var statusClass = isRunning ? 'running' : isComplete ? 'card-complete' : r.status === 'error' ? 'error' : '';
     var cardClass = 'roadmap-card ' + statusClass + (isArchived ? ' archived-card' : '');
-    var fillClass = pct === 100 ? 'complete-fill' : '';
 
-    var stateClass = r.state === 'Ready' ? 'ready' : r.state === 'Complete' ? 'complete' : '';
+    // Badge: show state, and only show status if it adds info beyond state
+    var stateClass = r.state === 'Ready' ? 'ready' : isComplete ? 'badge-complete' : '';
     var badges = [el('span', { className: 'badge ' + stateClass }, r.state)];
-    if (r.status !== 'idle') {
+    // Only show status badge if it's different from what state implies
+    var statusImplied = isComplete ? 'complete' : 'idle';
+    if (r.status !== 'idle' && r.status !== statusImplied) {
       badges.push(el('span', { className: 'badge ' + r.status }, r.status));
     }
 
     var metaItems = [];
     if (r.repo) metaItems.push(el('span', null, r.repo));
-    if (r.author) metaItems.push(el('span', null, r.author));
 
-    if (r.status === 'running' && r.created) {
-      var clockSpan = el('span', { className: 'running-clock' });
-      startClock(clockSpan, r.created);
-      metaItems.push(clockSpan);
-    }
-
-    var fill = el('div', { className: 'progress-bar-fill ' + fillClass });
+    var fill = el('div', { className: 'progress-bar-fill ' + (pct === 100 ? 'complete-fill' : '') });
     fill.style.width = pct + '%';
 
     var numberSpan = el('span', { className: 'card-number' }, r.roadmap_number ? '#' + r.roadmap_number : '');
     var nameSpan = el('span', { className: 'card-name' }, r.name);
-    var nameGroup = el('span', null, [numberSpan, nameSpan]);
 
-    var footerChildren = [
-      el('span', { className: 'progress-text' }, complete + '/' + total + ' steps (' + pct + '%)')
-    ];
+    // Footer: progress left, clock/archive right
+    var footerLeft = el('span', { className: 'progress-text' }, done + '/' + total + ' steps (' + pct + '%)');
+    var footerRightItems = [];
 
-    if (r.state === 'Complete' && !isArchived) {
-      var archBtn = el('button', {
+    if (isRunning && r.created) {
+      var clockSpan = el('span', { className: 'running-clock' });
+      startClock(clockSpan, r.created);
+      footerRightItems.push(clockSpan);
+    }
+
+    if (isComplete && !isArchived) {
+      footerRightItems.push(el('button', {
         className: 'archive-btn',
         title: 'Archive this roadmap',
         onclick: function(ev) { archiveRoadmap(r.id, ev); }
-      }, 'Archive');
-      footerChildren.push(archBtn);
+      }, 'Archive'));
     }
+
+    var footerRight = el('div', { className: 'footer-right' }, footerRightItems);
 
     var card = el('div', { className: cardClass, onclick: function() { location.href = '/roadmap/' + r.id; } }, [
       el('div', { className: 'card-header' }, [
-        nameGroup,
+        el('span', null, [numberSpan, nameSpan]),
         el('div', { className: 'card-badges' }, badges),
       ]),
       el('div', { className: 'card-meta' }, metaItems),
       el('div', { className: 'progress-bar-bg' }, [fill]),
-      el('div', { className: 'card-footer-row' }, footerChildren),
+      el('div', { className: 'card-footer-row' }, [footerLeft, footerRight]),
     ]);
     list.appendChild(card);
   });
@@ -388,36 +417,34 @@ function connectSSE() {
   var dot = document.getElementById('sse-dot');
   var status = document.getElementById('sse-status');
   var es = new EventSource(API + '/events/stream');
-
-  es.onopen = function() {
-    dot.className = 'status-dot connected';
-    status.textContent = 'Connected';
-  };
-
-  es.onerror = function() {
-    dot.className = 'status-dot disconnected';
-    status.textContent = 'Disconnected \u2014 retrying...';
-  };
-
-  var eventTypes = ['roadmap_updated', 'roadmap_synced', 'roadmap_deleted',
-                    'step_updated', 'steps_updated', 'state_changed',
-                    'event_logged', 'control_changed'];
-  eventTypes.forEach(function(type) {
-    es.addEventListener(type, function() { loadRoadmaps(); });
+  es.onopen = function() { dot.className = 'status-dot connected'; status.textContent = 'Connected'; };
+  es.onerror = function() { dot.className = 'status-dot disconnected'; status.textContent = 'Disconnected \u2014 retrying...'; };
+  ['roadmap_updated','roadmap_synced','roadmap_deleted','step_updated','steps_updated','state_changed','event_logged','control_changed'].forEach(function(t) {
+    es.addEventListener(t, function() { loadRoadmaps(); });
   });
 }
 
-// --- Refresh button ---
+// --- Sort + Search handlers ---
+
+document.getElementById('sort-select').addEventListener('change', function() {
+  currentSort = this.value;
+  renderRoadmaps(allRoadmaps);
+  savePreferences();
+});
+
+document.getElementById('search-input').addEventListener('input', function() {
+  searchText = this.value;
+  renderRoadmaps(allRoadmaps);
+});
 
 document.getElementById('refresh-btn').textContent = '\u27F3';
-document.getElementById('refresh-btn').addEventListener('click', function() {
-  loadRoadmaps();
-});
+document.getElementById('refresh-btn').addEventListener('click', function() { loadRoadmaps(); });
 
 // --- Init ---
 
 (async function init() {
   await loadPreferences();
+  document.getElementById('sort-select').value = currentSort;
   buildFilters();
   loadRoadmaps();
   connectSSE();
