@@ -171,7 +171,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v15</span>
+  <span>Dashboard Service v16</span>
 </div>
 
 <script>
@@ -452,17 +452,16 @@ async function loadRoadmaps() {
   }
 }
 
-// --- SSE ---
+// --- Polling (lightweight, no SSE connection held) ---
 
-function connectSSE() {
+var pollInterval = null;
+
+function startPolling() {
   var dot = document.getElementById('sse-dot');
   var status = document.getElementById('sse-status');
-  var es = new EventSource(API + '/events/stream');
-  es.onopen = function() { dot.className = 'status-dot connected'; status.textContent = 'Connected'; };
-  es.onerror = function() { dot.className = 'status-dot disconnected'; status.textContent = 'Disconnected \u2014 retrying...'; };
-  ['roadmap_updated','roadmap_synced','roadmap_deleted','step_updated','steps_updated','state_changed','event_logged','control_changed'].forEach(function(t) {
-    es.addEventListener(t, function() { loadRoadmaps(); });
-  });
+  dot.className = 'status-dot connected';
+  status.textContent = 'Polling every 10s';
+  pollInterval = setInterval(function() { loadRoadmaps(); }, 10000);
 }
 
 // --- Sort + Search handlers ---
@@ -488,7 +487,7 @@ document.getElementById('refresh-btn').addEventListener('click', function() { lo
   document.getElementById('sort-select').value = currentSort;
   buildFilters();
   loadRoadmaps();
-  connectSSE();
+  startPolling();
 })();
 </script>
 </body>
