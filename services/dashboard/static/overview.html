@@ -338,11 +338,12 @@ function renderActions(roadmaps) {
   var completedNotArchived = roadmaps.filter(function(r) {
     return r.state === 'Complete' && !(r.archived === 1 || r.archived === true);
   });
-  if (completedNotArchived.length === 0) return;
+  var count = completedNotArchived.length;
   var btn = el('button', {
     className: 'action-btn',
-    onclick: function() { archiveAllCompleted(completedNotArchived); }
-  }, 'Archive All Completed (' + completedNotArchived.length + ')');
+    onclick: count > 0 ? function() { archiveAllCompleted(completedNotArchived); } : null
+  }, count > 0 ? 'Archive All Completed (' + count + ')' : 'Archive All Completed');
+  if (count === 0) btn.disabled = true;
   row.appendChild(btn);
 }
 
