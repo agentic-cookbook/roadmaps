@@ -62,6 +62,14 @@
   .filter-checkbox.archived-cb input:checked ~ .check-box { background: var(--text-muted); border-color: var(--text-muted); }
   .filter-checkbox.archived-cb:hover .check-box { border-color: var(--text-muted); }
 
+  .actions-row { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
+  .action-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--text); }
+  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .sort-label { font-size: 0.8rem; color: var(--text-muted); }
   .sort-select {
     background: var(--surface); border: 1px solid var(--border); color: var(--text);
@@ -133,6 +141,8 @@
   <span class="subtitle" id="subtitle">Loading...</span>
   <button class="refresh-btn" id="refresh-btn" title="Refresh"></button>
 </div>
+
+<div class="actions-row" id="actions-row"></div>
 
 <div class="toolbar">
   <div class="filters" id="filters"></div>
@@ -316,10 +326,33 @@ function archiveRoadmap(id, ev) {
     .then(function() { loadRoadmaps(); }).catch(function() {});
 }
 
+// --- Actions row ---
+
+function renderActions(roadmaps) {
+  var row = document.getElementById('actions-row');
+  row.replaceChildren();
+  var completedNotArchived = roadmaps.filter(function(r) {
+    return r.state === 'Complete' && !(r.archived === 1 || r.archived === true);
+  });
+  if (completedNotArchived.length === 0) return;
+  var btn = el('button', {
+    className: 'action-btn',
+    onclick: function() { archiveAllCompleted(completedNotArchived); }
+  }, 'Archive All Completed (' + completedNotArchived.length + ')');
+  row.appendChild(btn);
+}
+
+function archiveAllCompleted(roadmaps) {
+  Promise.all(roadmaps.map(function(r) {
+    return fetch(API + '/roadmaps/' + r.id + '/archive', { method: 'POST' });
+  })).then(function() { loadRoadmaps(); }).catch(function() { loadRoadmaps(); });
+}
+
 // --- Rendering ---
 
 function renderRoadmaps(roadmaps) {
   clearClocks();
+  renderActions(roadmaps);
   var list = document.getElementById('roadmap-list');
   var filtered = sortRoadmaps(roadmaps.filter(function(r) {
     return matchesFilter(r) && matchesSearch(r);
