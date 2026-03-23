@@ -1,19 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Edit(.claude/Features/**)",
-      "Write(.claude/Features/**)",
-      "Read(.claude/Features/**)",
-      "Bash(git add .claude/Features:*)",
+      "Edit(Roadmaps/**)",
+      "Write(Roadmaps/**)",
+      "Read(Roadmaps/**)",
+      "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git mv .claude/Features:*)",
+      "Bash(git mv:*)",
       "Bash(gh:*)",
-      "Bash(mkdir -p .claude/Features:*)",
-      "Bash(touch .claude/Features:*)",
-      "Bash(wc -l .claude/Features:*)",
+      "Bash(mkdir -p:*)",
       "Bash(head:*)",
-      "Bash(test -s .claude/Features:*)",
       "Bash(grep -q:*)",
       "Bash(git check-ignore:*)",
       "Bash(git rev-parse:*)"

@@ -2,7 +2,7 @@
 
 These are not suggestions. These are hard stops.
 
-- **If you are about to create a file outside `.claude/Features/`** — STOP. You are writing implementation code. Return to the current step.
+- **If you are about to create a file outside `Roadmaps/`** — STOP. You are writing implementation code. Return to the current step.
 - **If you are about to write ANY file during Phase 1 (Discussion)** — STOP. Discussion is conversational only. No files are created until Phase 2.
 - **If you are about to skip the Phase Gate (Discussion → Planning)** — STOP. You MUST ask the user for explicit permission to transition. This is not optional.
 - **If you are about to skip presenting a draft to the user** — STOP. Every draft must be shown in full and approved before writing to disk.

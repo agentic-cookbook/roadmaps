@@ -49,15 +49,15 @@ If this fails, **STOP** — tell the user to run `gh auth login`.
 
 Create directories:
 ```bash
-mkdir -p .claude/Features/FeatureDefinitions
-mkdir -p .claude/Features/Active-Roadmaps
-mkdir -p .claude/Features/Completed-Roadmaps
-mkdir -p .claude/Features/Completed-Features
+mkdir -p Roadmaps/Definitions
+mkdir -p Roadmaps/Active
+mkdir -p Roadmaps/Completed
+mkdir -p Roadmaps/Completed
 ```
 
-Ensure `.claude/Features/` is tracked by git:
+Ensure `Roadmaps/` is tracked by git:
 ```bash
-git check-ignore -q .claude/Features/FeatureDefinitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
+git check-ignore -q Roadmaps/Definitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
 ```
 If `IGNORED`, add negation rules to `.gitignore`, commit and push.
 
@@ -150,7 +150,7 @@ Verify each with `gh issue view`.
 
 ## Step 6: Write Feature Definition
 
-Write `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md`:
+Write `Roadmaps/Definitions/<FeatureName>-Definition.md`:
 
 ```markdown
 # Feature Definition: <FeatureName>
@@ -182,7 +182,7 @@ Commit and push.
 
 ## Step 7: Write Feature Roadmap
 
-Write `.claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md` with one step per bug.
+Write `Roadmaps/Active/<FeatureName>-Roadmap.md` with one step per bug.
 
 Each step should have:
 - `### Step N: <bug title>` — the description from the issue title
@@ -207,8 +207,8 @@ Commit and push.
 ```
 === BUGFIX ROADMAP COMPLETE: <FeatureName> ===
 
-Feature Definition: .claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md
-Roadmap: .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md
+Feature Definition: Roadmaps/Definitions/<FeatureName>-Definition.md
+Roadmap: Roadmaps/Active/<FeatureName>-Roadmap.md
 Steps: <N>
 Issues: #<first> through #<last>
 Phase: Ready

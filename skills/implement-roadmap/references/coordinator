@@ -61,13 +61,13 @@ def count_steps(roadmap_path):
     return total, complete
 
 
-def find_roadmaps(base=".claude/Features/Active-Roadmaps"):
+def find_roadmaps(base="Roadmaps/Active"):
     """Find all active roadmaps with Phase: Ready."""
     roadmaps = []
     base_path = Path(base)
     if not base_path.exists():
         return roadmaps
-    for f in sorted(base_path.glob("*-FeatureRoadmap.md")):
+    for f in sorted(base_path.glob("*-Roadmap.md")):
         content = f.read_text()
         phase_match = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
         status_match = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
@@ -75,7 +75,7 @@ def find_roadmaps(base=".claude/Features/Active-Roadmaps"):
         status = status_match.group(1).strip() if status_match else "Not Started"
         if phase == "Ready" and status.lower() != "complete":
             name_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-            name = name_match.group(1).strip() if name_match else f.stem.replace("-FeatureRoadmap", "")
+            name = name_match.group(1).strip() if name_match else f.stem.replace("-Roadmap", "")
             total, complete = count_steps(str(f))
             roadmaps.append({"name": name, "path": str(f), "total": total, "complete": complete})
     return roadmaps
@@ -85,7 +85,7 @@ def get_feature_name(roadmap_path):
     """Extract feature name from roadmap file."""
     content = Path(roadmap_path).read_text()
     m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-    return m.group(1).strip() if m else Path(roadmap_path).stem.replace("-FeatureRoadmap", "")
+    return m.group(1).strip() if m else Path(roadmap_path).stem.replace("-Roadmap", "")
 
 
 # --- Commands ---
@@ -146,8 +146,8 @@ def cmd_resolve(args):
 
     if feature_name:
         # Look for matching roadmap
-        base = Path(".claude/Features/Active-Roadmaps")
-        matches = list(base.glob(f"*{feature_name}*-FeatureRoadmap.md"))
+        base = Path("Roadmaps/Active")
+        matches = list(base.glob(f"*{feature_name}*-Roadmap.md"))
         if len(matches) == 1:
             total, complete = count_steps(str(matches[0]))
             name = get_feature_name(str(matches[0]))

@@ -1,6 +1,6 @@
 # Feature Roadmap: {{FEATURE_NAME}}
 
-**Feature Definition**: `.claude/Features/FeatureDefinitions/{{FEATURE_NAME}}-FeatureDefinition.md`
+**Feature Definition**: `Roadmaps/Definitions/{{FEATURE_NAME}}-Definition.md`
 **Created**: {{DATE}}
 **Status**: Not Started | In Progress | Complete
 **Implementing**: No
@@ -62,4 +62,4 @@ _Repeat for each step..._
 - [ ] Feature Definition updated with completion date and deviations
 - [ ] Project docs updated (README, CHANGELOG, API docs as relevant)
 - [ ] Feature Summary written
-- [ ] Roadmap moved to Completed-Roadmaps/
+- [ ] Roadmap moved to Completed/

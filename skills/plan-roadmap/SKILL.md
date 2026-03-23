@@ -37,7 +37,7 @@ When planning is complete, tell the user to run `/implement-roadmap` to begin im
 
 **This skill produces planning documents and GitHub issues. Nothing else.**
 
-Your only permitted outputs are: Markdown files inside `.claude/Features/`, GitHub issues via `gh issue create`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside `.claude/Features/`, STOP. You are off course.
+Your only permitted outputs are: Markdown files inside `Roadmaps/`, GitHub issues via `gh issue create`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside `Roadmaps/`, STOP. You are off course.
 
 Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for the complete list of hard-stop guardrails.
 
@@ -72,39 +72,39 @@ If this fails, **STOP**. Tell the user to run `gh auth login` first.
 ### 0c: Create directory structure
 
 ```bash
-mkdir -p .claude/Features/FeatureDefinitions
-mkdir -p .claude/Features/Active-Roadmaps
-mkdir -p .claude/Features/Completed-Roadmaps
-mkdir -p .claude/Features/Completed-Features
+mkdir -p Roadmaps/Definitions
+mkdir -p Roadmaps/Active
+mkdir -p Roadmaps/Completed
+mkdir -p Roadmaps/Completed
 ```
 
 ### 0d: Verify directories are writable
 
 ```bash
-touch .claude/Features/FeatureDefinitions/.verify && rm .claude/Features/FeatureDefinitions/.verify
-touch .claude/Features/Active-Roadmaps/.verify && rm .claude/Features/Active-Roadmaps/.verify
+touch Roadmaps/Definitions/.verify && rm Roadmaps/Definitions/.verify
+touch Roadmaps/Active/.verify && rm Roadmaps/Active/.verify
 ```
 
 If either fails, **STOP**. Tell the user the directory is not writable.
 
-### 0e: Ensure `.claude/Features/` is tracked by git
+### 0e: Ensure `Roadmaps/` is tracked by git
 
 Run the following to check if git would ignore the Features directory:
 
 ```bash
-git check-ignore -q .claude/Features/FeatureDefinitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
+git check-ignore -q Roadmaps/Definitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
 ```
 
-If the output is `IGNORED`, the `.gitignore` (or a parent `.gitignore`) is excluding `.claude/Features/`. Fix this by appending negation rules to the repo-root `.gitignore`:
+If the output is `IGNORED`, the `.gitignore` (or a parent `.gitignore`) is excluding `Roadmaps/`. Fix this by appending negation rules to the repo-root `.gitignore`:
 
 Append the negation rules to `.gitignore` (use `printf` to avoid heredoc permission warnings):
 
 ```bash
-printf '\n!.claude/Features/\n!.claude/Features/**\n' >> .gitignore
+printf '\n!Roadmaps/\n!Roadmaps/**\n' >> .gitignore
 ```
 
 ```bash
-git add .gitignore && git commit -m "chore: allow .claude/Features/ in git" && git push
+git add .gitignore && git commit -m "chore: allow Roadmaps/ in git" && git push
 ```
 
 After adding the rules, re-run the `git check-ignore` check to confirm the path is now tracked. If it still reports `IGNORED`, **STOP** and tell the user — a higher-level `.gitignore` rule may need manual attention.
@@ -154,8 +154,8 @@ Here's what I heard:
 Proposed feature name: <FeatureName>
 
 If this looks right, I'll move to Planning and create:
-  - .claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md
-  - .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md
+  - Roadmaps/Definitions/<FeatureName>-Definition.md
+  - Roadmaps/Active/<FeatureName>-Roadmap.md
   - GitHub issues (one per implementation step)
 
 No implementation code will be written. Only planning documents.
@@ -175,7 +175,7 @@ Proceed? (yes / revise name / keep discussing)
 
 # PHASE 2: PLANNING
 
-> **Goal**: Transform the discussion into structured planning artifacts. Only Markdown files in `.claude/Features/` and GitHub issues are created.
+> **Goal**: Transform the discussion into structured planning artifacts. Only Markdown files in `Roadmaps/` and GitHub issues are created.
 
 ---
 
@@ -241,21 +241,21 @@ Otherwise, tell me what to change in either document.
 
 Write the Feature Definition to:
 ```
-.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md
+Roadmaps/Definitions/<FeatureName>-Definition.md
 ```
 
 Write the Feature Roadmap to:
 ```
-.claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md
+Roadmaps/Active/<FeatureName>-Roadmap.md
 ```
 
 ### 5f: Verify both files exist and have content
 
 ```bash
-wc -l ".claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md"
-head -5 ".claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md"
-wc -l ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
-head -5 ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+wc -l "Roadmaps/Definitions/<FeatureName>-Definition.md"
+head -5 "Roadmaps/Definitions/<FeatureName>-Definition.md"
+wc -l "Roadmaps/Active/<FeatureName>-Roadmap.md"
+head -5 "Roadmaps/Active/<FeatureName>-Roadmap.md"
 ```
 
 If either file does not exist or is empty: **STOP. Tell the user. Re-attempt the write.**
@@ -263,7 +263,7 @@ If either file does not exist or is empty: **STOP. Tell the user. Re-attempt the
 ### 5g: Commit and push both files
 
 ```bash
-git add ".claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md" ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+git add "Roadmaps/Definitions/<FeatureName>-Definition.md" "Roadmaps/Active/<FeatureName>-Roadmap.md"
 git commit -m "docs: add Feature Definition and Roadmap for <FeatureName>"
 git push
 ```
@@ -287,8 +287,8 @@ cat > /tmp/gh-issue-body.md <<'EOF'
 ## Context
 
 Part of the <FeatureName> feature.
-Feature Definition: `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md`
-Roadmap: `.claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md`
+Feature Definition: `Roadmaps/Definitions/<FeatureName>-Definition.md`
+Roadmap: `Roadmaps/Active/<FeatureName>-Roadmap.md`
 
 ## Step Details
 
@@ -345,7 +345,7 @@ All planning artifacts are now complete. Update the Roadmap's `Phase` field from
 ### 6f: Commit and push the updated Roadmap
 
 ```bash
-git add ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+git add "Roadmaps/Active/<FeatureName>-Roadmap.md"
 git commit -m "docs: add GitHub issue numbers to <FeatureName> Roadmap, set Phase to Ready"
 git push
 ```
@@ -360,22 +360,22 @@ Execute all of the following checks. **Every check must pass.**
 
 ```bash
 # Check Feature Definition exists and has content
-test -s ".claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md" && echo "PASS: Feature Definition exists" || echo "FAIL: Feature Definition missing"
+test -s "Roadmaps/Definitions/<FeatureName>-Definition.md" && echo "PASS: Feature Definition exists" || echo "FAIL: Feature Definition missing"
 ```
 
 ```bash
 # Check Roadmap exists and has content
-test -s ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" && echo "PASS: Roadmap exists" || echo "FAIL: Roadmap missing"
+test -s "Roadmaps/Active/<FeatureName>-Roadmap.md" && echo "PASS: Roadmap exists" || echo "FAIL: Roadmap missing"
 ```
 
 ```bash
 # Check Implementing field is No
-grep -q "Implementing.*No" ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" && echo "PASS: Implementing is No" || echo "FAIL: Implementing field incorrect"
+grep -q "Implementing.*No" "Roadmaps/Active/<FeatureName>-Roadmap.md" && echo "PASS: Implementing is No" || echo "FAIL: Implementing field incorrect"
 ```
 
 ```bash
 # Check Phase field is Ready
-grep -q "Phase.*Ready" ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" && echo "PASS: Phase is Ready" || echo "FAIL: Phase field incorrect"
+grep -q "Phase.*Ready" "Roadmaps/Active/<FeatureName>-Roadmap.md" && echo "PASS: Phase is Ready" || echo "FAIL: Phase field incorrect"
 ```
 
 ```bash
@@ -397,11 +397,11 @@ Print the complete summary, then ask:
 === PLANNING COMPLETE: <FeatureName> ===
 
 Feature Definition:
-  File: .claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md
+  File: Roadmaps/Definitions/<FeatureName>-Definition.md
   Sections: <list key sections>
 
 Roadmap:
-  File: .claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md
+  File: Roadmaps/Active/<FeatureName>-Roadmap.md
   Steps: <N> total
   Phase: Ready
   Estimated scope: <S/M/L breakdown>

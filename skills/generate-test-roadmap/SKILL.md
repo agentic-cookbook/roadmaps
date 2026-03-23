@@ -43,23 +43,23 @@ If this fails, **STOP** — tell the user to run `gh auth login`.
 
 Create directories:
 ```bash
-mkdir -p .claude/Features/FeatureDefinitions
-mkdir -p .claude/Features/Active-Roadmaps
-mkdir -p .claude/Features/Completed-Roadmaps
-mkdir -p .claude/Features/Completed-Features
+mkdir -p Roadmaps/Definitions
+mkdir -p Roadmaps/Active
+mkdir -p Roadmaps/Completed
+mkdir -p Roadmaps/Completed
 ```
 
-Ensure `.claude/Features/` is tracked by git:
+Ensure `Roadmaps/` is tracked by git:
 ```bash
-git check-ignore -q .claude/Features/FeatureDefinitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
+git check-ignore -q Roadmaps/Definitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
 ```
 If `IGNORED`, append negation rules to `.gitignore`:
 ```bash
-printf '\n!.claude/Features/\n!.claude/Features/**\n' >> .gitignore
+printf '\n!Roadmaps/\n!Roadmaps/**\n' >> .gitignore
 ```
 
 ```bash
-git add .gitignore && git commit -m "chore: allow .claude/Features/ in git" && git push
+git add .gitignore && git commit -m "chore: allow Roadmaps/ in git" && git push
 ```
 
 ---
@@ -99,7 +99,7 @@ Each step:
 
 ## Step 3: Write Feature Definition
 
-Write `.claude/Features/FeatureDefinitions/${FEATURE_NAME}-FeatureDefinition.md`:
+Write `Roadmaps/Definitions/${FEATURE_NAME}-Definition.md`:
 
 ```markdown
 # Feature Definition: ${FEATURE_NAME}
@@ -148,7 +148,7 @@ None — this is a test fixture.
 
 Commit and push:
 ```bash
-git add ".claude/Features/FeatureDefinitions/${FEATURE_NAME}-FeatureDefinition.md"
+git add "Roadmaps/Definitions/${FEATURE_NAME}-Definition.md"
 git commit -m "docs: add Feature Definition for ${FEATURE_NAME}"
 git push
 ```
@@ -157,7 +157,7 @@ git push
 
 ## Step 4: Write Feature Roadmap
 
-Write `.claude/Features/Active-Roadmaps/${FEATURE_NAME}-FeatureRoadmap.md` using the roadmap template structure.
+Write `Roadmaps/Active/${FEATURE_NAME}-Roadmap.md` using the roadmap template structure.
 
 Set:
 - `**Status**: Not Started`
@@ -175,7 +175,7 @@ Include all 20 steps using the step template structure from the plan-roadmap ski
 
 Commit and push:
 ```bash
-git add ".claude/Features/Active-Roadmaps/${FEATURE_NAME}-FeatureRoadmap.md"
+git add "Roadmaps/Active/${FEATURE_NAME}-Roadmap.md"
 git commit -m "docs: add Feature Roadmap for ${FEATURE_NAME}"
 git push
 ```
@@ -197,7 +197,7 @@ After all 20 issues are created:
 2. Set `**Phase**: Ready`
 3. Commit and push:
 ```bash
-git add ".claude/Features/Active-Roadmaps/${FEATURE_NAME}-FeatureRoadmap.md"
+git add "Roadmaps/Active/${FEATURE_NAME}-Roadmap.md"
 git commit -m "docs: add GitHub issue numbers to ${FEATURE_NAME} Roadmap, set Phase to Ready"
 git push
 ```
@@ -211,8 +211,8 @@ Print:
 ```
 === TEST ROADMAP GENERATED: ${FEATURE_NAME} ===
 
-Feature Definition: .claude/Features/FeatureDefinitions/${FEATURE_NAME}-FeatureDefinition.md
-Roadmap: .claude/Features/Active-Roadmaps/${FEATURE_NAME}-FeatureRoadmap.md
+Feature Definition: Roadmaps/Definitions/${FEATURE_NAME}-Definition.md
+Roadmap: Roadmaps/Active/${FEATURE_NAME}-Roadmap.md
 Steps: 20
 GitHub Issues: #<first> through #<last>
 Phase: Ready

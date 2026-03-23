@@ -1,6 +1,6 @@
 # Feature Roadmap: DashboardBugfixes
 
-**Feature Definition**: `.claude/Features/FeatureDefinitions/DashboardBugfixes-FeatureDefinition.md`
+**Feature Definition**: `Roadmaps/Definitions/DashboardBugfixes-Definition.md`
 **Created**: 2026-03-21
 **Status**: Not Started
 **Phase**: Ready

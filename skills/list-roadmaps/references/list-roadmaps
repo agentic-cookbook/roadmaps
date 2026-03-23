@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """List active roadmaps with progress and description.
 
-Scans .claude/Features/Active-Roadmaps/ and prints a concise summary
+Scans Roadmaps/Active/ and prints a concise summary
 of each roadmap: progress bar, counts, and goal from the Feature Definition.
 
 Usage:
@@ -16,8 +16,8 @@ from pathlib import Path
 
 VERSION = "5"
 
-ACTIVE_DIR = Path(".claude/Features/Active-Roadmaps")
-DEFS_DIR = Path(".claude/Features/FeatureDefinitions")
+ACTIVE_DIR = Path("Roadmaps/Active")
+DEFS_DIR = Path("Roadmaps/Definitions")
 
 
 def slugify(name):
@@ -72,7 +72,7 @@ def parse_roadmap(path):
     """Extract name, status, and step counts from a roadmap file."""
     content = path.read_text()
     name_m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-    name = name_m.group(1).strip() if name_m else path.stem.replace("-FeatureRoadmap", "")
+    name = name_m.group(1).strip() if name_m else path.stem.replace("-Roadmap", "")
 
     status_m = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
     status = status_m.group(1).strip() if status_m else "Unknown"
@@ -93,7 +93,7 @@ def parse_roadmap(path):
 
 def get_goal(feature_name):
     """Read the Goal and Purpose section from the Feature Definition."""
-    def_path = DEFS_DIR / f"{feature_name}-FeatureDefinition.md"
+    def_path = DEFS_DIR / f"{feature_name}-Definition.md"
     if not def_path.exists():
         return None
     content = def_path.read_text()
@@ -125,7 +125,7 @@ def main():
         print("No active roadmaps found.")
         sys.exit(0)
 
-    roadmaps = sorted(ACTIVE_DIR.glob("*-FeatureRoadmap.md"))
+    roadmaps = sorted(ACTIVE_DIR.glob("*-Roadmap.md"))
     if not roadmaps:
         print("No active roadmaps found.")
         sys.exit(0)

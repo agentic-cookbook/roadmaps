@@ -72,15 +72,15 @@ This outputs JSON. Parse it:
   # Set Status to Complete in the roadmap file
   sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' "<roadmap_path>"
 
-  # Move to Completed-Roadmaps
-  mkdir -p .claude/Features/Completed-Roadmaps
-  git mv "<roadmap_path>" ".claude/Features/Completed-Roadmaps/$(basename <roadmap_path>)"
+  # Move to Completed
+  mkdir -p Roadmaps/Completed
+  git mv "<roadmap_path>" "Roadmaps/Completed/$(basename <roadmap_path>)"
 
   # Update Feature Definition status
-  sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' ".claude/Features/FeatureDefinitions/<feature_name>-FeatureDefinition.md"
+  sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' "Roadmaps/Definitions/<feature_name>-Definition.md"
 
   # Commit
-  git add -A .claude/Features/
+  git add -A Roadmaps/
   git commit -m "docs: complete feature <feature_name> — archive roadmap"
   git push
   ```
@@ -122,7 +122,7 @@ Step <N>: <description>
 GitHub Issue: <issue>
 Complexity: <complexity>
 Roadmap file: <roadmap_path>
-Feature Definition: .claude/Features/FeatureDefinitions/<feature_name>-FeatureDefinition.md
+Feature Definition: Roadmaps/Definitions/<feature_name>-Definition.md
 
 Implement ONLY this step. When done, update the roadmap to mark this step Complete, then return. Do not implement any other step.
 ```

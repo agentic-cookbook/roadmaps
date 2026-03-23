@@ -17,7 +17,7 @@ Then stop. Do not continue with the rest of the skill.
 
 # Implement Roadmap
 
-Implementation workflow for features that have been planned with `/plan-roadmap`. Picks up a Roadmap from `Active-Roadmaps/` and works through each step with proper isolation, testing, and review.
+Implementation workflow for features that have been planned with `/plan-roadmap`. Picks up a Roadmap from `Active/` and works through each step with proper isolation, testing, and review.
 
 ## CRITICAL RULES
 
@@ -81,7 +81,7 @@ You will initialize the dashboard after the user selects a feature (since you ne
 
 ### Step 1: Scan Active Roadmaps
 
-Read all files in `.claude/Features/Active-Roadmaps/`. For each `*-FeatureRoadmap.md` file, parse:
+Read all files in `Roadmaps/Active/`. For each `*-Roadmap.md` file, parse:
 
 - The feature name (from `# Feature Roadmap: <name>`)
 - The `**Status**:` field
@@ -125,7 +125,7 @@ If `DASH_CLI` was found in Step 0, initialize and load the roadmap:
 
 ```bash
 python3 "$DASH_CLI" init "<FeatureName>"
-python3 "$DASH_CLI" load-roadmap ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+python3 "$DASH_CLI" load-roadmap "Roadmaps/Active/<FeatureName>-Roadmap.md"
 ```
 
 The `init` command opens the browser immediately. The `load-roadmap` command reads the roadmap markdown file and automatically populates all step names, GitHub issues, PRs, and completion status. You do NOT manually add steps, issues, or PRs — `load-roadmap` does it all.
@@ -155,7 +155,7 @@ Loop for each step in the Roadmap. **Run a control check before every sub-step**
 **Control check.** Then run this command to find the next step. It uses grep — no LLM judgment:
 
 ```bash
-ROADMAP=".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" && LINE=$(grep -n '^\- \*\*Status\*\*:' "$ROADMAP" | grep -iv complete | head -1 | cut -d: -f1) && if [ -z "$LINE" ]; then echo "DONE"; else awk -v line="$LINE" 'NR<=line && /^### Step [0-9]+:/{last=$0} END{print last}' "$ROADMAP"; fi
+ROADMAP="Roadmaps/Active/<FeatureName>-Roadmap.md" && LINE=$(grep -n '^\- \*\*Status\*\*:' "$ROADMAP" | grep -iv complete | head -1 | cut -d: -f1) && if [ -z "$LINE" ]; then echo "DONE"; else awk -v line="$LINE" 'NR<=line && /^### Step [0-9]+:/{last=$0} END{print last}' "$ROADMAP"; fi
 ```
 
 - If output is `DONE`, all steps are complete — proceed to the Completion phase.
@@ -362,13 +362,13 @@ Only update docs that are relevant. Don't create docs that don't already exist i
 
 ### Step 5: Create Feature Summary
 
-Create `.claude/Features/Completed-Features/<FeatureName>-Summary.md`:
+Create `Roadmaps/Completed/<FeatureName>-Summary.md`:
 
 ```markdown
 # Feature Summary: <FeatureName>
 
 **Completed**: <date>
-**Feature Definition**: `.claude/Features/FeatureDefinitions/<FeatureName>-FeatureDefinition.md`
+**Feature Definition**: `Roadmaps/Definitions/<FeatureName>-Definition.md`
 
 ## Architecture Decisions
 
@@ -400,10 +400,10 @@ Create `.claude/Features/Completed-Features/<FeatureName>-Summary.md`:
 Update the Roadmap:
 - Set `**Status**:` to `Complete`
 
-Move the Roadmap from `Active-Roadmaps/` to `Completed-Roadmaps/`:
+Move the Roadmap from `Active/` to `Completed/`:
 
 ```bash
-git mv ".claude/Features/Active-Roadmaps/<FeatureName>-FeatureRoadmap.md" ".claude/Features/Completed-Roadmaps/<FeatureName>-FeatureRoadmap.md"
+git mv "Roadmaps/Active/<FeatureName>-Roadmap.md" "Roadmaps/Completed/<FeatureName>-Roadmap.md"
 ```
 
 ### Step 7: Stop Dashboard

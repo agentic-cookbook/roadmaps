@@ -66,8 +66,8 @@ Done → run /implement-roadmap-interactively to build it
 
 **Files created:**
 
-- `.claude/Features/FeatureDefinitions/<Name>-FeatureDefinition.md`
-- `.claude/Features/Active-Roadmaps/<Name>-FeatureRoadmap.md`
+- `Roadmaps/Definitions/<Name>-Definition.md`
+- `Roadmaps/Active/<Name>-Roadmap.md`
 - GitHub issues (one per implementation step)
 
 **Changelog:**
@@ -149,7 +149,7 @@ For interactive step-by-step control with checkpoints, use `/implement-roadmap-i
 
 Implementation skill for features planned with `/plan-roadmap`. Works through each Roadmap step with proper isolation, testing, and review.
 
-**What it does:** Picks up a Feature Roadmap from `Active-Roadmaps/` and implements it step by step:
+**What it does:** Picks up a Feature Roadmap from `Active/` and implements it step by step:
 
 1. **Selects** a feature from available roadmaps
 2. **Acquires a lock** so no other session works on the same feature
@@ -168,7 +168,7 @@ Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
 
 ```
 Startup
-  → Scans Active-Roadmaps/
+  → Scans Active/
   → Shows available features (filters out Planning phase and locked features)
   → You choose a feature
   → Lock acquired

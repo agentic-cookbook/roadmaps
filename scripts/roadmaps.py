@@ -8,6 +8,8 @@ Usage:
     roadmaps --list                     List all roadmaps across all repos
     roadmaps --list-dashboards          List all dashboard URLs
     roadmaps --open-dashboards          Open all dashboard URLs in browser
+    roadmaps --monitor [SECONDS]        Live monitor roadmaps + dashboards (default: 30s)
+    roadmaps --cleanup                  Remove dead dashboard dirs and kill orphaned servers
     roadmaps --projects-dir <path>      Override projects directory (default: ~/projects)
 
 Environment:
@@ -18,9 +20,12 @@ import argparse
 import json
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
+import time
+from datetime import datetime
 from pathlib import Path
 
 
@@ -41,7 +46,7 @@ def parse_roadmap_meta(roadmap_path):
     phase_match = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
     status_match = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
 
-    name = name_match.group(1).strip() if name_match else Path(roadmap_path).stem.replace("-FeatureRoadmap", "")
+    name = name_match.group(1).strip() if name_match else Path(roadmap_path).stem.replace("-Roadmap", "")
     phase = phase_match.group(1) if phase_match else "Ready"
     status = status_match.group(1).strip() if status_match else "Not Started"
     total, complete = count_steps(roadmap_path)
@@ -66,11 +71,14 @@ def find_all_roadmaps(projects_dir):
     for repo_dir in sorted(projects_path.iterdir()):
         if not repo_dir.is_dir():
             continue
-        roadmap_dir = repo_dir / ".claude" / "Features" / "Active-Roadmaps"
+        # Check new path first, fall back to old path during migration
+        roadmap_dir = repo_dir / "Roadmaps" / "Active"
+        if not roadmap_dir.exists():
+            roadmap_dir = repo_dir / ".claude" / "Features" / "Active-Roadmaps"
         if not roadmap_dir.exists():
             continue
         roadmaps = []
-        for f in sorted(roadmap_dir.glob("*-FeatureRoadmap.md")):
+        for f in sorted(list(roadmap_dir.glob("*-Roadmap.md")) + list(roadmap_dir.glob("*-FeatureRoadmap.md"))):
             meta = parse_roadmap_meta(f)
             if meta["status"].lower() != "complete":
                 roadmaps.append(meta)
@@ -169,11 +177,36 @@ def reset_color():
     return "\033[0m"
 
 
+# --- CWD-based project detection ---
+
+def detect_project(projects_dir):
+    """Detect project name from CWD if inside a project subdirectory.
+
+    Returns the project directory name if CWD is inside one, else None
+    (meaning show all projects).
+    """
+    cwd = Path.cwd().resolve()
+    projects_path = Path(projects_dir).expanduser().resolve()
+
+    if not str(cwd).startswith(str(projects_path)):
+        return None
+
+    relative = cwd.relative_to(projects_path)
+    parts = relative.parts
+    if not parts:
+        return None
+
+    return parts[0]
+
+
 # --- Commands ---
 
-def cmd_list(projects_dir):
+def cmd_list(projects_dir, project=None):
     """List all roadmaps across all repos."""
     all_roadmaps = find_all_roadmaps(projects_dir)
+
+    if project:
+        all_roadmaps = {k: v for k, v in all_roadmaps.items() if k == project}
 
     if not all_roadmaps:
         print("No active roadmaps found.")
@@ -189,7 +222,7 @@ def cmd_list(projects_dir):
         print()
 
 
-def cmd_list_dashboards():
+def cmd_list_dashboards(project=None):
     """List all dashboard URLs, grouped by project."""
     dashboards = find_dashboards()
 
@@ -202,6 +235,12 @@ def cmd_list_dashboards():
     for d in dashboards:
         by_repo.setdefault(d["repo"], []).append(d)
 
+    if project:
+        by_repo = {k: v for k, v in by_repo.items() if k == project}
+        if not by_repo:
+            print("No dashboards found.")
+            return
+
     for repo_name in sorted(by_repo.keys()):
         print(f"\033[1m{repo_name}\033[0m")
         for d in by_repo[repo_name]:
@@ -212,12 +251,17 @@ def cmd_list_dashboards():
             alive_indicator = "\033[32m\u25CF\033[0m" if d["alive"] else "\033[90m\u25CB\033[0m"
             url_str = d["url"] or "no port"
             print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{display_status}{reset_color()}")
+            print(f"    \033[90m{d['dir']}\033[0m")
         print()
 
 
-def cmd_open_dashboards():
+def cmd_open_dashboards(project=None):
     """Open all dashboard URLs in browser."""
     dashboards = find_dashboards()
+
+    if project:
+        dashboards = [d for d in dashboards if d["repo"] == project]
+
     opened = 0
 
     for d in dashboards:
@@ -237,6 +281,151 @@ def cmd_open_dashboards():
         print("No running dashboards to open.")
 
 
+def cmd_cleanup():
+    """Remove dead dashboard dirs and kill orphaned server processes."""
+    tmpdir = Path(os.environ.get("TMPDIR", "/tmp")).resolve()
+
+    # 1. Find dashboard dirs where the server is dead
+    dead_dirs = []
+    for d in sorted(tmpdir.glob("progress-dashboard-*")):
+        if d.name == "progress-dashboard-active":
+            continue
+        if not d.is_dir():
+            continue
+
+        port_file = d / "port"
+        if not port_file.exists():
+            dead_dirs.append(d)
+            continue
+
+        try:
+            port = int(port_file.read_text().strip())
+        except (ValueError, OSError):
+            dead_dirs.append(d)
+            continue
+
+        url = f"http://127.0.0.1:{port}"
+        try:
+            import urllib.request
+            urllib.request.urlopen(url, timeout=1)
+        except Exception:
+            dead_dirs.append(d)
+
+    # 2. Find orphaned Python processes whose cwd is a deleted dashboard dir
+    orphaned_pids = []
+    try:
+        result = subprocess.run(
+            ["lsof", "-c", "Python", "-a", "-d", "cwd", "-Fn"],
+            capture_output=True, text=True, timeout=5,
+        )
+        lines = result.stdout.strip().split("\n")
+        pid = None
+        for line in lines:
+            if line.startswith("p"):
+                pid = int(line[1:])
+            elif line.startswith("n") and pid:
+                cwd_path = Path(line[1:])
+                if "progress-dashboard-" in str(cwd_path) and not cwd_path.exists():
+                    orphaned_pids.append((pid, str(cwd_path)))
+                pid = None
+    except Exception:
+        pass
+
+    if not dead_dirs and not orphaned_pids:
+        print("Nothing to clean up.")
+        return
+
+    # 3. Report and clean
+    if dead_dirs:
+        print(f"\033[1mRemoving {len(dead_dirs)} dead dashboard dir(s):\033[0m")
+        for d in dead_dirs:
+            title = d.name.replace("progress-dashboard-", "")
+            print(f"  {title:<30} {d}")
+            shutil.rmtree(d)
+        print()
+
+    if orphaned_pids:
+        print(f"\033[1mKilling {len(orphaned_pids)} orphaned server process(es):\033[0m")
+        for pid, cwd_path in orphaned_pids:
+            dirname = Path(cwd_path).name.replace("progress-dashboard-", "")
+            print(f"  PID {pid:<8} {dirname:<30} (dir deleted)")
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except OSError as e:
+                print(f"    \033[31mfailed: {e}\033[0m")
+        print()
+
+    # 4. Clean up the active symlink/file if it points to a dead dir
+    active = tmpdir / "progress-dashboard-active"
+    if active.exists():
+        try:
+            content = active.read_text().strip()
+            if content and not Path(content).exists():
+                active.unlink()
+                print(f"Removed stale active pointer: {content}")
+        except OSError:
+            pass
+
+    print("Cleanup complete.")
+
+
+def cmd_monitor(projects_dir, interval, project=None):
+    """Live monitor: show roadmaps and dashboards, refresh in a loop."""
+    try:
+        while True:
+            # Clear screen
+            print("\033[2J\033[H", end="")
+            print(f"\033[1mRoadmap Monitor\033[0m  \033[90m(every {interval}s — Ctrl-C to stop)  {datetime.now().strftime('%H:%M:%S')}\033[0m")
+            print()
+
+            # Roadmaps
+            all_roadmaps = find_all_roadmaps(projects_dir)
+            if project:
+                all_roadmaps = {k: v for k, v in all_roadmaps.items() if k == project}
+
+            if all_roadmaps:
+                print("\033[1m── Roadmaps ──\033[0m")
+                print()
+                for repo_name, roadmaps in all_roadmaps.items():
+                    print(f"\033[1m{repo_name}\033[0m")
+                    for r in roadmaps:
+                        pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
+                        bar = progress_bar(r["complete"], r["total"])
+                        phase_tag = f"  \033[90m[{r['phase']}]\033[0m" if r["phase"] != "Ready" else ""
+                        print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{phase_tag}")
+                    print()
+
+            # Dashboards
+            dashboards = find_dashboards()
+            if project:
+                dashboards = [d for d in dashboards if d["repo"] == project]
+
+            if dashboards:
+                print("\033[1m── Dashboards ──\033[0m")
+                print()
+                by_repo = {}
+                for d in dashboards:
+                    by_repo.setdefault(d["repo"], []).append(d)
+                for repo_name in sorted(by_repo.keys()):
+                    print(f"\033[1m{repo_name}\033[0m")
+                    for d in by_repo[repo_name]:
+                        display_status = d["status"]
+                        if not d["alive"] and d["status"] == "running":
+                            display_status = "not running"
+                        color = status_color(display_status)
+                        alive_indicator = "\033[32m\u25CF\033[0m" if d["alive"] else "\033[90m\u25CB\033[0m"
+                        url_str = d["url"] or "no port"
+                        print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{display_status}{reset_color()}")
+                    print()
+
+            if not all_roadmaps and not dashboards:
+                print("No active roadmaps or dashboards found.")
+
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        print("\n\033[90mMonitoring stopped.\033[0m")
+
+
 # --- Main ---
 
 def main():
@@ -248,20 +437,27 @@ def main():
     parser.add_argument("--list", action="store_true", help="List all roadmaps across all repos")
     parser.add_argument("--list-dashboards", action="store_true", help="List all dashboard URLs")
     parser.add_argument("--open-dashboards", action="store_true", help="Open all dashboard URLs in browser")
+    parser.add_argument("--monitor", nargs="?", const=30, type=int, metavar="SECONDS", help="Live monitor (default: 30s interval)")
+    parser.add_argument("--cleanup", action="store_true", help="Remove dead dashboard dirs and kill orphaned servers")
     parser.add_argument("--projects-dir", default=None, help="Projects directory (default: ~/projects)")
     args = parser.parse_args()
 
     projects_dir = args.projects_dir or os.environ.get("ROADMAPS_PROJECTS_DIR", "~/projects")
+    project = detect_project(projects_dir)
 
     if args.list:
-        cmd_list(projects_dir)
+        cmd_list(projects_dir, project=project)
     elif args.list_dashboards:
-        cmd_list_dashboards()
+        cmd_list_dashboards(project=project)
     elif args.open_dashboards:
-        cmd_open_dashboards()
+        cmd_open_dashboards(project=project)
+    elif args.monitor is not None:
+        cmd_monitor(projects_dir, args.monitor, project=project)
+    elif args.cleanup:
+        cmd_cleanup()
     else:
         # Default: show list
-        cmd_list(projects_dir)
+        cmd_list(projects_dir, project=project)
 
 
 if __name__ == "__main__":
