@@ -68,14 +68,22 @@ All steps will commit to this single branch. One PR will be created at the end.
 
 ## Step 3: Implementation Loop
 
+**IMPORTANT**: All roadmap paths from this point forward must reference the **worktree copy**. Derive the worktree roadmap path:
+
+```bash
+WT_ROADMAP_PATH="$WORKTREE_PATH/<roadmap_path>"
+```
+
+Where `<roadmap_path>` is the relative path from Step 1 (e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`).
+
 This is a loop. Repeat until done:
 
 ### 3a: Get Next Step
 
-Run the coordinator to find the next step:
+Run the coordinator against the **worktree copy** of the roadmap so it sees status updates from previous steps:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "<roadmap_path>"
+python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "$WT_ROADMAP_PATH"
 ```
 
 This outputs JSON. Parse it:
@@ -86,10 +94,10 @@ This outputs JSON. Parse it:
 
   **1. Write State and History files (inside the worktree):**
 
-  Derive the roadmap directory from `<roadmap_path>` (its parent directory). Then:
+  Derive the roadmap directory from the worktree roadmap path:
 
   ```bash
-  ROADMAP_DIR="$(dirname "<roadmap_path>")"
+  ROADMAP_DIR="$(dirname "$WT_ROADMAP_PATH")"
   TODAY="$(date +%Y-%m-%d)"
   NOW="$(date +%Y-%m-%d-%H%M%S)"
   AUTHOR="$(git config user.name) <$(git config user.email)>"
@@ -132,17 +140,40 @@ This outputs JSON. Parse it:
 
   **3. Push the feature branch and create a PR:**
 
-  Build the PR body dynamically. For each step that had a GitHub issue, include `Closes #<issue_number>`.
+  Build the PR body file. For each step that had a GitHub issue, include `Closes #<issue_number>`:
+
+  ```bash
+  cat > /tmp/gh-pr-body.md <<'PRBODYEOF'
+  ## Summary
+
+  Implements the <feature_name> feature.
+
+  ## Steps
+
+  <For each step, add a line: - [x] Step N: description>
+
+  ## Linked Issues
+
+  <For each step with a GitHub issue, add: Closes #<issue_number>>
+
+  ## Testing
+
+  All steps verified against the feature definition's verification strategy.
+
+  ## Checklist
+
+  - [ ] Build passes
+  - [ ] Tests pass
+  - [ ] Follows project conventions
+  PRBODYEOF
+  ```
+
+  Then push and create the PR:
 
   ```bash
   git -C "$WORKTREE_PATH" push -u origin "$FEATURE_BRANCH"
   gh pr create --head "$FEATURE_BRANCH" --title "feat: <feature_name>" --body-file /tmp/gh-pr-body.md
   ```
-
-  The PR body file (`/tmp/gh-pr-body.md`) should contain:
-  - A summary line: `Implements the <feature_name> feature.`
-  - A section listing all steps: `## Steps` with each step as a checkbox line
-  - A blank line, then `Closes #<issue>` for every step that had a GitHub issue (each on its own line)
 
   **4. Run reviews on the PR:**
 
@@ -208,8 +239,8 @@ Implement step <N> of the <feature_name> feature.
 Step <N>: <description>
 GitHub Issue: <issue>
 Complexity: <complexity>
-Roadmap file: <roadmap_path>
-Feature Definition: <roadmap_dir>/Definition.md
+Roadmap file: <wt_roadmap_path>
+Feature Definition: <wt_roadmap_dir>/Definition.md
 Worktree path: <worktree_path>
 
 Implement ONLY this step. Commit your changes to the existing branch.
