@@ -5,13 +5,18 @@ Scans all repos in a projects directory for active feature roadmaps
 and progress dashboards.
 
 Usage:
-    roadmaps --list                     List all active roadmaps across all repos
-    roadmaps --list --all               List all roadmaps including archived/completed
-    roadmaps --list-dashboards          List all dashboard URLs
-    roadmaps --open-dashboards          Open all dashboard URLs in browser
-    roadmaps --monitor [SECONDS]        Live monitor roadmaps + dashboards (default: 30s)
-    roadmaps --cleanup                  Remove dead dashboard dirs and kill orphaned servers
-    roadmaps --projects-dir <path>      Override projects directory (default: ~/projects)
+    roadmaps --list                         List active roadmaps (running + ready)
+    roadmaps --list --running               Show only running roadmaps
+    roadmaps --list --complete              Include completed roadmaps
+    roadmaps --list --archived              Include archived roadmaps
+    roadmaps --list --all                   Show everything (running + active + complete + archived)
+    roadmaps --list --search <text>         Filter by name
+    roadmaps --list --sort <field>          Sort by: number, name, modified, created (default: number)
+    roadmaps --list-dashboards              List all dashboard URLs
+    roadmaps --open-dashboards              Open all dashboard URLs in browser
+    roadmaps --monitor [SECONDS]            Live monitor roadmaps + dashboards (default: 30s)
+    roadmaps --cleanup                      Remove dead dashboard dirs and kill orphaned servers
+    roadmaps --projects-dir <path>          Override projects directory (default: ~/projects)
 
 Environment:
     ROADMAPS_PROJECTS_DIR   Override default projects directory
@@ -36,9 +41,9 @@ import roadmap_lib as lib
 
 # --- Roadmap scanning ---
 
-def find_all_roadmaps(projects_dir, include_archived=False):
-    """Scan all repos for roadmaps. Optionally include completed/archived ones."""
-    results = {}
+def find_all_roadmaps(projects_dir):
+    """Scan all repos for roadmaps. Returns flat list with repo_name on each entry."""
+    results = []
     projects_path = Path(projects_dir).expanduser()
     if not projects_path.exists():
         return results
@@ -47,28 +52,30 @@ def find_all_roadmaps(projects_dir, include_archived=False):
         if not repo_dir.is_dir():
             continue
 
-        roadmaps = []
-
         # New per-directory layout: Roadmaps/YYYY-MM-DD-Name/
         roadmap_dirs = lib.find_roadmap_dirs(repo_dir)
         if roadmap_dirs:
             for rd in roadmap_dirs:
                 state = lib.current_state(rd)
                 active = lib.is_active(rd)
-                if not active and not include_archived:
-                    continue
                 rm_file = lib.roadmap_path(rd)
                 name = lib.get_feature_name(rd)
                 total, complete = lib.count_steps(rm_file)
-                meta = {
+                # Extract number from dir name for sorting
+                dirname = rd.name
+                results.append({
                     "name": name,
+                    "repo": repo_dir.name,
                     "path": str(rm_file),
+                    "dir": dirname,
                     "state": state,
                     "total": total,
                     "complete": complete,
-                    "archived": not active,
-                }
-                roadmaps.append(meta)
+                    "is_complete": state == "Complete",
+                    "is_active": active and state != "Complete",
+                    "is_running": active and complete > 0 and complete < total,
+                    "is_archived": not active and state == "Complete",
+                })
         else:
             # Old flat layout fallback
             old = lib.find_roadmaps_old_layout(repo_dir)
@@ -77,22 +84,21 @@ def find_all_roadmaps(projects_dir, include_archived=False):
                     continue
                 rm_path = entry["roadmap_path"]
                 is_completed = entry["location"] == "completed"
-                if is_completed and not include_archived:
-                    continue
                 name = lib.parse_roadmap_heading(rm_path) or entry["name"]
                 total, complete = lib.count_steps(rm_path)
-                meta = {
+                results.append({
                     "name": name,
+                    "repo": repo_dir.name,
                     "path": str(rm_path),
+                    "dir": rm_path.parent.name,
                     "state": "Complete" if is_completed else "Ready",
                     "total": total,
                     "complete": complete,
-                    "archived": is_completed,
-                }
-                roadmaps.append(meta)
-
-        if roadmaps:
-            results[repo_dir.name] = roadmaps
+                    "is_complete": is_completed,
+                    "is_active": not is_completed,
+                    "is_running": False,
+                    "is_archived": is_completed,
+                })
 
     return results
 
@@ -210,27 +216,70 @@ def detect_project(projects_dir):
 
 # --- Commands ---
 
-def cmd_list(projects_dir, project=None, include_archived=False):
-    """List all roadmaps across all repos."""
-    all_roadmaps = find_all_roadmaps(projects_dir, include_archived=include_archived)
+def cmd_list(projects_dir, project=None, show_running=True, show_active=True,
+             show_complete=False, show_archived=False, search=None, sort_by="number"):
+    """List roadmaps with filtering, sorting, and search."""
+    all_roadmaps = find_all_roadmaps(projects_dir)
 
     if project:
-        all_roadmaps = {k: v for k, v in all_roadmaps.items() if k == project}
+        all_roadmaps = [r for r in all_roadmaps if r["repo"] == project]
 
-    if not all_roadmaps:
-        label = "roadmaps" if include_archived else "active roadmaps"
-        print(f"No {label} found.")
+    # Filter
+    filtered = []
+    for r in all_roadmaps:
+        if show_running and r["is_running"]:
+            filtered.append(r)
+        elif show_active and r["is_active"]:
+            filtered.append(r)
+        elif show_complete and r["is_complete"] and not r["is_archived"]:
+            filtered.append(r)
+        elif show_archived and r["is_archived"]:
+            filtered.append(r)
+
+    # Search
+    if search:
+        search_lower = search.lower()
+        filtered = [r for r in filtered if search_lower in r["name"].lower()]
+
+    # Sort
+    if sort_by == "name":
+        filtered.sort(key=lambda r: r["name"].lower())
+    elif sort_by == "modified":
+        filtered.sort(key=lambda r: r["dir"], reverse=True)
+    elif sort_by == "created":
+        filtered.sort(key=lambda r: r["dir"])
+    else:  # number (default) — by directory name which starts with date
+        filtered.sort(key=lambda r: r["dir"])
+
+    if not filtered:
+        print("No roadmaps match the current filters.")
         return
 
-    for repo_name, roadmaps in all_roadmaps.items():
+    # Group by repo for display
+    by_repo = {}
+    for r in filtered:
+        by_repo.setdefault(r["repo"], []).append(r)
+
+    for repo_name, roadmaps in sorted(by_repo.items()):
         print(f"\033[1m{repo_name}\033[0m")
         for r in roadmaps:
             pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
             bar = progress_bar(r["complete"], r["total"])
+
+            # State tag with color
             state = r.get("state", "")
-            state_tag = f"  \033[90m[{state}]\033[0m" if state not in ("Ready", "") else ""
-            archived_tag = "  \033[32m[Archived]\033[0m" if r.get("archived") else ""
-            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}{archived_tag}")
+            if r["is_archived"]:
+                state_tag = "  \033[90m[Archived]\033[0m"
+            elif r["is_complete"]:
+                state_tag = "  \033[32m[Complete]\033[0m"
+            elif r["is_running"]:
+                state_tag = "  \033[33m[Running]\033[0m"
+            elif state not in ("Ready", ""):
+                state_tag = f"  \033[90m[{state}]\033[0m"
+            else:
+                state_tag = ""
+
+            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}")
         print()
 
 
@@ -393,18 +442,23 @@ def cmd_monitor(projects_dir, interval, project=None):
             # Roadmaps
             all_roadmaps = find_all_roadmaps(projects_dir)
             if project:
-                all_roadmaps = {k: v for k, v in all_roadmaps.items() if k == project}
+                all_roadmaps = [r for r in all_roadmaps if r["repo"] == project]
+            # Show running + active in monitor
+            active = [r for r in all_roadmaps if r["is_running"] or r["is_active"]]
 
-            if all_roadmaps:
+            if active:
                 print("\033[1m── Roadmaps ──\033[0m")
                 print()
-                for repo_name, roadmaps in all_roadmaps.items():
+                by_repo = {}
+                for r in active:
+                    by_repo.setdefault(r["repo"], []).append(r)
+                for repo_name, roadmaps in sorted(by_repo.items()):
                     print(f"\033[1m{repo_name}\033[0m")
                     for r in roadmaps:
                         pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
                         bar = progress_bar(r["complete"], r["total"])
                         state = r.get("state", "")
-                        state_tag = f"  \033[90m[{state}]\033[0m" if state not in ("Ready", "") else ""
+                        state_tag = f"  \033[33m[Running]\033[0m" if r["is_running"] else (f"  \033[90m[{state}]\033[0m" if state not in ("Ready", "") else "")
                         print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}")
                     print()
 
@@ -431,7 +485,7 @@ def cmd_monitor(projects_dir, interval, project=None):
                         print(f"  {alive_indicator} {d['title']:<30} {url_str:<30} {color}{display_status}{reset_color()}")
                     print()
 
-            if not all_roadmaps and not dashboards:
+            if not active and not dashboards:
                 print("No active roadmaps or dashboards found.")
 
             time.sleep(interval)
@@ -447,8 +501,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="Examples:\n  roadmaps --list\n  roadmaps --list-dashboards\n  roadmaps --open-dashboards",
     )
-    parser.add_argument("--list", action="store_true", help="List all roadmaps across all repos")
-    parser.add_argument("--all", action="store_true", help="Include archived/completed roadmaps (use with --list)")
+    parser.add_argument("--list", action="store_true", help="List roadmaps (default: running + active)")
+    parser.add_argument("--running", action="store_true", help="Show running roadmaps")
+    parser.add_argument("--active", action="store_true", help="Show active (non-complete) roadmaps")
+    parser.add_argument("--complete", action="store_true", help="Show completed roadmaps")
+    parser.add_argument("--archived", action="store_true", help="Show archived roadmaps")
+    parser.add_argument("--all", action="store_true", help="Show all roadmaps (running + active + complete + archived)")
+    parser.add_argument("--search", metavar="TEXT", help="Filter roadmaps by name")
+    parser.add_argument("--sort", choices=["number", "name", "modified", "created"], default="number", help="Sort order (default: number)")
     parser.add_argument("--list-dashboards", action="store_true", help="List all dashboard URLs")
     parser.add_argument("--open-dashboards", action="store_true", help="Open all dashboard URLs in browser")
     parser.add_argument("--monitor", nargs="?", const=30, type=int, metavar="SECONDS", help="Live monitor (default: 30s interval)")
@@ -459,8 +519,23 @@ def main():
     projects_dir = args.projects_dir or os.environ.get("ROADMAPS_PROJECTS_DIR", "~/projects")
     project = detect_project(projects_dir)
 
-    if args.list:
-        cmd_list(projects_dir, project=project, include_archived=args.all)
+    if args.list or not (args.list_dashboards or args.open_dashboards or args.monitor is not None or args.cleanup):
+        # Determine which filters are active
+        if args.all:
+            show_r, show_a, show_c, show_ar = True, True, True, True
+        elif args.running or args.active or args.complete or args.archived:
+            show_r = args.running
+            show_a = args.active
+            show_c = args.complete
+            show_ar = args.archived
+        else:
+            # Default: running + active
+            show_r, show_a, show_c, show_ar = True, True, False, False
+
+        cmd_list(projects_dir, project=project,
+                 show_running=show_r, show_active=show_a,
+                 show_complete=show_c, show_archived=show_ar,
+                 search=args.search, sort_by=args.sort)
     elif args.list_dashboards:
         cmd_list_dashboards(project=project)
     elif args.open_dashboards:
@@ -469,9 +544,6 @@ def main():
         cmd_monitor(projects_dir, args.monitor, project=project)
     elif args.cleanup:
         cmd_cleanup()
-    else:
-        # Default: show list
-        cmd_list(projects_dir, project=project, include_archived=args.all)
 
 
 if __name__ == "__main__":
