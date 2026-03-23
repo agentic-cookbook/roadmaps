@@ -20,7 +20,7 @@
   }
   .main-content { flex: 1; }
   h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
-  .subtitle-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+  .subtitle-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; justify-content: space-between; }
   .subtitle { color: var(--text-muted); font-size: 0.85rem; }
   .refresh-btn {
     background: none; border: 1px solid var(--border); color: var(--text-muted);
@@ -62,7 +62,7 @@
   .filter-checkbox.archived-cb input:checked ~ .check-box { background: var(--text-muted); border-color: var(--text-muted); }
   .filter-checkbox.archived-cb:hover .check-box { border-color: var(--text-muted); }
 
-  .actions-row { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
+  .subtitle-left { display: flex; align-items: center; gap: 0.5rem; }
   .action-btn {
     background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
     padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
@@ -138,11 +138,12 @@
 <div class="main-content">
 <h1>Roadmap Dashboard</h1>
 <div class="subtitle-row">
-  <span class="subtitle" id="subtitle">Loading...</span>
-  <button class="refresh-btn" id="refresh-btn" title="Refresh"></button>
+  <div class="subtitle-left">
+    <span class="subtitle" id="subtitle">Loading...</span>
+    <button class="refresh-btn" id="refresh-btn" title="Refresh"></button>
+  </div>
+  <div id="actions-row"></div>
 </div>
-
-<div class="actions-row" id="actions-row"></div>
 
 <div class="toolbar">
   <div class="filters" id="filters"></div>
