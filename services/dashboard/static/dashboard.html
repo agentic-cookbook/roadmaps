@@ -627,7 +627,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v1</span>
+    <span class="footer-version">Dashboard Service v2</span>
   </div>
 </div><!-- /main-wrap -->
 
@@ -1000,8 +1000,13 @@ function renderTickets(container, items, type) {
 function render(data) {
   lastData = data;
 
+  // Determine effective display status: state=Complete always wins
+  var isComplete = data.state === 'Complete' || data.status === 'complete';
+  var isError = data.status === 'error';
+  var isRunning = data.status === 'running' && !isComplete;
+
   // Title: "Feature Roadmap: {name}" with checkmark when complete
-  var displayTitle = (data.status === 'complete' ? '\u2713 ' : '') + 'Feature Roadmap: ' + (data.name || 'Untitled');
+  var displayTitle = (isComplete ? '\u2713 ' : '') + 'Feature Roadmap: ' + (data.name || 'Untitled');
   var titleEl = document.getElementById('title');
   var titleTextNode = titleEl.firstChild;
   if (titleTextNode && titleTextNode.nodeType === 3) {
@@ -1015,8 +1020,10 @@ function render(data) {
   renderEnv(data);
 
   var badge = document.getElementById('status-badge');
-  badge.textContent = data.status || 'running';
-  badge.className = 'badge badge-' + (data.status === 'complete' ? 'complete' : data.status === 'error' ? 'error' : 'running');
+  var badgeLabel = isComplete ? 'COMPLETE' : isError ? 'ERROR' : isRunning ? 'RUNNING' : 'IDLE';
+  var badgeClass = isComplete ? 'complete' : isError ? 'error' : isRunning ? 'running' : 'waiting';
+  badge.textContent = badgeLabel;
+  badge.className = 'badge badge-' + badgeClass;
 
   var steps = data.steps || [];
   var done = steps.filter(function(s) { return s.status === 'complete'; }).length;
@@ -1220,6 +1227,15 @@ function updateControlButtons() {
   var btnResume = document.getElementById('btn-resume');
   var btnStop = document.getElementById('btn-stop');
   var controlStatus = document.getElementById('control-status');
+  var controlsDiv = document.getElementById('controls');
+
+  // Hide all controls when complete or idle
+  if (lastData && (lastData.state === 'Complete' || lastData.status === 'complete' ||
+      (lastData.status === 'idle' && lastData.state !== 'Ready' && lastData.state !== 'Implementing'))) {
+    controlsDiv.style.display = 'none';
+    return;
+  }
+  controlsDiv.style.display = '';
 
   if (currentControl === 'pause') {
     btnPause.style.display = 'none';

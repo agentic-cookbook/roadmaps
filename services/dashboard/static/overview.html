@@ -377,17 +377,17 @@ function renderRoadmaps(roadmaps) {
     var isArchived = r.archived === 1 || r.archived === true;
     var isComplete = r.state === 'Complete';
     var isRunning = r.status === 'running';
-    var statusClass = isRunning ? 'running' : isComplete ? 'card-complete' : r.status === 'error' ? 'error' : '';
+    var statusClass = isComplete ? 'card-complete' : r.status === 'error' ? 'error' : isRunning ? 'running' : '';
     var cardClass = 'roadmap-card ' + statusClass + (isArchived ? ' archived-card' : '');
 
-    // Single badge: show the most useful status info
+    // Single badge: state takes priority over status
     var badges = [];
-    if (isRunning) {
-      badges.push(el('span', { className: 'badge running' }, 'Running'));
+    if (isComplete) {
+      badges.push(el('span', { className: 'badge badge-complete' }, 'Complete'));
     } else if (r.status === 'error') {
       badges.push(el('span', { className: 'badge error' }, 'Error'));
-    } else if (isComplete) {
-      badges.push(el('span', { className: 'badge badge-complete' }, 'Complete'));
+    } else if (isRunning) {
+      badges.push(el('span', { className: 'badge running' }, 'Running'));
     } else {
       badges.push(el('span', { className: 'badge ready' }, r.state));
     }
