@@ -109,6 +109,7 @@
   .badge.badge-complete { background: rgba(63,185,80,0.2); color: var(--green); }
   .badge.error { background: rgba(248,81,73,0.2); color: var(--red); }
   .badge.ready { background: rgba(88,166,255,0.2); color: var(--accent); }
+  .badge.badge-archived { background: rgba(139,148,158,0.2); color: var(--text-muted); }
   .card-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
   .progress-bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
   .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
@@ -383,7 +384,9 @@ function renderRoadmaps(roadmaps) {
 
     // Single badge: state takes priority over status
     var badges = [];
-    if (isComplete) {
+    if (isArchived) {
+      badges.push(el('span', { className: 'badge badge-archived' }, 'Archived'));
+    } else if (isComplete) {
       badges.push(el('span', { className: 'badge badge-complete' }, 'Complete'));
     } else if (r.status === 'error') {
       badges.push(el('span', { className: 'badge error' }, 'Error'));
