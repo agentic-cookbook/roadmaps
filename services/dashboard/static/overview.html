@@ -107,12 +107,11 @@
   .running-clock { font-size: 0.75rem; color: var(--yellow); font-variant-numeric: tabular-nums; }
   .footer-right { display: flex; gap: 0.75rem; align-items: center; }
   .archive-btn {
-    background: none; border: none; color: var(--text-muted); cursor: pointer;
-    font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px;
-    opacity: 0; transition: opacity 0.15s, color 0.15s;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer;
+    font-size: 0.7rem; padding: 0.2rem 0.6rem; border-radius: 4px;
+    transition: border-color 0.15s, color 0.15s;
   }
-  .roadmap-card:hover .archive-btn { opacity: 1; }
-  .archive-btn:hover { color: var(--text); }
+  .archive-btn:hover { border-color: var(--accent); color: var(--text); }
   .empty { color: var(--text-muted); text-align: center; padding: 3rem; }
 
   /* --- Footer pinned to bottom --- */
