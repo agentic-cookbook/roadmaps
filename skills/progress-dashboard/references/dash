@@ -1096,6 +1096,15 @@ def svc_begin_step(client, args):
     rid = _get_active_roadmap_id()
     step_num = int(args[0])
     client.begin_step(rid, step_num)
+    # Log event (get step description from API)
+    try:
+        rm = client.get_roadmap(rid)
+        for s in rm.get("steps", []):
+            if s["number"] == step_num:
+                client.log_event(rid, f"Step {step_num} started: {s['description']}")
+                break
+    except Exception:
+        client.log_event(rid, f"Step {step_num} started")
 
 
 def svc_finish_step(client, args):
@@ -1105,6 +1114,15 @@ def svc_finish_step(client, args):
     rid = _get_active_roadmap_id()
     step_num = int(args[0])
     client.finish_step(rid, step_num)
+    # Log event
+    try:
+        rm = client.get_roadmap(rid)
+        for s in rm.get("steps", []):
+            if s["number"] == step_num:
+                client.log_event(rid, f"Step {step_num} complete: {s['description']}")
+                break
+    except Exception:
+        client.log_event(rid, f"Step {step_num} complete")
 
 
 def svc_pr_created(client, args):
@@ -1112,7 +1130,10 @@ def svc_pr_created(client, args):
         print("Usage: dash pr-created <step_number> <pr_number> <pr_url>", file=sys.stderr)
         sys.exit(1)
     rid = _get_active_roadmap_id()
-    client.pr_created(rid, int(args[0]), int(args[1]), args[2])
+    step_num = int(args[0])
+    pr_num = int(args[1])
+    client.pr_created(rid, step_num, pr_num, args[2])
+    client.log_event(rid, f"Step {step_num}: PR #{pr_num} created")
 
 
 def svc_step_start(client, args):
@@ -1184,6 +1205,7 @@ def svc_check_control(client, args):
 
 def svc_complete(client, args):
     rid = _get_active_roadmap_id()
+    client.log_event(rid, "All steps complete")
     client.complete(rid)
 
 
