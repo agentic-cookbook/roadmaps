@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+  }
+  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .subtitle { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .filters {
+    display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+  }
+  .filter-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 0.35rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+  }
+  .filter-btn.active { color: var(--accent); border-color: var(--accent); }
+  .roadmap-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .roadmap-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 1rem 1.25rem; cursor: pointer; transition: border-color 0.15s;
+  }
+  .roadmap-card:hover { border-color: var(--accent); }
+  .roadmap-card.running { border-left: 3px solid var(--yellow); }
+  .roadmap-card.complete { border-left: 3px solid var(--green); }
+  .roadmap-card.error { border-left: 3px solid var(--red); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .card-name { font-weight: 600; font-size: 1rem; }
+  .card-badges { display: flex; gap: 0.4rem; }
+  .badge {
+    font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px;
+    background: var(--border); color: var(--text-muted);
+  }
+  .badge.running { background: rgba(210,153,34,0.2); color: var(--yellow); }
+  .badge.complete { background: rgba(63,185,80,0.2); color: var(--green); }
+  .badge.error { background: rgba(248,81,73,0.2); color: var(--red); }
+  .badge.ready { background: rgba(88,166,255,0.2); color: var(--accent); }
+  .card-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .progress-bar-bg {
+    height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s;
+  }
+  .progress-bar-fill.complete-fill { background: var(--green); }
+  .progress-text { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+  .empty { color: var(--text-muted); text-align: center; padding: 3rem; }
+  .footer {
+    margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);
+    font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;
+  }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+  .status-dot.connected { background: var(--green); }
+  .status-dot.disconnected { background: var(--red); }
+</style>
+</head>
+<body>
+
+<h1>Roadmap Dashboard</h1>
+<div class="subtitle" id="subtitle">Loading...</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="running">Running</button>
+  <button class="filter-btn" data-filter="active">Active</button>
+  <button class="filter-btn" data-filter="complete">Complete</button>
+</div>
+
+<div class="roadmap-list" id="roadmap-list"></div>
+
+<div class="footer">
+  <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
+  <span>Dashboard Service</span>
+</div>
+
+<script>
+const API = '/api/v1';
+let allRoadmaps = [];
+let currentFilter = 'all';
+
+// --- Safe DOM helpers ---
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'className') e.className = v;
+    else if (k === 'onclick') e.onclick = v;
+    else if (k.startsWith('data')) e.setAttribute(k.replace(/([A-Z])/g, '-$1').toLowerCase(), v);
+    else e.setAttribute(k, v);
+  });
+  if (children) {
+    if (typeof children === 'string') e.textContent = children;
+    else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(c); });
+    else e.appendChild(children);
+  }
+  return e;
+}
+
+function text(s) { return document.createTextNode(s || ''); }
+
+// --- Rendering ---
+
+function renderRoadmaps(roadmaps) {
+  const list = document.getElementById('roadmap-list');
+  const filtered = roadmaps.filter(r => {
+    if (currentFilter === 'all') return true;
+    if (currentFilter === 'running') return r.status === 'running';
+    if (currentFilter === 'active') return !['Complete'].includes(r.state);
+    if (currentFilter === 'complete') return r.state === 'Complete';
+    return true;
+  });
+
+  filtered.sort((a, b) => {
+    if (a.status === 'running' && b.status !== 'running') return -1;
+    if (b.status === 'running' && a.status !== 'running') return 1;
+    return (b.modified || '').localeCompare(a.modified || '');
+  });
+
+  list.replaceChildren();
+
+  if (filtered.length === 0) {
+    list.appendChild(el('div', {className: 'empty'}, 'No roadmaps match the current filter.'));
+    return;
+  }
+
+  filtered.forEach(r => {
+    const steps = r.steps || [];
+    const total = steps.length;
+    const complete = steps.filter(s => s.status === 'complete').length;
+    const pct = total > 0 ? Math.round(complete / total * 100) : 0;
+    const statusClass = r.status === 'running' ? 'running' : r.state === 'Complete' ? 'complete' : r.status === 'error' ? 'error' : '';
+    const fillClass = pct === 100 ? 'complete-fill' : '';
+
+    const stateClass = r.state === 'Ready' ? 'ready' : r.state === 'Complete' ? 'complete' : '';
+    const badges = [el('span', {className: `badge ${stateClass}`}, r.state)];
+    if (r.status !== 'idle') {
+      badges.push(el('span', {className: `badge ${r.status}`}, r.status));
+    }
+
+    const metaItems = [];
+    if (r.repo) metaItems.push(el('span', null, r.repo));
+    if (r.author) metaItems.push(el('span', null, r.author));
+
+    const fill = el('div', {className: `progress-bar-fill ${fillClass}`});
+    fill.style.width = pct + '%';
+
+    const card = el('div', {className: `roadmap-card ${statusClass}`, onclick: () => { location.href = '/roadmap/' + r.id; }}, [
+      el('div', {className: 'card-header'}, [
+        el('span', {className: 'card-name'}, r.name),
+        el('div', {className: 'card-badges'}, badges),
+      ]),
+      el('div', {className: 'card-meta'}, metaItems),
+      el('div', {className: 'progress-bar-bg'}, [fill]),
+      el('div', {className: 'progress-text'}, `${complete}/${total} steps (${pct}%)`),
+    ]);
+    list.appendChild(card);
+  });
+
+  document.getElementById('subtitle').textContent = `${roadmaps.length} roadmap${roadmaps.length !== 1 ? 's' : ''}`;
+}
+
+// --- Data fetching ---
+
+async function loadRoadmaps() {
+  try {
+    const resp = await fetch(`${API}/roadmaps`);
+    const roadmaps = await resp.json();
+    allRoadmaps = await Promise.all(roadmaps.map(async r => {
+      const detail = await fetch(`${API}/roadmaps/${r.id}`);
+      return detail.json();
+    }));
+    renderRoadmaps(allRoadmaps);
+  } catch (e) {
+    document.getElementById('subtitle').textContent = 'Failed to load roadmaps';
+  }
+}
+
+// --- SSE ---
+
+function connectSSE() {
+  const dot = document.getElementById('sse-dot');
+  const status = document.getElementById('sse-status');
+  const es = new EventSource(`${API}/events/stream`);
+
+  es.onopen = () => {
+    dot.className = 'status-dot connected';
+    status.textContent = 'Connected';
+  };
+
+  es.onerror = () => {
+    dot.className = 'status-dot disconnected';
+    status.textContent = 'Disconnected \u2014 retrying...';
+  };
+
+  const eventTypes = ['roadmap_updated', 'roadmap_synced', 'roadmap_deleted',
+                      'step_updated', 'steps_updated', 'state_changed',
+                      'event_logged', 'control_changed'];
+  eventTypes.forEach(type => {
+    es.addEventListener(type, () => loadRoadmaps());
+  });
+}
+
+// --- Filters ---
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderRoadmaps(allRoadmaps);
+  });
+});
+
+// --- Init ---
+
+loadRoadmaps();
+connectSSE();
+</script>
+</body>
+</html>

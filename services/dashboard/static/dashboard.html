@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap Detail</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --yellow: #d29922; --red: #f85149;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text);
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  .top-bar { flex-shrink: 0; padding: 1.25rem 1.5rem 0 1.5rem; }
+  .nav { font-size: 0.8rem; margin-bottom: 0.5rem; }
+  .nav a { color: var(--accent); text-decoration: none; }
+  .nav a:hover { text-decoration: underline; }
+  header { margin-bottom: 0.75rem; }
+  .header-row { display: flex; justify-content: space-between; align-items: baseline; }
+  h1 { font-size: 1.5rem; font-weight: 600; }
+  .status-badge {
+    font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 10px;
+    background: var(--border); color: var(--text-muted);
+  }
+  .status-badge.running { background: rgba(210,153,34,0.2); color: var(--yellow); }
+  .status-badge.complete { background: rgba(63,185,80,0.2); color: var(--green); }
+  .status-badge.error { background: rgba(248,81,73,0.2); color: var(--red); }
+  .env-info { display: flex; gap: 1rem; margin-top: 0.3rem; font-size: 0.7rem; color: var(--text-muted); }
+  .progress-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+  .progress-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
+  .progress-bar-fill.done { background: var(--green); }
+  .progress-text { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+  .controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .ctrl-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+    padding: 0.3rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+  }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--text); }
+  .ctrl-btn.danger:hover { border-color: var(--red); color: var(--red); }
+
+  .content { display: flex; flex: 1; overflow: hidden; padding: 0 1.5rem; gap: 1.5rem; }
+  .steps-pane { flex: 0 0 55%; overflow-y: auto; padding-right: 0.5rem; }
+  .right-pane { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+
+  .step {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.75rem 1rem; margin-bottom: 0.5rem;
+  }
+  .step.active { border-color: var(--yellow); }
+  .step-header { display: flex; align-items: center; gap: 0.5rem; }
+  .step-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+  .step-icon.in_progress { color: var(--yellow); }
+  .step-icon.complete { color: var(--green); }
+  .step-icon.error { color: var(--red); }
+  .step-name { font-weight: 500; font-size: 0.9rem; }
+  .step-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; margin-left: 1.7rem; }
+  .step-detail {
+    font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; margin-left: 1.7rem;
+    font-family: monospace; background: var(--bg); padding: 0.3rem 0.5rem; border-radius: 4px;
+  }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; }
+  .panel-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted); }
+  .event-log { max-height: 300px; overflow-y: auto; font-size: 0.75rem; font-family: monospace; }
+  .event-entry { padding: 0.15rem 0; border-bottom: 1px solid var(--border); }
+  .event-time { color: var(--text-muted); margin-right: 0.5rem; }
+
+  .issue-item, .pr-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0; font-size: 0.8rem; }
+  .issue-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .issue-dot.open { background: var(--green); }
+  .issue-dot.closed { background: var(--red); }
+  .issue-dot.merged { background: #a371f7; }
+  .issue-link { color: var(--accent); text-decoration: none; }
+  .issue-link:hover { text-decoration: underline; }
+  .issue-status { color: var(--text-muted); font-size: 0.7rem; }
+
+  .footer {
+    flex-shrink: 0; padding: 0.5rem 1.5rem; border-top: 1px solid var(--border);
+    font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;
+  }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+  .status-dot.connected { background: var(--green); }
+  .status-dot.disconnected { background: var(--red); }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; animation: spin 1s linear infinite; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="nav"><a href="/">&larr; All Roadmaps</a></div>
+  <header>
+    <div class="header-row">
+      <h1 id="title">Loading...</h1>
+      <span class="status-badge" id="status-badge"></span>
+    </div>
+    <div class="env-info" id="env-info"></div>
+  </header>
+  <div class="progress-row">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+    <div class="progress-text" id="progress-text"></div>
+  </div>
+  <div class="controls" id="controls"></div>
+</div>
+
+<div class="content">
+  <div class="steps-pane" id="steps-pane"></div>
+  <div class="right-pane">
+    <div class="panel" id="issues-panel" style="display:none">
+      <div class="panel-title">Issues</div>
+      <div id="issues-list"></div>
+    </div>
+    <div class="panel" id="prs-panel" style="display:none">
+      <div class="panel-title">Pull Requests</div>
+      <div id="prs-list"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Event Log</div>
+      <div class="event-log" id="event-log"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
+  <span>Dashboard Service</span>
+</div>
+
+<script>
+const API = '/api/v1';
+const roadmapId = location.pathname.split('/').pop();
+let data = null;
+
+// --- Safe DOM helpers ---
+
+function el(tag, attrs, children) {
+  const e = document.createElement(tag);
+  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
+    if (k === 'className') e.className = v;
+    else if (k === 'onclick') e.onclick = v;
+    else if (k === 'href') e.href = v;
+    else if (k === 'target') e.target = v;
+    else e.setAttribute(k, v);
+  });
+  if (children) {
+    if (typeof children === 'string') e.textContent = children;
+    else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(c); });
+    else e.appendChild(children);
+  }
+  return e;
+}
+
+// --- Rendering ---
+
+function render(d) {
+  data = d;
+  document.title = d.name + ' - Dashboard';
+
+  // Title + status
+  document.getElementById('title').textContent = d.name;
+  const badge = document.getElementById('status-badge');
+  badge.textContent = d.status;
+  badge.className = 'status-badge ' + d.status;
+
+  // Environment
+  const env = document.getElementById('env-info');
+  env.replaceChildren();
+  if (d.repo) env.appendChild(el('span', null, d.repo));
+  if (d.branch) env.appendChild(el('span', null, d.branch));
+  if (d.machine) env.appendChild(el('span', null, d.machine));
+
+  // Progress
+  const steps = d.steps || [];
+  const total = steps.length;
+  const complete = steps.filter(s => s.status === 'complete').length;
+  const pct = total > 0 ? Math.round(complete / total * 100) : 0;
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = pct + '%';
+  fill.className = 'progress-bar-fill' + (pct === 100 ? ' done' : '');
+  document.getElementById('progress-text').textContent = `${complete}/${total} steps (${pct}%)`;
+
+  // Controls
+  const ctrlDiv = document.getElementById('controls');
+  ctrlDiv.replaceChildren();
+  if (d.status === 'running') {
+    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn', onclick: () => sendControl('pause')}, 'Pause'));
+    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn danger', onclick: () => sendControl('stop')}, 'Stop'));
+  } else if (d.status === 'running' || checkIfPaused()) {
+    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn', onclick: () => sendControl('resume')}, 'Resume'));
+    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn danger', onclick: () => sendControl('stop')}, 'Stop'));
+  }
+
+  // Steps
+  const stepsPane = document.getElementById('steps-pane');
+  stepsPane.replaceChildren();
+  steps.forEach(s => {
+    const icons = {not_started: '\u25CB', in_progress: '\u27F3', complete: '\u2713', error: '\u2717', skipped: '\u2713'};
+    const icon = icons[s.status] || '\u25CB';
+    const isActive = s.status === 'in_progress';
+
+    const stepEl = el('div', {className: 'step' + (isActive ? ' active' : '')}, [
+      el('div', {className: 'step-header'}, [
+        el('span', {className: 'step-icon ' + s.status}, s.status === 'in_progress' ? el('span', {className: 'spinner'}, '\u27F3') : document.createTextNode(icon)),
+        el('span', {className: 'step-name'}, `Step ${s.number}: ${s.description}`),
+      ]),
+    ]);
+
+    // Meta line
+    const meta = [];
+    if (s.complexity) meta.push(s.complexity);
+    if (s.step_type === 'Manual') meta.push('MANUAL');
+    if (s.issue_number) meta.push('#' + s.issue_number);
+    if (s.pr_number) meta.push('PR #' + s.pr_number);
+    if (meta.length) stepEl.appendChild(el('div', {className: 'step-meta'}, meta.join(' \u2022 ')));
+
+    if (s.detail) stepEl.appendChild(el('div', {className: 'step-detail'}, s.detail));
+
+    stepsPane.appendChild(stepEl);
+  });
+
+  // Issues
+  const issues = d.issues || [];
+  const issuesPanel = document.getElementById('issues-panel');
+  const issuesList = document.getElementById('issues-list');
+  issuesList.replaceChildren();
+  if (issues.length) {
+    issuesPanel.style.display = '';
+    issues.forEach(iss => {
+      const dotClass = iss.status === 'closed' ? 'closed' : 'open';
+      const item = el('div', {className: 'issue-item'}, [
+        el('span', {className: 'issue-dot ' + dotClass}),
+        iss.url ? el('a', {className: 'issue-link', href: iss.url, target: '_blank'}, `#${iss.number}`) : el('span', null, `#${iss.number}`),
+        el('span', null, iss.title || ''),
+        el('span', {className: 'issue-status'}, iss.status || ''),
+      ]);
+      issuesList.appendChild(item);
+    });
+  } else {
+    issuesPanel.style.display = 'none';
+  }
+
+  // PRs
+  const prs = d.prs || [];
+  const prsPanel = document.getElementById('prs-panel');
+  const prsList = document.getElementById('prs-list');
+  prsList.replaceChildren();
+  if (prs.length) {
+    prsPanel.style.display = '';
+    prs.forEach(pr => {
+      const dotClass = pr.status === 'merged' ? 'merged' : pr.status === 'closed' ? 'closed' : 'open';
+      const item = el('div', {className: 'pr-item'}, [
+        el('span', {className: 'issue-dot ' + dotClass}),
+        pr.url ? el('a', {className: 'issue-link', href: pr.url, target: '_blank'}, `#${pr.number}`) : el('span', null, `#${pr.number}`),
+        el('span', null, pr.title || ''),
+        el('span', {className: 'issue-status'}, pr.status || ''),
+      ]);
+      prsList.appendChild(item);
+    });
+  } else {
+    prsPanel.style.display = 'none';
+  }
+
+  // Events
+  const events = d.events || [];
+  const log = document.getElementById('event-log');
+  log.replaceChildren();
+  events.forEach(ev => {
+    const entry = el('div', {className: 'event-entry'}, [
+      el('span', {className: 'event-time'}, (ev.time || '').substring(11, 19)),
+      document.createTextNode(ev.message || ''),
+    ]);
+    log.appendChild(entry);
+  });
+  log.scrollTop = log.scrollHeight;
+}
+
+let _controlState = null;
+function checkIfPaused() { return _controlState === 'pause'; }
+
+async function sendControl(action) {
+  await fetch(`${API}/roadmaps/${roadmapId}/control`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({action}),
+  });
+  _controlState = action;
+}
+
+// --- Data ---
+
+async function loadData() {
+  try {
+    const resp = await fetch(`${API}/roadmaps/${roadmapId}`);
+    if (!resp.ok) { document.getElementById('title').textContent = 'Roadmap not found'; return; }
+    render(await resp.json());
+    // Also load control state
+    const ctrl = await fetch(`${API}/roadmaps/${roadmapId}/control`);
+    const ctrlData = await ctrl.json();
+    _controlState = ctrlData.action;
+  } catch (e) {
+    document.getElementById('title').textContent = 'Failed to load';
+  }
+}
+
+// --- SSE ---
+
+function connectSSE() {
+  const dot = document.getElementById('sse-dot');
+  const status = document.getElementById('sse-status');
+  const es = new EventSource(`${API}/roadmaps/${roadmapId}/events/stream`);
+
+  es.onopen = () => { dot.className = 'status-dot connected'; status.textContent = 'Connected'; };
+  es.onerror = () => { dot.className = 'status-dot disconnected'; status.textContent = 'Disconnected \u2014 retrying...'; };
+
+  const eventTypes = ['roadmap_updated', 'roadmap_synced', 'step_updated', 'steps_updated',
+                      'state_changed', 'event_logged', 'control_changed', 'history_event'];
+  eventTypes.forEach(type => { es.addEventListener(type, () => loadData()); });
+}
+
+// --- Init ---
+
+loadData();
+connectSSE();
+</script>
+</body>
+</html>
