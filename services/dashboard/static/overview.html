@@ -86,6 +86,46 @@
   .search-input::placeholder { color: var(--text-muted); }
   .search-input:focus { outline: none; border-color: var(--accent); }
 
+  /* --- Project filter dropdown --- */
+  .project-filter { position: relative; }
+  .project-filter-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    padding: 0.3rem 0.5rem; border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+    display: flex; align-items: center; gap: 0.35rem; white-space: nowrap;
+  }
+  .project-filter-btn:hover { border-color: var(--accent); }
+  .project-filter-btn:focus { outline: none; border-color: var(--accent); }
+  .project-filter-btn .arrow { font-size: 0.6rem; color: var(--text-muted); }
+  .project-filter-btn .pf-count {
+    background: var(--accent); color: #fff; font-size: 0.65rem;
+    padding: 0.05rem 0.35rem; border-radius: 8px; font-weight: 600;
+  }
+  .project-dropdown {
+    display: none; position: absolute; top: calc(100% + 4px); left: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    min-width: 180px; max-height: 240px; overflow-y: auto; z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4); padding: 0.35rem 0;
+  }
+  .project-dropdown.open { display: block; }
+  .project-dropdown-item {
+    display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.75rem;
+    cursor: pointer; font-size: 0.8rem; color: var(--text); transition: background 0.1s;
+  }
+  .project-dropdown-item:hover { background: var(--border); }
+  .project-dropdown-item .check-box {
+    width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+  }
+  .project-dropdown-item.selected .check-box { border-color: var(--accent); background: var(--accent); }
+  .project-dropdown-item .check-mark {
+    display: none; color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 1;
+  }
+  .project-dropdown-item.selected .check-mark { display: block; }
+  .project-dropdown-empty {
+    padding: 0.5rem 0.75rem; font-size: 0.8rem; color: var(--text-muted);
+  }
+
   /* --- Cards --- */
   .roadmap-list { display: flex; flex-direction: column; gap: 0.75rem; }
   .roadmap-card {
@@ -162,6 +202,12 @@
       <option value="created_desc">Newest First</option>
       <option value="created_asc">Oldest First</option>
     </select>
+    <div class="project-filter" id="project-filter">
+      <button class="project-filter-btn" id="project-filter-btn" type="button">
+        Project <span class="arrow">&#9662;</span>
+      </button>
+      <div class="project-dropdown" id="project-dropdown"></div>
+    </div>
     <input class="search-input" id="search-input" type="text" placeholder="Filter by name...">
   </div>
 </div>
@@ -171,7 +217,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v16</span>
+  <span>Dashboard Service v17</span>
 </div>
 
 <script>
@@ -180,6 +226,7 @@ var allRoadmaps = [];
 var activeFilters = { running: true, active: true, complete: true, archived: false };
 var currentSort = 'number_asc';
 var searchText = '';
+var selectedProjects = [];
 var clockIntervals = [];
 
 // --- Safe DOM helpers ---
@@ -236,12 +283,84 @@ function buildFilters() {
   });
 }
 
+// --- Project filter dropdown ---
+
+function getUniqueProjects(roadmaps) {
+  var set = {};
+  roadmaps.forEach(function(r) { if (r.repo) set[r.repo] = true; });
+  return Object.keys(set).sort();
+}
+
+function buildProjectDropdown(roadmaps) {
+  var dropdown = document.getElementById('project-dropdown');
+  var btn = document.getElementById('project-filter-btn');
+  var projects = getUniqueProjects(roadmaps);
+  dropdown.replaceChildren();
+
+  if (projects.length === 0) {
+    dropdown.appendChild(el('div', { className: 'project-dropdown-empty' }, 'No projects'));
+    updateProjectBtnLabel();
+    return;
+  }
+
+  projects.forEach(function(proj) {
+    var isSelected = selectedProjects.indexOf(proj) !== -1;
+    var checkMark = el('span', { className: 'check-mark' }, '\u2713');
+    var checkBox = el('span', { className: 'check-box' }, [checkMark]);
+    var item = el('div', { className: 'project-dropdown-item' + (isSelected ? ' selected' : '') }, [
+      checkBox, document.createTextNode(proj)
+    ]);
+    item.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var idx = selectedProjects.indexOf(proj);
+      if (idx === -1) { selectedProjects.push(proj); }
+      else { selectedProjects.splice(idx, 1); }
+      buildProjectDropdown(allRoadmaps);
+      renderRoadmaps(allRoadmaps);
+      savePreferences();
+    });
+    dropdown.appendChild(item);
+  });
+  updateProjectBtnLabel();
+}
+
+function updateProjectBtnLabel() {
+  var btn = document.getElementById('project-filter-btn');
+  btn.replaceChildren();
+  btn.appendChild(document.createTextNode('Project '));
+  if (selectedProjects.length > 0) {
+    btn.appendChild(el('span', { className: 'pf-count' }, '' + selectedProjects.length));
+    btn.appendChild(document.createTextNode(' '));
+  }
+  btn.appendChild(el('span', { className: 'arrow' }, '\u25BE'));
+}
+
+function matchesProject(r) {
+  if (selectedProjects.length === 0) return true;
+  return selectedProjects.indexOf(r.repo) !== -1;
+}
+
+// --- Project filter toggle ---
+
+document.getElementById('project-filter-btn').addEventListener('click', function(ev) {
+  ev.stopPropagation();
+  document.getElementById('project-dropdown').classList.toggle('open');
+});
+
+document.addEventListener('click', function(ev) {
+  var filter = document.getElementById('project-filter');
+  if (!filter.contains(ev.target)) {
+    document.getElementById('project-dropdown').classList.remove('open');
+  }
+});
+
 // --- Preferences ---
 
 function savePreferences() {
   var prefs = {
     overview_filters: Object.keys(activeFilters).filter(function(k) { return activeFilters[k]; }).join(','),
-    overview_sort: currentSort
+    overview_sort: currentSort,
+    overview_projects: selectedProjects.join(',')
   };
   fetch(API + '/preferences', {
     method: 'PUT', headers: { 'Content-Type': 'application/json' },
@@ -262,6 +381,9 @@ async function loadPreferences() {
     }
     if (prefs.overview_sort) {
       currentSort = prefs.overview_sort;
+    }
+    if (prefs.overview_projects) {
+      selectedProjects = prefs.overview_projects.split(',').filter(function(s) { return s.trim(); });
     }
   } catch (e) {}
 }
@@ -361,7 +483,7 @@ function renderRoadmaps(roadmaps) {
   renderActions(roadmaps);
   var list = document.getElementById('roadmap-list');
   var filtered = sortRoadmaps(roadmaps.filter(function(r) {
-    return matchesFilter(r) && matchesSearch(r);
+    return matchesFilter(r) && matchesSearch(r) && matchesProject(r);
   }));
 
   list.replaceChildren();
@@ -438,6 +560,7 @@ function renderRoadmaps(roadmaps) {
   });
 
   document.getElementById('subtitle').textContent = roadmaps.length + ' roadmap' + (roadmaps.length !== 1 ? 's' : '');
+  buildProjectDropdown(roadmaps);
 }
 
 // --- Data fetching ---
