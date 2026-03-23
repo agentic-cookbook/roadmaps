@@ -75,32 +75,64 @@ def _try_service():
         return None
 
 
-def _active_roadmap_file():
-    return Path.home() / ".claude" / "dashboard-active.json"
+def _roadmap_registry_file():
+    return Path.home() / ".claude" / "dashboard-registry.json"
 
 
-def _save_active_roadmap(roadmap_id, title):
-    f = _active_roadmap_file()
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(json.dumps({"roadmap_id": roadmap_id, "title": title}))
-
-
-def _load_active_roadmap():
-    f = _active_roadmap_file()
+def _load_registry():
+    f = _roadmap_registry_file()
     if not f.exists():
-        return None
+        return {}
     try:
         return json.loads(f.read_text())
     except (json.JSONDecodeError, OSError):
-        return None
+        return {}
+
+
+def _save_registry(registry):
+    f = _roadmap_registry_file()
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(registry, indent=2))
+
+
+def _save_active_roadmap(roadmap_id, title):
+    """Register a roadmap ID by its title slug AND set it as the current active."""
+    registry = _load_registry()
+    slug = slugify(title)
+    registry[slug] = {"roadmap_id": roadmap_id, "title": title}
+    registry["_active"] = slug
+    _save_registry(registry)
 
 
 def _get_active_roadmap_id():
-    active = _load_active_roadmap()
-    if not active:
-        print("ERROR: No active roadmap. Run 'dash init' first.", file=sys.stderr)
-        sys.exit(1)
-    return active["roadmap_id"]
+    """Get the active roadmap ID.
+
+    Resolution order:
+    1. The file-based state file (progress-dashboard-active) — use its title slug
+       to look up the service roadmap ID from the registry. This ensures that
+       concurrent sessions each track their own roadmap.
+    2. The _active key in the registry (last init'd roadmap).
+    """
+    registry = _load_registry()
+
+    # Try to resolve from the file-based state (which is per-feature)
+    file_state = load_state()
+    if file_state:
+        dash_dir = file_state.get("dash_dir", "")
+        # Extract slug from dir name: /tmp/progress-dashboard-<slug>
+        dirname = Path(dash_dir).name
+        if dirname.startswith("progress-dashboard-"):
+            slug = dirname.replace("progress-dashboard-", "")
+            if slug in registry:
+                return registry[slug]["roadmap_id"]
+
+    # Fall back to last active
+    active_slug = registry.get("_active")
+    if active_slug and active_slug in registry:
+        return registry[active_slug]["roadmap_id"]
+
+    print("ERROR: No active roadmap. Run 'dash init' first.", file=sys.stderr)
+    sys.exit(1)
 
 
 def slugify(name):
