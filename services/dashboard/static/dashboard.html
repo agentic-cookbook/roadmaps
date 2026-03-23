@@ -6,88 +6,26 @@
 <title>Roadmap Detail</title>
 <style>
   :root {
-    --bg: #0d1117; --surface: #161b22; --border: #30363d;
-    --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff;
-    --green: #3fb950; --yellow: #d29922; --red: #f85149;
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    background: var(--bg); color: var(--text);
-    display: flex; flex-direction: column; height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
   }
-  .top-bar { flex-shrink: 0; padding: 1.25rem 1.5rem 0 1.5rem; }
-  header { margin-bottom: 0.75rem; }
-  .header-row { display: flex; justify-content: space-between; align-items: baseline; }
-  h1 { font-size: 1.5rem; font-weight: 600; }
-  .status-badge {
-    font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 10px;
-    background: var(--border); color: var(--text-muted);
-  }
-  .status-badge.running { background: rgba(210,153,34,0.2); color: var(--yellow); }
-  .status-badge.complete { background: rgba(63,185,80,0.2); color: var(--green); }
-  .status-badge.error { background: rgba(248,81,73,0.2); color: var(--red); }
-  .env-info { display: flex; gap: 1rem; margin-top: 0.3rem; font-size: 0.7rem; color: var(--text-muted); }
-  .progress-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
-  .progress-bar-bg { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
-  .progress-bar-fill.done { background: var(--green); }
-  .progress-text { font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
-  .controls { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-  .ctrl-btn {
-    background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
-    padding: 0.3rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
-  }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--text); }
-  .ctrl-btn.danger:hover { border-color: var(--red); color: var(--red); }
-
-  .content { display: flex; flex: 1; overflow: hidden; padding: 0 1.5rem; gap: 1.5rem; }
-  .steps-pane { flex: 0 0 55%; overflow-y: auto; padding-right: 0.5rem; }
-  .right-pane { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
-
-  .step {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-    padding: 0.75rem 1rem; margin-bottom: 0.5rem;
-  }
-  .step.active { border-color: var(--yellow); }
-  .step-header { display: flex; align-items: center; gap: 0.5rem; }
-  .step-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
-  .step-icon.in_progress { color: var(--yellow); }
-  .step-icon.complete { color: var(--green); }
-  .step-icon.error { color: var(--red); }
-  .step-name { font-weight: 500; font-size: 0.9rem; }
-  .step-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; margin-left: 1.7rem; }
-  .step-detail {
-    font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem; margin-left: 1.7rem;
-    font-family: monospace; background: var(--bg); padding: 0.3rem 0.5rem; border-radius: 4px;
-  }
-
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; }
-  .panel-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-muted); }
-  .event-log { max-height: 300px; overflow-y: auto; font-size: 0.75rem; font-family: monospace; }
-  .event-entry { padding: 0.15rem 0; border-bottom: 1px solid var(--border); }
-  .event-time { color: var(--text-muted); margin-right: 0.5rem; }
-
-  .issue-item, .pr-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0; font-size: 0.8rem; }
-  .issue-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .issue-dot.open { background: var(--green); }
-  .issue-dot.closed { background: var(--red); }
-  .issue-dot.merged { background: #a371f7; }
-  .issue-link { color: var(--accent); text-decoration: none; }
-  .issue-link:hover { text-decoration: underline; }
-  .issue-status { color: var(--text-muted); font-size: 0.7rem; }
-
-  .footer {
-    flex-shrink: 0; padding: 0.5rem 1.5rem; border-top: 1px solid var(--border);
-    font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;
-  }
-  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
-  .status-dot.connected { background: var(--green); }
-  .status-dot.disconnected { background: var(--red); }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner { display: inline-block; animation: spin 1s linear infinite; }
 
   /* --- Hamburger sidebar --- */
   .hamburger {
@@ -155,6 +93,451 @@
     transition: transform 0.25s ease;
   }
   .main-wrap.shifted { transform: translateX(280px); }
+
+  /* --- Top bar: header + progress + controls --- */
+  .top-bar {
+    flex-shrink: 0;
+    padding: 1.25rem 1.5rem 0 1.5rem;
+  }
+  header {
+    margin-bottom: 0.75rem;
+  }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h1 { font-size: 1.5rem; font-weight: 600; }
+  .env-info {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .env-info a { color: var(--accent); text-decoration: none; }
+  .env-info a:hover { text-decoration: underline; }
+  .env-label {
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin-right: 0.2rem;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .badge-running { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge-complete { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-error { background: rgba(248,81,73,0.15); color: var(--red); }
+  .badge-waiting { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+
+  .progress-bar-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.65rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .progress-bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+  .progress-eta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .progress-eta .eta-value {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .progress-bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+
+  .progress-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.35rem;
+  }
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .controls button {
+    padding: 0.3rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .controls button:hover { border-color: var(--text-muted); }
+  .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .controls button.btn-pause { border-color: var(--yellow); color: var(--yellow); }
+  .controls button.btn-pause:hover { background: rgba(210,153,34,0.1); }
+  .controls button.btn-resume { border-color: var(--green); color: var(--green); }
+  .controls button.btn-resume:hover { background: rgba(63,185,80,0.1); }
+  .controls button.btn-stop { border-color: var(--red); color: var(--red); }
+  .controls button.btn-stop:hover { background: rgba(248,81,73,0.1); }
+  .control-status {
+    font-size: 0.7rem;
+    color: var(--yellow);
+    align-self: center;
+    margin-left: 0.5rem;
+  }
+
+  /* --- Two-pane layout --- */
+  .panes {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    padding: 0 1.5rem;
+    gap: 1px;
+  }
+
+  .pane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .pane-left {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+  }
+  .pane-right {
+    flex: 1;
+    min-width: 0;
+    border-left: 1px solid var(--border);
+    padding-left: 1.25rem;
+    margin-left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pane-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .pane-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .pane-scroll::-webkit-scrollbar { width: 6px; }
+  .pane-scroll::-webkit-scrollbar-track { background: transparent; }
+  .pane-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* --- Steps --- */
+  .steps-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    position: relative;
+  }
+  .steps { list-style: none; }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    transition: border-color 0.2s;
+  }
+  .step.step-active {
+    border-color: var(--yellow);
+  }
+  .step-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    margin-top: 0.1rem;
+  }
+  .step-body { flex: 1; min-width: 0; }
+  .step-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  .step-detail {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    background: rgba(0,0,0,0.2);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.2rem;
+  }
+  .step-detail a { color: var(--accent); text-decoration: none; }
+  .step-detail a:hover { text-decoration: underline; }
+  .step-tag-manual {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--yellow);
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .step-status-debug {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-top: 0.15rem;
+  }
+  .step-time {
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  /* --- Issues & PRs panels --- */
+  .right-panels {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .right-panel-header {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.35rem;
+  }
+  .right-panel-empty {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+    font-style: italic;
+    padding: 0.2rem 0;
+  }
+  .ticket {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0;
+    font-size: 0.75rem;
+  }
+  .ticket-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ticket-dot-open { background: var(--green); }
+  .ticket-dot-in_progress { background: var(--yellow); }
+  .ticket-dot-closed { background: var(--text-muted); }
+  .ticket-dot-merged { background: var(--accent); }
+  .ticket a { color: var(--text); text-decoration: none; }
+  .ticket a:hover { color: var(--accent); text-decoration: underline; }
+  .ticket-status {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* --- Events section (resizable, pinned to bottom) --- */
+  .events-section {
+    flex: none;
+    height: 25vh;
+    display: flex;
+    flex-direction: column;
+    min-height: 80px;
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  .events-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    flex-shrink: 0;
+    cursor: ns-resize;
+    user-select: none;
+  }
+  .events-toolbar .pane-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    flex: 1;
+  }
+
+  /* --- Events --- */
+  .event {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    padding: 0.2rem 0;
+    display: flex;
+    gap: 0.6rem;
+  }
+  .event-time { flex-shrink: 0; font-size: 0.65rem; }
+  .event-msg { color: var(--text); }
+  .event-msg-warn { color: var(--yellow); }
+  .event-msg-error { color: var(--red); }
+  .event-msg-success { color: var(--green); }
+
+  /* --- Footer --- */
+  .footer {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+  .footer.error .footer-status { color: var(--red); }
+  .footer-status { flex: 1; text-align: center; }
+  .footer-version { flex-shrink: 0; opacity: 0.5; }
+  .footer-left {
+    flex-shrink: 0;
+  }
+  .footer-left label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    user-select: none;
+  }
+  .footer-left input[type="checkbox"] {
+    accent-color: var(--accent);
+  }
+
+  /* --- Inline status indicator (next to title) --- */
+  .title-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.75rem;
+    font-size: 1.1rem;
+    vertical-align: middle;
+  }
+  .title-status-text {
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* --- Debug panel --- */
+  .debug-section {
+    flex-shrink: 0;
+    height: 200px;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+  .debug-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0;
+    flex-shrink: 0;
+    cursor: ns-resize;
+    user-select: none;
+  }
+  .debug-toolbar .pane-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+    flex: 1;
+  }
+  .debug-toolbar button {
+    cursor: pointer;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 0.65rem;
+  }
+  .debug-toolbar button:hover { border-color: var(--text-muted); color: var(--text); }
+  .debug-log {
+    flex: 1;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.65rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .debug-log::-webkit-scrollbar { width: 4px; }
+  .debug-log::-webkit-scrollbar-track { background: transparent; }
+  .debug-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    display: inline-block;
+    width: 0.9rem;
+    height: 0.9rem;
+    border: 2px solid var(--border);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  /* --- Measuring element (hidden) --- */
+  .measure {
+    position: absolute;
+    visibility: hidden;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 0.85rem;
+    font-family: inherit;
+  }
 </style>
 </head>
 <body>
@@ -169,242 +552,747 @@
 </div>
 
 <div class="main-wrap" id="main-wrap">
-<div class="top-bar">
-  <header>
-    <div class="header-row">
-      <div style="display:flex;align-items:center">
-        <button class="hamburger" id="hamburger-btn">&#9776;</button>
-        <h1 id="title">Loading...</h1>
+  <div class="top-bar">
+    <header>
+      <div class="header-row">
+        <div style="display:flex;align-items:center">
+          <button class="hamburger" id="hamburger-btn">&#9776;</button>
+          <h1 id="title">Loading... <span id="title-status" class="title-status"></span></h1>
+        </div>
+        <span id="status-badge" class="badge badge-waiting">waiting</span>
       </div>
-      <span class="status-badge" id="status-badge"></span>
-    </div>
-    <div class="env-info" id="env-info"></div>
-  </header>
-  <div class="progress-row">
-    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
-    <div class="progress-text" id="progress-text"></div>
-  </div>
-  <div class="controls" id="controls"></div>
-</div>
+      <div id="env-info" class="env-info"></div>
+    </header>
 
-<div class="content">
-  <div class="steps-pane" id="steps-pane"></div>
-  <div class="right-pane">
-    <div class="panel" id="issues-panel" style="display:none">
-      <div class="panel-title">Issues</div>
-      <div id="issues-list"></div>
-    </div>
-    <div class="panel" id="prs-panel" style="display:none">
-      <div class="panel-title">Pull Requests</div>
-      <div id="prs-list"></div>
-    </div>
-    <div class="panel">
-      <div class="panel-title">Event Log</div>
-      <div class="event-log" id="event-log"></div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-label">
+        <span id="progress-label">0 / 0 steps</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div id="progress-fill" class="progress-bar-fill" style="width: 0%"></div>
+      </div>
+      <div class="progress-bottom">
+        <div id="progress-eta" class="progress-eta"></div>
+        <div id="controls" class="controls">
+          <span id="control-status" class="control-status"></span>
+          <button id="btn-pause" class="btn-pause" onclick="sendControl('pause')">Pause</button>
+          <button id="btn-resume" class="btn-resume" onclick="sendControl('resume')" style="display:none">Resume</button>
+          <button id="btn-stop" class="btn-stop" onclick="sendControl('stop')">Stop</button>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="footer">
-  <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service</span>
-</div>
+  <div class="panes">
+    <div class="pane pane-left" id="pane-steps">
+      <div class="steps-section">
+        <div class="pane-header">Steps</div>
+        <div class="pane-scroll" id="steps-scroll">
+          <ul id="steps" class="steps"></ul>
+        </div>
+      </div>
+      <!-- Debug panel (hidden by default) -->
+      <div id="debug-panel" class="debug-section" style="display:none">
+        <div class="debug-toolbar" id="debug-toolbar">
+          <span class="pane-header">Debug Log</span>
+          <button onclick="copyDebugLog()">Copy</button>
+          <button onclick="downloadDebugLog()">Download</button>
+        </div>
+        <div id="debug-log" class="debug-log"></div>
+      </div>
+    </div>
+    <div class="pane pane-right">
+      <div id="right-panels" class="right-panels" style="display:none">
+        <div class="right-panel">
+          <div class="right-panel-header">Issues</div>
+          <div id="issues"></div>
+        </div>
+        <div class="right-panel">
+          <div class="right-panel-header">Pull Requests</div>
+          <div id="prs"></div>
+        </div>
+      </div>
+      <div class="events-section" id="events-section">
+        <div class="events-toolbar" id="events-toolbar">
+          <span class="pane-header">Event Log</span>
+        </div>
+        <div class="pane-scroll" id="events-scroll">
+          <div id="events"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="poll-status" class="footer">
+    <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
+    <span class="footer-status" id="footer-status">Connecting...</span>
+    <span class="footer-version">Dashboard Service</span>
+  </div>
 </div><!-- /main-wrap -->
 
-<script>
-const API = '/api/v1';
-const roadmapId = location.pathname.split('/').pop();
-let data = null;
+<span id="measure" class="measure"></span>
 
-// --- Safe DOM helpers ---
+<script>
+var API = '/api/v1';
+var roadmapId = location.pathname.split('/').pop();
+
+var STATUS_ICONS = {
+  not_started: '\u25CB',
+  in_progress: null,
+  complete: '\u2713',
+  error: '\u2717',
+  skipped: '\u2713'
+};
+var STATUS_COLORS = {
+  not_started: 'var(--text-muted)',
+  in_progress: 'var(--yellow)',
+  complete: 'var(--green)',
+  error: 'var(--red)',
+  skipped: 'var(--yellow)'
+};
+
+var lastData = null;
+var currentControl = null;
+var localEvents = [];
+var debugEntries = [];
+var debugEnabled = false;
+
+// --- Debug logging ---
+function isScrolledToBottom(elem) {
+  return elem.scrollHeight - elem.scrollTop - elem.clientHeight < 10;
+}
+
+function debugLog(msg) {
+  var ts = new Date().toISOString().substr(11, 12);
+  var entry = ts + ' ' + msg;
+  debugEntries.push(entry);
+  if (debugEnabled) {
+    var logEl = document.getElementById('debug-log');
+    var atBottom = isScrolledToBottom(logEl);
+    var line = document.createElement('div');
+    line.textContent = entry;
+    logEl.appendChild(line);
+    if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+  }
+}
+
+function toggleDebug() {
+  debugEnabled = document.getElementById('debug-mode').checked;
+  var panel = document.getElementById('debug-panel');
+  panel.style.display = debugEnabled ? '' : 'none';
+  if (debugEnabled) {
+    // Render all buffered entries
+    var logEl = document.getElementById('debug-log');
+    while (logEl.firstChild) logEl.removeChild(logEl.firstChild);
+    debugEntries.forEach(function(entry) {
+      var line = document.createElement('div');
+      line.textContent = entry;
+      logEl.appendChild(line);
+    });
+    logEl.scrollTop = logEl.scrollHeight;
+    debugLog('Debug mode enabled (' + debugEntries.length + ' buffered entries)');
+  }
+  // Force re-render to toggle debug info in steps
+  if (lastData) render(lastData);
+}
+
+// --- Resizable panel helper ---
+function makeResizable(panelId, toolbarId) {
+  var panel = document.getElementById(panelId);
+  var toolbar = document.getElementById(toolbarId);
+  var dragging = false;
+  var startY, startH;
+
+  toolbar.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'BUTTON') return;
+    dragging = true;
+    startY = e.clientY;
+    startH = panel.offsetHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    var newH = startH - (e.clientY - startY);
+    if (newH < 60) newH = 60;
+    if (newH > window.innerHeight * 0.6) newH = window.innerHeight * 0.6;
+    panel.style.height = newH + 'px';
+    panel.style.flex = 'none';
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+}
+
+makeResizable('events-section', 'events-toolbar');
+makeResizable('debug-panel', 'debug-toolbar');
+
+function copyDebugLog() {
+  navigator.clipboard.writeText(debugEntries.join('\n')).then(function() {
+    debugLog('Log copied to clipboard (' + debugEntries.length + ' entries)');
+  });
+}
+
+function downloadDebugLog() {
+  var blob = new Blob([debugEntries.join('\n')], { type: 'text/plain' });
+  var url = URL.createObjectURL(blob);
+  var titleEl = document.getElementById('title');
+  var titleText = (titleEl.firstChild && titleEl.firstChild.nodeType === 3 ? titleEl.firstChild.textContent : 'roadmap').trim().replace(/\s+/g, '-');
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = titleText + '-' + new Date().toISOString().replace(/[:.]/g, '-') + '.log';
+  a.click();
+  URL.revokeObjectURL(url);
+  debugLog('Log downloaded');
+}
+
+// --- Utility functions ---
+function formatTime(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
 
 function el(tag, attrs, children) {
-  const e = document.createElement(tag);
-  if (attrs) Object.entries(attrs).forEach(([k, v]) => {
-    if (k === 'className') e.className = v;
-    else if (k === 'onclick') e.onclick = v;
-    else if (k === 'href') e.href = v;
-    else if (k === 'target') e.target = v;
-    else e.setAttribute(k, v);
-  });
+  var e = document.createElement(tag);
+  if (attrs) {
+    for (var k of Object.keys(attrs)) {
+      var v = attrs[k];
+      if (k === 'style' && typeof v === 'object') {
+        Object.assign(e.style, v);
+      } else if (k === 'className') {
+        e.className = v;
+      } else if (k === 'textContent') {
+        e.textContent = v;
+      } else if (k === 'onclick') {
+        e.onclick = v;
+      } else {
+        e.setAttribute(k, v);
+      }
+    }
+  }
   if (children) {
-    if (typeof children === 'string') e.textContent = children;
-    else if (Array.isArray(children)) children.forEach(c => { if (c) e.appendChild(c); });
-    else e.appendChild(children);
+    for (var c of children) {
+      if (c) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
   }
   return e;
 }
 
-// --- Rendering ---
-
-function render(d) {
-  data = d;
-  document.title = d.name + ' - Dashboard';
-
-  // Title + status
-  document.getElementById('title').textContent = d.name;
-  const badge = document.getElementById('status-badge');
-  badge.textContent = d.status;
-  badge.className = 'status-badge ' + d.status;
-
-  // Environment
-  const env = document.getElementById('env-info');
-  env.replaceChildren();
-  if (d.repo) env.appendChild(el('span', null, d.repo));
-  if (d.branch) env.appendChild(el('span', null, d.branch));
-  if (d.machine) env.appendChild(el('span', null, d.machine));
-
-  // Progress
-  const steps = d.steps || [];
-  const total = steps.length;
-  const complete = steps.filter(s => s.status === 'complete').length;
-  const pct = total > 0 ? Math.round(complete / total * 100) : 0;
-  const fill = document.getElementById('progress-fill');
-  fill.style.width = pct + '%';
-  fill.className = 'progress-bar-fill' + (pct === 100 ? ' done' : '');
-  document.getElementById('progress-text').textContent = `${complete}/${total} steps (${pct}%)`;
-
-  // Controls
-  const ctrlDiv = document.getElementById('controls');
-  ctrlDiv.replaceChildren();
-  if (d.status === 'running') {
-    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn', onclick: () => sendControl('pause')}, 'Pause'));
-    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn danger', onclick: () => sendControl('stop')}, 'Stop'));
-  } else if (d.status === 'running' || checkIfPaused()) {
-    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn', onclick: () => sendControl('resume')}, 'Resume'));
-    ctrlDiv.appendChild(el('button', {className: 'ctrl-btn danger', onclick: () => sendControl('stop')}, 'Stop'));
-  }
-
-  // Steps
-  const stepsPane = document.getElementById('steps-pane');
-  stepsPane.replaceChildren();
-  steps.forEach(s => {
-    const icons = {not_started: '\u25CB', in_progress: '\u27F3', complete: '\u2713', error: '\u2717', skipped: '\u2713'};
-    const icon = icons[s.status] || '\u25CB';
-    const isActive = s.status === 'in_progress';
-
-    const stepEl = el('div', {className: 'step' + (isActive ? ' active' : '')}, [
-      el('div', {className: 'step-header'}, [
-        el('span', {className: 'step-icon ' + s.status}, s.status === 'in_progress' ? el('span', {className: 'spinner'}, '\u27F3') : document.createTextNode(icon)),
-        el('span', {className: 'step-name'}, `Step ${s.number}: ${s.description}`),
-      ]),
-    ]);
-
-    // Meta line
-    const meta = [];
-    if (s.complexity) meta.push(s.complexity);
-    if (s.step_type === 'Manual') meta.push('MANUAL');
-    if (s.issue_number) meta.push('#' + s.issue_number);
-    if (s.pr_number) meta.push('PR #' + s.pr_number);
-    if (meta.length) stepEl.appendChild(el('div', {className: 'step-meta'}, meta.join(' \u2022 ')));
-
-    if (s.detail) stepEl.appendChild(el('div', {className: 'step-detail'}, s.detail));
-
-    stepsPane.appendChild(stepEl);
+function measureStepWidth(steps) {
+  var ruler = document.getElementById('measure');
+  var maxW = 200;
+  steps.forEach(function(step, i) {
+    ruler.textContent = 'Step ' + (step.number || (i + 1)) + ': ' + (step.description || '');
+    var w = ruler.offsetWidth;
+    if (w > maxW) maxW = w;
   });
-
-  // Issues
-  const issues = d.issues || [];
-  const issuesPanel = document.getElementById('issues-panel');
-  const issuesList = document.getElementById('issues-list');
-  issuesList.replaceChildren();
-  if (issues.length) {
-    issuesPanel.style.display = '';
-    issues.forEach(iss => {
-      const dotClass = iss.status === 'closed' ? 'closed' : 'open';
-      const item = el('div', {className: 'issue-item'}, [
-        el('span', {className: 'issue-dot ' + dotClass}),
-        iss.url ? el('a', {className: 'issue-link', href: iss.url, target: '_blank'}, `#${iss.number}`) : el('span', null, `#${iss.number}`),
-        el('span', null, iss.title || ''),
-        el('span', {className: 'issue-status'}, iss.status || ''),
-      ]);
-      issuesList.appendChild(item);
-    });
-  } else {
-    issuesPanel.style.display = 'none';
-  }
-
-  // PRs
-  const prs = d.prs || [];
-  const prsPanel = document.getElementById('prs-panel');
-  const prsList = document.getElementById('prs-list');
-  prsList.replaceChildren();
-  if (prs.length) {
-    prsPanel.style.display = '';
-    prs.forEach(pr => {
-      const dotClass = pr.status === 'merged' ? 'merged' : pr.status === 'closed' ? 'closed' : 'open';
-      const item = el('div', {className: 'pr-item'}, [
-        el('span', {className: 'issue-dot ' + dotClass}),
-        pr.url ? el('a', {className: 'issue-link', href: pr.url, target: '_blank'}, `#${pr.number}`) : el('span', null, `#${pr.number}`),
-        el('span', null, pr.title || ''),
-        el('span', {className: 'issue-status'}, pr.status || ''),
-      ]);
-      prsList.appendChild(item);
-    });
-  } else {
-    prsPanel.style.display = 'none';
-  }
-
-  // Events
-  const events = d.events || [];
-  const log = document.getElementById('event-log');
-  log.replaceChildren();
-  events.forEach(ev => {
-    const entry = el('div', {className: 'event-entry'}, [
-      el('span', {className: 'event-time'}, (ev.time || '').substring(11, 19)),
-      document.createTextNode(ev.message || ''),
-    ]);
-    log.appendChild(entry);
-  });
-  log.scrollTop = log.scrollHeight;
+  return maxW + 175;
 }
 
-let _controlState = null;
-function checkIfPaused() { return _controlState === 'pause'; }
+function buildStepEl(step, index, isPaused) {
+  var isActive = step.status === 'in_progress';
+  var stepNum = step.number || (index + 1);
+  var stepName = step.description || '';
+  var stepType = step.step_type || '';
 
+  var iconEl = el('span', { className: 'step-icon', style: { color: STATUS_COLORS[step.status] || 'var(--text-muted)' } });
+  if (isActive && isPaused) {
+    iconEl.textContent = '\u23F8';
+    iconEl.style.color = 'var(--yellow)';
+  } else if (isActive) {
+    iconEl.appendChild(el('span', { className: 'spinner' }));
+  } else {
+    iconEl.textContent = STATUS_ICONS[step.status] || '\u25CB';
+  }
+
+  var titleDiv = el('div', { className: 'step-title' }, [
+    document.createTextNode('Step ' + stepNum + ': ' + stepName)
+  ]);
+  if (stepType.toLowerCase() === 'manual') {
+    titleDiv.appendChild(el('span', { className: 'step-tag-manual', textContent: '(Manual)' }));
+  }
+  var bodyChildren = [titleDiv];
+
+  // Always show issue link (from step data)
+  if (step.issue_number) {
+    var issueText = 'Issue #' + step.issue_number;
+    if (step.issue_title) issueText += ': ' + step.issue_title;
+    var issueLink = el('a', { href: step.issue_url || '#', textContent: issueText });
+    bodyChildren.push(el('div', { className: 'step-detail' }, [issueLink]));
+  }
+
+  // Always show PR link if present
+  if (step.pr_number) {
+    var prText = 'PR #' + step.pr_number;
+    if (step.pr_title) prText += ': ' + step.pr_title;
+    var prLink = el('a', { href: step.pr_url || '#', textContent: prText });
+    bodyChildren.push(el('div', { className: 'step-detail' }, [prLink]));
+  }
+
+  if (step.detail) {
+    bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
+  }
+
+  // Additional links (not issue/PR which are shown above)
+  if (step.links && step.links.length > 0) {
+    var extraLinks = step.links.filter(function(l) {
+      return l.label.indexOf('Issue #') !== 0 && l.label.indexOf('PR #') !== 0;
+    });
+    if (extraLinks.length > 0) {
+      var linksDiv = el('div', { className: 'step-detail' });
+      extraLinks.forEach(function(link, li) {
+        if (li > 0) linksDiv.appendChild(document.createTextNode(' \u00B7 '));
+        linksDiv.appendChild(el('a', { href: link.url, textContent: link.label }));
+      });
+      bodyChildren.push(linksDiv);
+    }
+  }
+
+  // Debug info at end of step
+  if (debugEnabled) {
+    bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
+  }
+
+  var stepChildren = [iconEl, el('div', { className: 'step-body' }, bodyChildren)];
+
+  if (step.updated_at) {
+    stepChildren.push(el('span', { className: 'step-time', textContent: formatTime(step.updated_at) }));
+  }
+
+  var className = 'step' + (isActive ? ' step-active' : '');
+  var li = el('li', { className: className, id: 'step-' + index }, stepChildren);
+  return li;
+}
+
+function buildEventEl(evt) {
+  return el('div', { className: 'event' }, [
+    el('span', { className: 'event-time', textContent: formatTime(evt.time) }),
+    el('span', { className: 'event-msg', textContent: evt.message })
+  ]);
+}
+
+function formatDuration(ms) {
+  var totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return totalSec + 's';
+  var min = Math.floor(totalSec / 60);
+  var sec = totalSec % 60;
+  if (min < 60) return min + 'm ' + sec + 's';
+  var hr = Math.floor(min / 60);
+  min = min % 60;
+  return hr + 'h ' + min + 'm';
+}
+
+function calcEta(steps) {
+  var completed = [];
+  var remaining = 0;
+  var inProgressStart = null;
+
+  steps.forEach(function(step) {
+    if (step.status === 'complete' && step.started_at && step.completed_at) {
+      var start = new Date(step.started_at).getTime();
+      var end = new Date(step.completed_at).getTime();
+      if (end > start) completed.push(end - start);
+    } else if (step.status === 'in_progress') {
+      if (step.started_at) inProgressStart = new Date(step.started_at).getTime();
+      remaining++;
+    } else if (step.status === 'not_started') {
+      remaining++;
+    }
+  });
+
+  if (completed.length === 0) {
+    if (inProgressStart) return { text: 'Estimating time remaining\u2026 completing first step', state: 'calculating' };
+    return { text: '', state: 'none' };
+  }
+
+  var avgMs = completed.reduce(function(a, b) { return a + b; }, 0) / completed.length;
+  var inProgressRemaining = 0;
+  if (inProgressStart) {
+    var elapsed = Date.now() - inProgressStart;
+    inProgressRemaining = Math.max(0, avgMs - elapsed);
+  }
+  var totalRemaining = inProgressRemaining + (remaining > 0 ? (remaining - (inProgressStart ? 1 : 0)) * avgMs : 0);
+  if (totalRemaining <= 0 && remaining === 0) return { text: '', state: 'none' };
+
+  return {
+    text: '~' + formatDuration(totalRemaining) + ' remaining',
+    avgText: formatDuration(avgMs) + '/step avg',
+    state: 'estimating'
+  };
+}
+
+var envRendered = false;
+
+function renderEnv(data) {
+  if (envRendered) return;
+  if (!data.repo && !data.branch && !data.machine) return;
+  envRendered = true;
+  debugLog('renderEnv: machine=' + data.machine + ' repo=' + data.repo + ' branch=' + data.branch);
+
+  var container = document.getElementById('env-info');
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  function addItem(label, text, url) {
+    if (!text) return;
+    var span = document.createElement('span');
+    var labelEl = document.createElement('span');
+    labelEl.className = 'env-label';
+    labelEl.textContent = label;
+    span.appendChild(labelEl);
+    if (url) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.textContent = text;
+      a.target = '_blank';
+      span.appendChild(a);
+    } else {
+      span.appendChild(document.createTextNode(text));
+    }
+    container.appendChild(span);
+  }
+
+  addItem('machine ', data.machine);
+  addItem('repo ', data.repo, data.repo_url);
+  if (data.worktree) addItem('worktree ', data.worktree);
+  if (data.branch) {
+    var branchUrl = data.repo_url ? data.repo_url + '/tree/' + data.branch : null;
+    addItem('branch ', data.branch, branchUrl);
+  }
+}
+
+function renderTickets(container, items, type) {
+  while (container.firstChild) container.removeChild(container.firstChild);
+  if (items.length === 0) {
+    var empty = document.createElement('div');
+    empty.className = 'right-panel-empty';
+    empty.textContent = 'Nothing yet, stay tuned...';
+    container.appendChild(empty);
+    return;
+  }
+  items.forEach(function(item) {
+    var row = document.createElement('div');
+    row.className = 'ticket';
+    var dot = document.createElement('span');
+    dot.className = 'ticket-dot ticket-dot-' + (item.status || 'open');
+    row.appendChild(dot);
+    var prefix = type === 'pr' ? 'PR' : '';
+    var link = document.createElement('a');
+    link.href = item.url || '#';
+    link.target = '_blank';
+    link.textContent = (prefix ? prefix + ' ' : '') + '#' + item.number + ' ' + (item.title || '');
+    row.appendChild(link);
+    var status = document.createElement('span');
+    status.className = 'ticket-status';
+    status.textContent = item.status || 'open';
+    row.appendChild(status);
+    container.appendChild(row);
+  });
+}
+
+// --- Main render ---
+function render(data) {
+  lastData = data;
+
+  // Title: "Feature Roadmap: {name}" with checkmark when complete
+  var displayTitle = (data.status === 'complete' ? '\u2713 ' : '') + 'Feature Roadmap: ' + (data.name || 'Untitled');
+  var titleEl = document.getElementById('title');
+  var titleTextNode = titleEl.firstChild;
+  if (titleTextNode && titleTextNode.nodeType === 3) {
+    titleTextNode.textContent = displayTitle;
+  } else {
+    titleEl.insertBefore(document.createTextNode(displayTitle), titleEl.firstChild);
+  }
+  document.title = (data.name || 'Roadmap') + ' - Dashboard';
+
+  // Environment info (flat fields on roadmap)
+  renderEnv(data);
+
+  var badge = document.getElementById('status-badge');
+  badge.textContent = data.status || 'running';
+  badge.className = 'badge badge-' + (data.status === 'complete' ? 'complete' : data.status === 'error' ? 'error' : 'running');
+
+  var steps = data.steps || [];
+  var done = steps.filter(function(s) { return s.status === 'complete'; }).length;
+  var total = steps.length;
+  var pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  debugLog('render: status=' + data.status + ' steps=' + total + ' done=' + done + ' control_state=' + (data.control_state || 'none'));
+
+  document.getElementById('progress-label').textContent = done + ' / ' + total + ' steps';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // ETA
+  var etaEl = document.getElementById('progress-eta');
+  while (etaEl.firstChild) etaEl.removeChild(etaEl.firstChild);
+  if (data.status === 'running') {
+    var eta = calcEta(steps);
+    if (eta.state === 'calculating') {
+      etaEl.appendChild(document.createTextNode(eta.text));
+    } else if (eta.state === 'estimating') {
+      var valSpan = document.createElement('span');
+      valSpan.className = 'eta-value';
+      valSpan.textContent = eta.text;
+      etaEl.appendChild(valSpan);
+      if (eta.avgText) etaEl.appendChild(document.createTextNode('  \u00B7  ' + eta.avgText));
+    }
+  } else if (data.status === 'complete') {
+    var firstStart = null, lastEnd = null;
+    steps.forEach(function(s) {
+      if (s.started_at) { var t = new Date(s.started_at).getTime(); if (!firstStart || t < firstStart) firstStart = t; }
+      if (s.completed_at) { var t2 = new Date(s.completed_at).getTime(); if (!lastEnd || t2 > lastEnd) lastEnd = t2; }
+    });
+    if (firstStart && lastEnd) {
+      etaEl.appendChild(document.createTextNode('Completed in '));
+      var valSpan2 = document.createElement('span');
+      valSpan2.className = 'eta-value';
+      valSpan2.textContent = formatDuration(lastEnd - firstStart);
+      etaEl.appendChild(valSpan2);
+    }
+  }
+
+  // Size steps pane
+  var paneSteps = document.getElementById('pane-steps');
+  var stepsWidth = measureStepWidth(steps);
+  paneSteps.style.width = stepsWidth + 'px';
+
+  // Render steps
+  var stepsEl = document.getElementById('steps');
+  while (stepsEl.firstChild) stepsEl.removeChild(stepsEl.firstChild);
+  var activeIndex = -1;
+  steps.forEach(function(step, i) {
+    stepsEl.appendChild(buildStepEl(step, i, currentControl === 'pause'));
+    if (step.status === 'in_progress') activeIndex = i;
+  });
+
+  if (activeIndex >= 0) {
+    var activeEl = document.getElementById('step-' + activeIndex);
+    if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Log individual step statuses
+  if (steps.length > 0) {
+    var stepSummary = steps.map(function(s, i) { return (i + 1) + ':' + s.status; }).join(' ');
+    debugLog('steps: ' + stepSummary);
+  }
+
+  // Render issues & PRs
+  var issues = data.issues || [];
+  var prs = data.prs || [];
+  document.getElementById('right-panels').style.display = '';
+  renderTickets(document.getElementById('issues'), issues, 'issue');
+  renderTickets(document.getElementById('prs'), prs, 'pr');
+
+  // Render events
+  var serverEvents = (data.events || []).map(function(e) {
+    var cls = '';
+    if (e.message && e.message.indexOf('Stop received') >= 0) cls = 'event-msg-error';
+    else if (e.message && e.message.indexOf('Pause received') >= 0) cls = 'event-msg-warn';
+    else if (e.message && e.message.indexOf('Resume received') >= 0) cls = 'event-msg-success';
+    return { time: e.time, message: e.message, colorClass: cls };
+  });
+  var allEvents = serverEvents.concat(localEvents);
+  allEvents.sort(function(a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
+
+  var eventsEl = document.getElementById('events');
+  while (eventsEl.firstChild) eventsEl.removeChild(eventsEl.firstChild);
+  allEvents.forEach(function(evt) {
+    var msgEl = el('span', { className: 'event-msg' + (evt.colorClass ? ' ' + evt.colorClass : ''), textContent: evt.message });
+    var row = el('div', { className: 'event' }, [
+      el('span', { className: 'event-time', textContent: formatTime(evt.time) }),
+      msgEl
+    ]);
+    eventsEl.appendChild(row);
+  });
+  var eventsScroll = document.getElementById('events-scroll');
+  if (isScrolledToBottom(eventsScroll)) eventsScroll.scrollTop = eventsScroll.scrollHeight;
+
+  // Footer and inline status indicator (no overlays)
+  var footerEl = document.getElementById('poll-status');
+  var statusEl = document.getElementById('footer-status');
+  var titleStatus = document.getElementById('title-status');
+  while (titleStatus.firstChild) titleStatus.removeChild(titleStatus.firstChild);
+
+  function setTitleStatus(icon, text, color) {
+    var iconSpan = document.createElement('span');
+    iconSpan.textContent = icon;
+    iconSpan.style.color = color;
+    var textSpan = document.createElement('span');
+    textSpan.className = 'title-status-text';
+    textSpan.style.color = color;
+    textSpan.textContent = text;
+    titleStatus.appendChild(iconSpan);
+    titleStatus.appendChild(textSpan);
+  }
+
+  if (data.status === 'complete') {
+    var firstStart2 = null, lastEnd2 = null;
+    steps.forEach(function(s) {
+      if (s.started_at) { var t = new Date(s.started_at).getTime(); if (!firstStart2 || t < firstStart2) firstStart2 = t; }
+      if (s.completed_at) { var t2 = new Date(s.completed_at).getTime(); if (!lastEnd2 || t2 > lastEnd2) lastEnd2 = t2; }
+    });
+    var elapsedStr = (firstStart2 && lastEnd2) ? ' in ' + formatDuration(lastEnd2 - firstStart2) : '';
+    setTitleStatus('\u2713', 'Complete' + elapsedStr, 'var(--green)');
+    statusEl.textContent = 'Done.';
+    footerEl.className = 'footer';
+    hideControls();
+    debugLog('status: complete' + elapsedStr);
+  } else if (data.status === 'error') {
+    hideControls();
+    var wasUserStop = false;
+    (data.events || []).forEach(function(e) {
+      if (e.message && e.message.indexOf('Stopped by user') >= 0) wasUserStop = true;
+    });
+    if (wasUserStop || currentControl === 'stop') {
+      setTitleStatus('\uD83D\uDED1', 'Stopped', 'var(--red)');
+      statusEl.textContent = 'Stopped.';
+      footerEl.className = 'footer';
+      debugLog('status: stopped by user');
+    } else {
+      setTitleStatus('\u2717', 'Error', 'var(--red)');
+      statusEl.textContent = 'Agent stopped with an error.';
+      footerEl.className = 'footer error';
+      debugLog('status: error');
+    }
+  } else {
+    statusEl.textContent = 'Last updated: ' + formatTime(data.updated_at || new Date().toISOString());
+    footerEl.className = 'footer';
+
+    if (data.control_state === 'stop') {
+      hideControls();
+      setTitleStatus('\uD83D\uDED1', 'Stopping\u2026', 'var(--red)');
+      statusEl.textContent = 'Stopping... agent is shutting down gracefully.';
+      footerEl.className = 'footer error';
+      debugLog('status: stopping');
+    } else if (data.control_state === 'pause') {
+      setTitleStatus('\u23F8', 'Paused', 'var(--yellow)');
+      document.getElementById('btn-resume').disabled = false;
+      debugLog('status: paused');
+    }
+  }
+}
+
+function addLocalEvent(message, colorClass) {
+  localEvents.push({ time: new Date().toISOString(), message: message, colorClass: colorClass || '' });
+  debugLog('localEvent: ' + message);
+  if (lastData) render(lastData);
+}
+
+// --- Control buttons -> API POST ---
 async function sendControl(action) {
-  await fetch(`${API}/roadmaps/${roadmapId}/control`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({action}),
-  });
-  _controlState = action;
+  debugLog('sendControl: ' + action);
+  try {
+    await fetch(API + '/roadmaps/' + roadmapId + '/control', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: action })
+    });
+    currentControl = action;
+    updateControlButtons();
+
+    if (action === 'pause') {
+      addLocalEvent('Pause requested \u2014 waiting for agent to pause after current operation', 'event-msg-warn');
+      setTimeout(function() {
+        if (currentControl === 'pause') {
+          document.getElementById('btn-resume').disabled = false;
+        }
+      }, 3000);
+    } else if (action === 'resume') {
+      addLocalEvent('Resume requested', 'event-msg-success');
+    } else if (action === 'stop') {
+      addLocalEvent('Stop requested \u2014 waiting for graceful shutdown', 'event-msg-error');
+    }
+  } catch (e) {
+    document.getElementById('control-status').textContent = 'Failed to send \u2014 server may be down';
+    debugLog('sendControl ERROR: ' + e.message);
+  }
 }
 
-// --- Data ---
+function updateControlButtons() {
+  var btnPause = document.getElementById('btn-pause');
+  var btnResume = document.getElementById('btn-resume');
+  var btnStop = document.getElementById('btn-stop');
+  var controlStatus = document.getElementById('control-status');
 
+  if (currentControl === 'pause') {
+    btnPause.style.display = 'none';
+    btnResume.style.display = '';
+    btnResume.disabled = true;
+    btnStop.disabled = false;
+    controlStatus.textContent = '';
+  } else if (currentControl === 'stop') {
+    btnPause.style.display = 'none';
+    btnResume.style.display = 'none';
+    btnStop.disabled = true;
+    controlStatus.textContent = '';
+  } else {
+    btnPause.style.display = '';
+    btnResume.style.display = 'none';
+    btnStop.disabled = false;
+    controlStatus.textContent = '';
+  }
+}
+
+function hideControls() {
+  document.getElementById('controls').style.display = 'none';
+}
+
+// --- Data loading via API ---
 async function loadData() {
   try {
-    const resp = await fetch(`${API}/roadmaps/${roadmapId}`);
-    if (!resp.ok) { document.getElementById('title').textContent = 'Roadmap not found'; return; }
-    render(await resp.json());
-    // Also load control state
-    const ctrl = await fetch(`${API}/roadmaps/${roadmapId}/control`);
-    const ctrlData = await ctrl.json();
-    _controlState = ctrlData.action;
+    var resp = await fetch(API + '/roadmaps/' + roadmapId);
+    if (!resp.ok) {
+      document.getElementById('title').firstChild.textContent = 'Roadmap not found';
+      debugLog('loadData: not ok (status ' + resp.status + ')');
+      return;
+    }
+    var data = await resp.json();
+    debugLog('loadData: received (' + JSON.stringify(data).length + ' bytes)');
+    render(data);
   } catch (e) {
-    document.getElementById('title').textContent = 'Failed to load';
+    document.getElementById('title').firstChild.textContent = 'Failed to load';
+    debugLog('loadData ERROR: ' + e.message);
   }
 }
 
-// --- SSE ---
+// --- SSE: EventSource for live updates ---
+var eventSource = null;
 
 function connectSSE() {
-  const dot = document.getElementById('sse-dot');
-  const status = document.getElementById('sse-status');
-  const es = new EventSource(`${API}/roadmaps/${roadmapId}/events/stream`);
+  var footerStatus = document.getElementById('footer-status');
 
-  es.onopen = () => { dot.className = 'status-dot connected'; status.textContent = 'Connected'; };
-  es.onerror = () => { dot.className = 'status-dot disconnected'; status.textContent = 'Disconnected \u2014 retrying...'; };
+  eventSource = new EventSource(API + '/roadmaps/' + roadmapId + '/events/stream');
 
-  const eventTypes = ['roadmap_updated', 'roadmap_synced', 'step_updated', 'steps_updated',
-                      'state_changed', 'event_logged', 'control_changed', 'history_event'];
-  eventTypes.forEach(type => { es.addEventListener(type, () => loadData()); });
+  eventSource.onopen = function() {
+    footerStatus.textContent = 'Connected';
+    debugLog('SSE: connected');
+  };
+
+  eventSource.onerror = function() {
+    footerStatus.textContent = 'Disconnected \u2014 retrying...';
+    debugLog('SSE: error/disconnected');
+  };
+
+  // On any of these event types, re-fetch full roadmap state
+  var eventTypes = ['roadmap_updated', 'roadmap_synced', 'step_updated', 'steps_updated',
+                    'state_changed', 'event_logged', 'control_changed', 'history_event'];
+  eventTypes.forEach(function(type) {
+    eventSource.addEventListener(type, function(e) {
+      debugLog('SSE event: ' + type);
+      loadData();
+    });
+  });
 }
 
 // --- Sidebar ---
-
-let sidebarOpen = false;
+var sidebarOpen = false;
 
 function toggleSidebar(open) {
   sidebarOpen = open !== undefined ? open : !sidebarOpen;
@@ -414,69 +1302,72 @@ function toggleSidebar(open) {
   if (sidebarOpen) loadSidebarRoadmaps();
 }
 
-document.getElementById('hamburger-btn').addEventListener('click', () => toggleSidebar());
-document.getElementById('sidebar-close').addEventListener('click', () => toggleSidebar(false));
-document.getElementById('sidebar-overlay').addEventListener('click', () => toggleSidebar(false));
+document.getElementById('hamburger-btn').addEventListener('click', function() { toggleSidebar(); });
+document.getElementById('sidebar-close').addEventListener('click', function() { toggleSidebar(false); });
+document.getElementById('sidebar-overlay').addEventListener('click', function() { toggleSidebar(false); });
 
 async function loadSidebarRoadmaps() {
-  const list = document.getElementById('sidebar-list');
+  var list = document.getElementById('sidebar-list');
   try {
-    const resp = await fetch(`${API}/roadmaps`);
-    const roadmaps = await resp.json();
+    var resp = await fetch(API + '/roadmaps');
+    var roadmaps = await resp.json();
     // Fetch step counts for each
-    const detailed = await Promise.all(roadmaps.map(async r => {
-      const d = await fetch(`${API}/roadmaps/${r.id}`);
+    var detailed = await Promise.all(roadmaps.map(async function(r) {
+      var d = await fetch(API + '/roadmaps/' + r.id);
       return d.json();
     }));
     // Sort: running first, then by name
-    detailed.sort((a, b) => {
+    detailed.sort(function(a, b) {
       if (a.status === 'running' && b.status !== 'running') return -1;
       if (b.status === 'running' && a.status !== 'running') return 1;
-      return a.name.localeCompare(b.name);
+      return (a.name || '').localeCompare(b.name || '');
     });
-    list.replaceChildren();
-    detailed.forEach(r => {
-      const steps = r.steps || [];
-      const total = steps.length;
-      const done = steps.filter(s => s.status === 'complete').length;
-      const pct = total > 0 ? Math.round(done / total * 100) : 0;
-      const isCurrent = r.id === roadmapId;
-      const isRunning = r.status === 'running';
-      const isComplete = r.state === 'Complete';
+    while (list.firstChild) list.removeChild(list.firstChild);
+    detailed.forEach(function(r) {
+      var steps = r.steps || [];
+      var total = steps.length;
+      var stepsDone = steps.filter(function(s) { return s.status === 'complete'; }).length;
+      var pct = total > 0 ? Math.round(stepsDone / total * 100) : 0;
+      var isCurrent = r.id === roadmapId;
+      var isRunning = r.status === 'running';
+      var isComplete = r.status === 'complete';
 
-      let cls = 'sidebar-item';
+      var cls = 'sidebar-item';
       if (isCurrent) cls += ' active';
       if (isRunning && !isCurrent) cls += ' running';
       if (isComplete) cls += ' complete-item';
 
-      const fillCls = 'sidebar-progress-fill' + (pct === 100 ? ' done' : '');
+      var fillCls = 'sidebar-progress-fill' + (pct === 100 ? ' done' : '');
 
-      const item = el('a', {className: cls, href: '/roadmap/' + r.id}, [
-        el('div', {className: 'sidebar-item-name'}, r.name),
-        el('div', {className: 'sidebar-item-meta'}, [
-          el('span', null, `${done}/${total}`),
-          (() => {
-            const bar = el('span', {className: 'sidebar-progress'});
-            const fill = el('span', {className: fillCls});
-            fill.style.width = pct + '%';
-            bar.appendChild(fill);
-            return bar;
-          })(),
-          r.repo ? el('span', null, r.repo) : null,
-        ]),
+      var barOuter = el('span', { className: 'sidebar-progress' });
+      var barFill = el('span', { className: fillCls });
+      barFill.style.width = pct + '%';
+      barOuter.appendChild(barFill);
+
+      var metaChildren = [
+        el('span', { textContent: stepsDone + '/' + total })
+      ];
+      metaChildren.push(barOuter);
+      if (r.repo) metaChildren.push(el('span', { textContent: r.repo }));
+
+      var item = el('a', { className: cls, href: '/roadmap/' + r.id }, [
+        el('div', { className: 'sidebar-item-name', textContent: r.name || r.id }),
+        el('div', { className: 'sidebar-item-meta' }, metaChildren)
       ]);
       list.appendChild(item);
     });
     if (detailed.length === 0) {
-      list.appendChild(el('div', {className: 'sidebar-item'}, 'No roadmaps yet.'));
+      list.appendChild(el('div', { className: 'sidebar-item', textContent: 'No roadmaps yet.' }));
     }
   } catch (e) {
-    list.replaceChildren(el('div', {className: 'sidebar-item'}, 'Failed to load roadmaps.'));
+    while (list.firstChild) list.removeChild(list.firstChild);
+    list.appendChild(el('div', { className: 'sidebar-item', textContent: 'Failed to load roadmaps.' }));
+    debugLog('loadSidebarRoadmaps ERROR: ' + e.message);
   }
 }
 
 // --- Init ---
-
+debugLog('Dashboard loaded, connecting to API');
 loadData();
 connectSSE();
 </script>
