@@ -75,63 +75,54 @@ def _try_service():
         return None
 
 
-def _roadmap_registry_file():
-    return Path.home() / ".claude" / "dashboard-registry.json"
-
-
-def _load_registry():
-    f = _roadmap_registry_file()
-    if not f.exists():
-        return {}
+def _read_frontmatter_id(filepath):
+    """Read the 'id' field from a markdown file's YAML frontmatter."""
     try:
-        return json.loads(f.read_text())
-    except (json.JSONDecodeError, OSError):
-        return {}
+        content = Path(filepath).read_text()
+        if not content.startswith("---"):
+            return None
+        end = content.find("\n---", 3)
+        if end == -1:
+            return None
+        fm = content[4:end]
+        for line in fm.split("\n"):
+            m = re.match(r"^id:\s*(.+)", line)
+            if m:
+                return m.group(1).strip()
+    except (OSError, ValueError):
+        pass
+    return None
 
 
-def _save_registry(registry):
-    f = _roadmap_registry_file()
-    f.parent.mkdir(parents=True, exist_ok=True)
-    f.write_text(json.dumps(registry, indent=2))
+def _save_service_id(dash_dir, roadmap_id):
+    """Store the service roadmap ID in the per-feature dash directory."""
+    Path(dash_dir).mkdir(parents=True, exist_ok=True)
+    (Path(dash_dir) / "service-id").write_text(roadmap_id)
 
 
-def _save_active_roadmap(roadmap_id, title):
-    """Register a roadmap ID by its title slug AND set it as the current active."""
-    registry = _load_registry()
-    slug = slugify(title)
-    registry[slug] = {"roadmap_id": roadmap_id, "title": title}
-    registry["_active"] = slug
-    _save_registry(registry)
+def _read_service_id(dash_dir):
+    """Read the service roadmap ID from the per-feature dash directory."""
+    f = Path(dash_dir) / "service-id"
+    if f.exists():
+        try:
+            return f.read_text().strip()
+        except OSError:
+            pass
+    return None
 
 
 def _get_active_roadmap_id():
-    """Get the active roadmap ID.
+    """Get the service roadmap ID for the current feature.
 
-    Resolution order:
-    1. The file-based state file (progress-dashboard-active) — use its title slug
-       to look up the service roadmap ID from the registry. This ensures that
-       concurrent sessions each track their own roadmap.
-    2. The _active key in the registry (last init'd roadmap).
+    Reads from the per-feature dash directory's service-id file.
+    Each feature has its own dash_dir, so concurrent sessions
+    don't interfere with each other.
     """
-    registry = _load_registry()
-
-    # Try to resolve from the file-based state (which is per-feature)
-    file_state = load_state()
-    if file_state:
-        dash_dir = file_state.get("dash_dir", "")
-        # Extract slug from dir name: /tmp/progress-dashboard-<slug>
-        dirname = Path(dash_dir).name
-        if dirname.startswith("progress-dashboard-"):
-            slug = dirname.replace("progress-dashboard-", "")
-            if slug in registry:
-                return registry[slug]["roadmap_id"]
-
-    # Fall back to last active
-    active_slug = registry.get("_active")
-    if active_slug and active_slug in registry:
-        return registry[active_slug]["roadmap_id"]
-
-    print("ERROR: No active roadmap. Run 'dash init' first.", file=sys.stderr)
+    dash_dir = get_dash_dir()
+    rid = _read_service_id(dash_dir)
+    if rid:
+        return rid
+    print("ERROR: No service roadmap ID. Run 'dash load-roadmap' first.", file=sys.stderr)
     sys.exit(1)
 
 
@@ -1025,29 +1016,41 @@ def svc_init(client, args):
         sys.exit(1)
     title = args[0]
     step_names = args[1:] if len(args) > 1 else []
+
+    # Create the per-feature dash_dir for state tracking (same as file-based mode)
+    dash_dir = dash_dir_for(title)
+    dash_dir.mkdir(parents=True, exist_ok=True)
+    save_state(dash_dir, pid=0, port=0)
+
     env = detect_environment()
-    rid = str(uuid.uuid4())
-    client.create_roadmap(
-        name=title, id=rid, status="running", state="Ready",
-        repo=env.get("repo"), repo_url=env.get("repo_url"),
-        branch=env.get("branch"), machine=env.get("machine"),
-        worktree=env.get("worktree"),
-    )
+
     if step_names:
+        # Standalone init (no roadmap file) — generate an ID
+        rid = str(uuid.uuid4())
+        client.create_roadmap(
+            name=title, id=rid, status="running", state="Ready",
+            repo=env.get("repo"), repo_url=env.get("repo_url"),
+            branch=env.get("branch"), machine=env.get("machine"),
+            worktree=env.get("worktree"),
+        )
         client.set_steps(rid, [{"number": i, "description": n} for i, n in enumerate(step_names, 1)])
-    client.log_event(rid, "Dashboard started")
-    _save_active_roadmap(rid, title)
-    # Open the service in the browser
-    url = f"{client.base_url}/roadmap/{rid}"
+        client.log_event(rid, "Dashboard started")
+        _save_service_id(dash_dir, rid)
+        url = f"{client.base_url}/roadmap/{rid}"
+    else:
+        # Init without steps — load-roadmap will create the service roadmap
+        # with the file's own ID. Just open the overview for now.
+        url = client.base_url
+
     if sys.platform == "darwin":
         subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     elif shutil.which("xdg-open"):
         subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"{rid}")
+    print(f"{dash_dir}")
 
 
 def svc_load_roadmap(client, args):
-    """Parse roadmap file locally, sync to service."""
+    """Parse roadmap file locally, sync to service using the file's own ID."""
     if len(args) < 1:
         print("Usage: dash load-roadmap <path-to-roadmap.md>", file=sys.stderr)
         sys.exit(1)
@@ -1055,7 +1058,17 @@ def svc_load_roadmap(client, args):
     if not roadmap_path.exists():
         print(f"ERROR: Roadmap not found: {roadmap_path}", file=sys.stderr)
         sys.exit(1)
-    rid = _get_active_roadmap_id()
+
+    # Use the roadmap file's own ID from YAML frontmatter
+    rid = _read_frontmatter_id(roadmap_path)
+    if not rid:
+        print(f"ERROR: No 'id' in frontmatter of {roadmap_path}", file=sys.stderr)
+        sys.exit(1)
+
+    # Store the ID in the per-feature dash_dir
+    dash_dir = get_dash_dir()
+    _save_service_id(dash_dir, rid)
+
     content = roadmap_path.read_text()
 
     # Extract title
@@ -1254,11 +1267,8 @@ def svc_shutdown(client, args):
 
 
 def svc_dir(client, args):
-    active = _load_active_roadmap()
-    if not active:
-        print("ERROR: No active roadmap", file=sys.stderr)
-        sys.exit(1)
-    print(f"{client.base_url}/roadmap/{active['roadmap_id']}")
+    rid = _get_active_roadmap_id()
+    print(f"{client.base_url}/roadmap/{rid}")
 
 
 def svc_add_issue(client, args):
