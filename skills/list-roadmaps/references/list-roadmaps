@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """List active roadmaps with progress and description.
 
-Scans Roadmaps/Active/ and prints a concise summary
+Scans Roadmaps/*/Roadmap.md and prints a concise summary
 of each roadmap: progress bar, counts, and goal from the Feature Definition.
 
 Usage:
@@ -14,10 +14,12 @@ import re
 import sys
 from pathlib import Path
 
-VERSION = "5"
+# Import shared roadmap library
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "scripts"))
+sys.path.insert(0, str(Path.home() / ".claude" / "scripts"))
+import roadmap_lib as lib
 
-ACTIVE_DIR = Path("Roadmaps/Active")
-DEFS_DIR = Path("Roadmaps/Definitions")
+VERSION = "6"
 
 
 def slugify(name):
@@ -68,15 +70,12 @@ def get_dashboard_url_for(feature_name):
     return None
 
 
-def parse_roadmap(path):
-    """Extract name, status, and step counts from a roadmap file."""
-    content = path.read_text()
-    name_m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-    name = name_m.group(1).strip() if name_m else path.stem.replace("-Roadmap", "")
+def parse_roadmap(roadmap_dir):
+    """Extract name, state, and step counts from a roadmap directory."""
+    name = lib.get_feature_name(roadmap_dir)
+    state = lib.current_state(roadmap_dir)
 
-    status_m = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
-    status = status_m.group(1).strip() if status_m else "Unknown"
-
+    content = lib.roadmap_path(roadmap_dir).read_text()
     step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
     matches = list(step_pattern.finditer(content))
     counts = {"complete": 0, "in progress": 0, "blocked": 0, "not started": 0}
@@ -88,12 +87,12 @@ def parse_roadmap(path):
         s = s_m.group(1).strip().lower() if s_m else "not started"
         counts[s] = counts.get(s, 0) + 1
 
-    return name, status, len(matches), counts
+    return name, state, len(matches), counts
 
 
-def get_goal(feature_name):
-    """Read the Goal and Purpose section from the Feature Definition."""
-    def_path = DEFS_DIR / f"{feature_name}-Definition.md"
+def get_goal(roadmap_dir):
+    """Read the Goal and Purpose section from the sibling Definition.md."""
+    def_path = lib.definition_path(roadmap_dir)
     if not def_path.exists():
         return None
     content = def_path.read_text()
@@ -121,18 +120,14 @@ def progress_bar(complete, total, width=20):
 
 
 def main():
-    if not ACTIVE_DIR.exists():
-        print("No active roadmaps found.")
-        sys.exit(0)
-
-    roadmaps = sorted(ACTIVE_DIR.glob("*-Roadmap.md"))
-    if not roadmaps:
+    roadmap_dirs = lib.find_roadmap_dirs(".")
+    if not roadmap_dirs:
         print("No active roadmaps found.")
         sys.exit(0)
 
     print(f"\n  list-roadmaps v{VERSION}\n")
-    for path in roadmaps:
-        name, status, total, counts = parse_roadmap(path)
+    for roadmap_dir in roadmap_dirs:
+        name, state, total, counts = parse_roadmap(roadmap_dir)
         complete = counts.get("complete", 0)
         bar = progress_bar(complete, total)
 
@@ -142,13 +137,14 @@ def main():
             if n:
                 remaining.append(f"{n} {label}")
 
-        print(f"  {name}  {bar}  {complete}/{total} done", end="")
+        state_label = f"  [{state}]" if state else ""
+        print(f"  {name}{state_label}  {bar}  {complete}/{total} done", end="")
         if remaining:
             print(f"  ({', '.join(remaining)})")
         else:
             print()
 
-        goal = get_goal(name)
+        goal = get_goal(roadmap_dir)
         if goal:
             print(f"    {goal}")
         dashboard_url = get_dashboard_url_for(name)

@@ -1,6 +1,6 @@
 ---
 name: generate-test-roadmap
-version: "1"
+version: "2"
 description: "Generate a test roadmap with silly cat-herding steps for testing the implement-roadmap workflow. No prompts, no approvals — just creates everything and exits."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> generate-test-roadmap v1
+> generate-test-roadmap v2
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -41,17 +41,15 @@ gh auth status
 ```
 If this fails, **STOP** — tell the user to run `gh auth login`.
 
-Create directories:
+Determine today's date for directory naming:
 ```bash
-mkdir -p Roadmaps/Definitions
-mkdir -p Roadmaps/Active
-mkdir -p Roadmaps/Completed
-mkdir -p Roadmaps/Completed
+date +%Y-%m-%d
 ```
+Store the result as `TODAY` (e.g., `2026-03-23`).
 
 Ensure `Roadmaps/` is tracked by git:
 ```bash
-git check-ignore -q Roadmaps/Definitions/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
+git check-ignore -q Roadmaps/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
 ```
 If `IGNORED`, append negation rules to `.gitignore`:
 ```bash
@@ -59,7 +57,9 @@ printf '\n!Roadmaps/\n!Roadmaps/**\n' >> .gitignore
 ```
 
 ```bash
-git add .gitignore && git commit -m "chore: allow Roadmaps/ in git" && git push
+git add .gitignore
+git commit -m "chore: allow Roadmaps/ in git"
+git push
 ```
 
 ---
@@ -99,13 +99,21 @@ Each step:
 
 ## Step 3: Write Feature Definition
 
-Write `Roadmaps/Definitions/${FEATURE_NAME}-Definition.md`:
+Create the per-directory structure:
+```bash
+mkdir -p "Roadmaps/${TODAY}-${FEATURE_NAME}/{State,History}"
+```
+
+Write `Roadmaps/${TODAY}-${FEATURE_NAME}/Definition.md`:
 
 ```markdown
-# Feature Definition: ${FEATURE_NAME}
+---
+created: ${TODAY}
+feature: ${FEATURE_NAME}
+type: test
+---
 
-**Created**: <today's date>
-**Status**: In Progress
+# Feature Definition: ${FEATURE_NAME}
 
 ## Goal and Purpose
 
@@ -146,9 +154,14 @@ None — this is a test fixture.
 | Local verification | `cat roadmap-test.md` and confirm 20 silly lines |
 ```
 
+Write the initial State file:
+```bash
+echo "Created by /generate-test-roadmap" > "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Created.md"
+```
+
 Commit and push:
 ```bash
-git add "Roadmaps/Definitions/${FEATURE_NAME}-Definition.md"
+git add "Roadmaps/${TODAY}-${FEATURE_NAME}/Definition.md" "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Created.md"
 git commit -m "docs: add Feature Definition for ${FEATURE_NAME}"
 git push
 ```
@@ -157,12 +170,16 @@ git push
 
 ## Step 4: Write Feature Roadmap
 
-Write `Roadmaps/Active/${FEATURE_NAME}-Roadmap.md` using the roadmap template structure.
+Write `Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md` using the roadmap template structure.
 
-Set:
-- `**Status**: Not Started`
-- `**Implementing**: No`
-- `**Phase**: Planning` (will be updated to Ready after issues are created)
+Use YAML frontmatter for metadata:
+```markdown
+---
+created: ${TODAY}
+feature: ${FEATURE_NAME}
+status: Not Started
+---
+```
 
 Include all 20 steps using the step template structure from the plan-roadmap skill. Each step should have:
 - GitHub Issue: `REPO#TBD` (placeholder — will be filled in Step 5)
@@ -175,7 +192,7 @@ Include all 20 steps using the step template structure from the plan-roadmap ski
 
 Commit and push:
 ```bash
-git add "Roadmaps/Active/${FEATURE_NAME}-Roadmap.md"
+git add "Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md"
 git commit -m "docs: add Feature Roadmap for ${FEATURE_NAME}"
 git push
 ```
@@ -194,11 +211,14 @@ After each issue, verify with `gh issue view <number> --json number,title,state`
 
 After all 20 issues are created:
 1. Update the Roadmap file — replace each `REPO#TBD` with the actual issue reference
-2. Set `**Phase**: Ready`
+2. Transition to Ready state:
+```bash
+echo "All issues linked, roadmap ready for implementation" > "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Ready.md"
+```
 3. Commit and push:
 ```bash
-git add "Roadmaps/Active/${FEATURE_NAME}-Roadmap.md"
-git commit -m "docs: add GitHub issue numbers to ${FEATURE_NAME} Roadmap, set Phase to Ready"
+git add "Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md" "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Ready.md"
+git commit -m "docs: add GitHub issue numbers to ${FEATURE_NAME} Roadmap, set state to Ready"
 git push
 ```
 
@@ -211,11 +231,12 @@ Print:
 ```
 === TEST ROADMAP GENERATED: ${FEATURE_NAME} ===
 
-Feature Definition: Roadmaps/Definitions/${FEATURE_NAME}-Definition.md
-Roadmap: Roadmaps/Active/${FEATURE_NAME}-Roadmap.md
+Directory: Roadmaps/${TODAY}-${FEATURE_NAME}/
+Definition: Roadmaps/${TODAY}-${FEATURE_NAME}/Definition.md
+Roadmap: Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md
+State: Ready
 Steps: 20
 GitHub Issues: #<first> through #<last>
-Phase: Ready
 
 To implement, run:
   /implement-roadmap

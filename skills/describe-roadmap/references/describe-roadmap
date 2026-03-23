@@ -16,10 +16,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION = "4"
+# Import shared roadmap library
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent / "scripts"))
+sys.path.insert(0, str(Path.home() / ".claude" / "scripts"))
+import roadmap_lib as lib
 
-ACTIVE_DIR = Path("Roadmaps/Active")
-DEFS_DIR = Path("Roadmaps/Definitions")
+VERSION = "5"
 
 
 def slugify(name):
@@ -79,20 +81,23 @@ STATUS_ICONS = {
 
 
 def find_roadmaps():
-    if not ACTIVE_DIR.exists():
-        return []
-    return sorted(ACTIVE_DIR.glob("*-Roadmap.md"))
+    """Find all roadmap directories using the shared library."""
+    return lib.find_roadmap_dirs(".")
 
 
-def parse_header(content):
+def parse_header(roadmap_dir):
+    """Extract metadata from a roadmap directory using frontmatter and state."""
     fields = {}
-    for key in ["Status", "Phase", "Created", "Implementing"]:
-        m = re.search(rf"\*\*{key}\*\*:\s*(.+)", content)
-        if m:
-            fields[key.lower()] = m.group(1).strip()
-    name_m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-    fields["name"] = name_m.group(1).strip() if name_m else "Unknown"
-    return fields
+    roadmap_file = lib.roadmap_path(roadmap_dir)
+    content = roadmap_file.read_text()
+    meta, _ = lib.parse_frontmatter(roadmap_file)
+
+    fields["name"] = lib.get_feature_name(roadmap_dir)
+    fields["status"] = meta.get("status", lib.current_state(roadmap_dir))
+    fields["phase"] = meta.get("phase", "")
+    fields["created"] = meta.get("created", "")
+    fields["state"] = lib.current_state(roadmap_dir)
+    return fields, content
 
 
 def parse_steps(content):
@@ -121,8 +126,9 @@ def parse_steps(content):
     return steps
 
 
-def get_goal(feature_name):
-    def_path = DEFS_DIR / f"{feature_name}-Definition.md"
+def get_goal(roadmap_dir):
+    """Read the Goal and Purpose section from the sibling Definition.md."""
+    def_path = lib.definition_path(roadmap_dir)
     if not def_path.exists():
         return None
     content = def_path.read_text()
@@ -138,7 +144,7 @@ def get_goal(feature_name):
 def select_roadmap(roadmaps, arg=None):
     if arg:
         for r in roadmaps:
-            name = r.stem.replace("-Roadmap", "")
+            name = lib.get_feature_name(r)
             if arg.lower() in name.lower():
                 return r
         print(f"No roadmap matching '{arg}' found.")
@@ -149,11 +155,9 @@ def select_roadmap(roadmaps, arg=None):
 
     print("\nActive roadmaps:\n")
     for i, r in enumerate(roadmaps):
-        content = r.read_text()
-        header = parse_header(content)
-        steps = parse_steps(content)
-        complete = sum(1 for s in steps if s["status"].lower() == "complete")
-        print(f"  {i + 1}. {header['name']}  ({complete}/{len(steps)} done)")
+        name = lib.get_feature_name(r)
+        total, complete = lib.count_steps(lib.roadmap_path(r))
+        print(f"  {i + 1}. {name}  ({complete}/{total} done)")
     print(f"  q. Quit")
 
     try:
@@ -175,9 +179,8 @@ def icon_for(status):
     return STATUS_ICONS.get(status.lower(), "?")
 
 
-def print_roadmap(path):
-    content = path.read_text()
-    header = parse_header(content)
+def print_roadmap(roadmap_dir):
+    header, content = parse_header(roadmap_dir)
     steps = parse_steps(content)
 
     counts = {}
@@ -193,7 +196,8 @@ def print_roadmap(path):
     # Header
     print(f"  {header['name']}")
     print(f"  {'=' * len(header['name'])}")
-    print(f"  Status: {header.get('status', '?')}  |  Phase: {header.get('phase', '?')}  |  Created: {header.get('created', '?')}")
+    state = header.get('state', header.get('status', '?'))
+    print(f"  State: {state}  |  Created: {header.get('created', '?')}")
 
     # Dashboard
     dashboard_url = get_dashboard_url_for(header["name"])
@@ -201,7 +205,7 @@ def print_roadmap(path):
         print(f"  Dashboard: {hyperlink(dashboard_url)}")
 
     # Goal
-    goal = get_goal(header["name"])
+    goal = get_goal(roadmap_dir)
     if goal:
         print(f"\n  {goal}")
 
