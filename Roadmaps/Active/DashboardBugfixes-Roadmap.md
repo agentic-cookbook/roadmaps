@@ -2,6 +2,8 @@
 
 **Feature Definition**: `Roadmaps/Definitions/DashboardBugfixes-Definition.md`
 **Created**: 2026-03-21
+**ID**: d3072a94-4340-4aad-89fb-8bdcaa900a44
+**Definition-ID**: ec8698e3-93b6-4a92-ab66-3125a09147d3
 **Status**: Not Started
 **Phase**: Ready
 

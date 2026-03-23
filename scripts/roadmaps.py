@@ -5,7 +5,8 @@ Scans all repos in a projects directory for active feature roadmaps
 and progress dashboards.
 
 Usage:
-    roadmaps --list                     List all roadmaps across all repos
+    roadmaps --list                     List all active roadmaps across all repos
+    roadmaps --list --all               List all roadmaps including archived/completed
     roadmaps --list-dashboards          List all dashboard URLs
     roadmaps --open-dashboards          Open all dashboard URLs in browser
     roadmaps --monitor [SECONDS]        Live monitor roadmaps + dashboards (default: 30s)
@@ -61,8 +62,8 @@ def parse_roadmap_meta(roadmap_path):
     }
 
 
-def find_all_roadmaps(projects_dir):
-    """Scan all repos for active roadmaps."""
+def find_all_roadmaps(projects_dir, include_archived=False):
+    """Scan all repos for roadmaps. Optionally include completed/archived ones."""
     results = {}
     projects_path = Path(projects_dir).expanduser()
     if not projects_path.exists():
@@ -71,17 +72,28 @@ def find_all_roadmaps(projects_dir):
     for repo_dir in sorted(projects_path.iterdir()):
         if not repo_dir.is_dir():
             continue
-        # Check new path first, fall back to old path during migration
+
+        roadmaps = []
+
+        # Active roadmaps — check new path first, fall back to old path
         roadmap_dir = repo_dir / "Roadmaps" / "Active"
         if not roadmap_dir.exists():
             roadmap_dir = repo_dir / ".claude" / "Features" / "Active-Roadmaps"
-        if not roadmap_dir.exists():
-            continue
-        roadmaps = []
-        for f in sorted(list(roadmap_dir.glob("*-Roadmap.md")) + list(roadmap_dir.glob("*-FeatureRoadmap.md"))):
-            meta = parse_roadmap_meta(f)
-            if meta["status"].lower() != "complete":
-                roadmaps.append(meta)
+        if roadmap_dir.exists():
+            for f in sorted(list(roadmap_dir.glob("*-Roadmap.md")) + list(roadmap_dir.glob("*-FeatureRoadmap.md"))):
+                meta = parse_roadmap_meta(f)
+                if meta["status"].lower() != "complete":
+                    roadmaps.append(meta)
+
+        # Archived/completed roadmaps
+        if include_archived:
+            completed_dir = repo_dir / "Roadmaps" / "Completed"
+            if completed_dir.exists():
+                for f in sorted(list(completed_dir.glob("*-Roadmap.md")) + list(completed_dir.glob("*-FeatureRoadmap.md"))):
+                    meta = parse_roadmap_meta(f)
+                    meta["archived"] = True
+                    roadmaps.append(meta)
+
         if roadmaps:
             results[repo_dir.name] = roadmaps
 
@@ -201,15 +213,16 @@ def detect_project(projects_dir):
 
 # --- Commands ---
 
-def cmd_list(projects_dir, project=None):
+def cmd_list(projects_dir, project=None, include_archived=False):
     """List all roadmaps across all repos."""
-    all_roadmaps = find_all_roadmaps(projects_dir)
+    all_roadmaps = find_all_roadmaps(projects_dir, include_archived=include_archived)
 
     if project:
         all_roadmaps = {k: v for k, v in all_roadmaps.items() if k == project}
 
     if not all_roadmaps:
-        print("No active roadmaps found.")
+        label = "roadmaps" if include_archived else "active roadmaps"
+        print(f"No {label} found.")
         return
 
     for repo_name, roadmaps in all_roadmaps.items():
@@ -218,7 +231,8 @@ def cmd_list(projects_dir, project=None):
             pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
             bar = progress_bar(r["complete"], r["total"])
             phase_tag = f"  \033[90m[{r['phase']}]\033[0m" if r["phase"] != "Ready" else ""
-            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{phase_tag}")
+            archived_tag = "  \033[32m[Archived]\033[0m" if r.get("archived") else ""
+            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{phase_tag}{archived_tag}")
         print()
 
 
@@ -435,6 +449,7 @@ def main():
         epilog="Examples:\n  roadmaps --list\n  roadmaps --list-dashboards\n  roadmaps --open-dashboards",
     )
     parser.add_argument("--list", action="store_true", help="List all roadmaps across all repos")
+    parser.add_argument("--all", action="store_true", help="Include archived/completed roadmaps (use with --list)")
     parser.add_argument("--list-dashboards", action="store_true", help="List all dashboard URLs")
     parser.add_argument("--open-dashboards", action="store_true", help="Open all dashboard URLs in browser")
     parser.add_argument("--monitor", nargs="?", const=30, type=int, metavar="SECONDS", help="Live monitor (default: 30s interval)")
@@ -446,7 +461,7 @@ def main():
     project = detect_project(projects_dir)
 
     if args.list:
-        cmd_list(projects_dir, project=project)
+        cmd_list(projects_dir, project=project, include_archived=args.all)
     elif args.list_dashboards:
         cmd_list_dashboards(project=project)
     elif args.open_dashboards:
@@ -457,7 +472,7 @@ def main():
         cmd_cleanup()
     else:
         # Default: show list
-        cmd_list(projects_dir, project=project)
+        cmd_list(projects_dir, project=project, include_archived=args.all)
 
 
 if __name__ == "__main__":
