@@ -39,8 +39,68 @@ import socket
 import subprocess
 import sys
 import time
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+# --- Dashboard service integration ---
+# If the Flask service is running, delegate to it instead of using files.
+
+_service_client = None
+_service_checked = False
+
+
+def _try_service():
+    """Try to connect to the dashboard service. Returns client or None."""
+    global _service_client, _service_checked
+    if _service_checked:
+        return _service_client
+    _service_checked = True
+    try:
+        # Try importing from the repo scripts/ or installed location
+        for p in [
+            Path(__file__).resolve().parent.parent.parent.parent / "scripts",
+            Path.home() / ".claude" / "scripts",
+        ]:
+            if (p / "dashboard_client.py").exists():
+                sys.path.insert(0, str(p))
+                break
+        from dashboard_client import DashboardClient, DashboardUnavailable
+        client = DashboardClient()
+        client.ping()
+        _service_client = client
+        return client
+    except Exception:
+        return None
+
+
+def _active_roadmap_file():
+    return Path.home() / ".claude" / "dashboard-active.json"
+
+
+def _save_active_roadmap(roadmap_id, title):
+    f = _active_roadmap_file()
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps({"roadmap_id": roadmap_id, "title": title}))
+
+
+def _load_active_roadmap():
+    f = _active_roadmap_file()
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _get_active_roadmap_id():
+    active = _load_active_roadmap()
+    if not active:
+        print("ERROR: No active roadmap. Run 'dash init' first.", file=sys.stderr)
+        sys.exit(1)
+    return active["roadmap_id"]
 
 
 def slugify(name):
@@ -922,14 +982,273 @@ def cmd_finish_step(args):
     write_progress(dash_dir, data)
 
 
+# ---------------------------------------------------------------------------
+# Service-mode command implementations
+# When the Flask service is running, these are used instead of file-based.
+# ---------------------------------------------------------------------------
+
+def svc_init(client, args):
+    if len(args) < 1:
+        print("Usage: dash init <title> [step1 step2 ...]", file=sys.stderr)
+        sys.exit(1)
+    title = args[0]
+    step_names = args[1:] if len(args) > 1 else []
+    env = detect_environment()
+    rid = str(uuid.uuid4())
+    client.create_roadmap(
+        name=title, id=rid, status="running", state="Ready",
+        repo=env.get("repo"), repo_url=env.get("repo_url"),
+        branch=env.get("branch"), machine=env.get("machine"),
+        worktree=env.get("worktree"),
+    )
+    if step_names:
+        client.set_steps(rid, [{"number": i, "description": n} for i, n in enumerate(step_names, 1)])
+    client.log_event(rid, "Dashboard started")
+    _save_active_roadmap(rid, title)
+    # Open the service in the browser
+    url = f"{client.base_url}/roadmap/{rid}"
+    if sys.platform == "darwin":
+        subprocess.Popen(["open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif shutil.which("xdg-open"):
+        subprocess.Popen(["xdg-open", url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print(f"{rid}")
+
+
+def svc_load_roadmap(client, args):
+    """Parse roadmap file locally, sync to service."""
+    if len(args) < 1:
+        print("Usage: dash load-roadmap <path-to-roadmap.md>", file=sys.stderr)
+        sys.exit(1)
+    roadmap_path = Path(args[0])
+    if not roadmap_path.exists():
+        print(f"ERROR: Roadmap not found: {roadmap_path}", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    content = roadmap_path.read_text()
+
+    # Extract title
+    title_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
+    title = title_match.group(1).strip() if title_match else "Unknown"
+
+    # Get repo URL for links
+    env = detect_environment()
+    repo_url = env.get("repo_url")
+
+    # Parse steps (reuse existing parser logic)
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+    steps, issues, prs = [], [], []
+
+    for i, match in enumerate(matches):
+        step_num = int(match.group(1))
+        step_desc = match.group(2).strip()
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        fields = parse_step_fields(content[block_start:block_end])
+        status = map_status(fields.get("Status", "Not Started"))
+        step_type = fields.get("Type", "Auto")
+        if step_type.lower() == "manual" and status == "not_started":
+            status = "skipped"
+
+        step = {"number": step_num, "description": step_desc, "status": status,
+                "step_type": step_type, "complexity": fields.get("Complexity")}
+
+        issue_ref = fields.get("GitHub Issue", "")
+        issue_num = extract_number(issue_ref, "issues")
+        if issue_num:
+            step["issue_number"] = issue_num
+            step["issue_url"] = f"{repo_url}/issues/{issue_num}" if repo_url else None
+            step["issue_title"] = f"Step {step_num}: {step_desc}"
+            issue_status = "closed" if status == "complete" else ("in_progress" if status == "in_progress" else "open")
+            issues.append({"number": issue_num, "title": step["issue_title"],
+                           "url": step["issue_url"], "status": issue_status})
+
+        pr_ref = fields.get("PR", "")
+        if pr_ref.strip() not in ("_TBD_", "TBD", ""):
+            pr_num = extract_number(pr_ref, "pull")
+            if pr_num:
+                pr_url = f"{repo_url}/pull/{pr_num}" if repo_url else None
+                url_match = re.search(r"(https?://\S+)", pr_ref)
+                if url_match:
+                    pr_url = url_match.group(1)
+                step["pr_number"] = pr_num
+                step["pr_url"] = pr_url
+                pr_status = "merged" if status == "complete" else "open"
+                prs.append({"number": pr_num, "title": f"Step {step_num}: {step_desc}",
+                             "url": pr_url, "status": pr_status})
+
+        steps.append(step)
+
+    # Sync to service
+    client.sync(rid, {
+        "title": title, "state": "Ready", "status": "running",
+        "environment": env, "steps": steps, "issues": issues, "prs": prs,
+        "events": [{"time": now_iso(), "message": f"Loaded roadmap: {len(steps)} steps"}],
+    })
+    complete_count = sum(1 for s in steps if s["status"] == "complete")
+    print(f"Loaded {len(steps)} steps ({complete_count} complete, {len(issues)} issues, {len(prs)} PRs)")
+
+
+def svc_begin_step(client, args):
+    if len(args) < 1:
+        print("Usage: dash begin-step <step_number>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    step_num = int(args[0])
+    client.begin_step(rid, step_num)
+
+
+def svc_finish_step(client, args):
+    if len(args) < 1:
+        print("Usage: dash finish-step <step_number>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    step_num = int(args[0])
+    client.finish_step(rid, step_num)
+
+
+def svc_pr_created(client, args):
+    if len(args) < 3:
+        print("Usage: dash pr-created <step_number> <pr_number> <pr_url>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.pr_created(rid, int(args[0]), int(args[1]), args[2])
+
+
+def svc_step_start(client, args):
+    if len(args) < 1:
+        print("Usage: dash step-start <step_number>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.begin_step(rid, int(args[0]))
+
+
+def svc_step_detail(client, args):
+    if len(args) < 2:
+        print("Usage: dash step-detail <step_number> <detail>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.update_step(rid, int(args[0]), detail=" ".join(args[1:]))
+
+
+def svc_step_complete(client, args):
+    if len(args) < 1:
+        print("Usage: dash step-complete <step_number>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.finish_step(rid, int(args[0]))
+
+
+def svc_step_error(client, args):
+    if len(args) < 2:
+        print("Usage: dash step-error <step_number> <message>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.step_error(rid, int(args[0]), " ".join(args[1:]))
+
+
+def svc_step_link(client, args):
+    if len(args) < 3:
+        print("Usage: dash step-link <step_number> <label> <url>", file=sys.stderr)
+        sys.exit(1)
+    # No direct link support in service yet — just log it
+    rid = _get_active_roadmap_id()
+    client.log_event(rid, f"Step {args[0]}: {args[1]}")
+
+
+def svc_set_steps(client, args):
+    if len(args) < 1:
+        print("Usage: dash set-steps <step1> [step2 ...]", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.set_steps(rid, [{"number": i, "description": n} for i, n in enumerate(args, 1)])
+
+
+def svc_event(client, args):
+    if len(args) < 1:
+        print("Usage: dash event <message>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.log_event(rid, " ".join(args))
+
+
+def svc_check_control(client, args):
+    rid = _get_active_roadmap_id()
+    action = client.check_control(rid)
+    print(action or "none")
+    if action and action != "none":
+        client.log_event(rid, f"{action.capitalize()} received by agent")
+        if action == "resume":
+            client.clear_control(rid)
+
+
+def svc_complete(client, args):
+    rid = _get_active_roadmap_id()
+    client.complete(rid)
+
+
+def svc_error(client, args):
+    rid = _get_active_roadmap_id()
+    message = " ".join(args) if args else "Unknown error"
+    client.error(rid, message)
+
+
+def svc_shutdown(client, args):
+    rid = _get_active_roadmap_id()
+    client.shutdown(rid)
+    print(f"Dashboard marked idle (roadmap {rid})")
+
+
+def svc_dir(client, args):
+    active = _load_active_roadmap()
+    if not active:
+        print("ERROR: No active roadmap", file=sys.stderr)
+        sys.exit(1)
+    print(f"{client.base_url}/roadmap/{active['roadmap_id']}")
+
+
+def svc_add_issue(client, args):
+    if len(args) < 3:
+        print("Usage: dash add-issue <number> <title> <url>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.add_issue(rid, int(args[0]), title=args[1], url=args[2])
+
+
+def svc_update_issue(client, args):
+    if len(args) < 2:
+        print("Usage: dash update-issue <number> <status>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.add_issue(rid, int(args[0]), status=args[1])
+
+
+def svc_add_pr(client, args):
+    if len(args) < 3:
+        print("Usage: dash add-pr <number> <title> <url>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.add_pr(rid, int(args[0]), title=args[1], url=args[2])
+
+
+def svc_update_pr(client, args):
+    if len(args) < 2:
+        print("Usage: dash update-pr <number> <status>", file=sys.stderr)
+        sys.exit(1)
+    rid = _get_active_roadmap_id()
+    client.add_pr(rid, int(args[0]), status=args[1])
+
+
+# ---------------------------------------------------------------------------
+# Command dispatch
+# ---------------------------------------------------------------------------
+
 COMMANDS = {
-    # New high-level commands
     "load-roadmap": cmd_load_roadmap,
     "begin-step": cmd_begin_step,
     "pr-created": cmd_pr_created,
     "finish-step": cmd_finish_step,
     "log": cmd_event,
-    # Legacy commands (kept for backward compatibility)
     "init": cmd_init,
     "set-steps": cmd_set_steps,
     "step-start": cmd_step_start,
@@ -949,14 +1268,51 @@ COMMANDS = {
     "dir": cmd_dir,
 }
 
+SERVICE_COMMANDS = {
+    "init": svc_init,
+    "load-roadmap": svc_load_roadmap,
+    "begin-step": svc_begin_step,
+    "finish-step": svc_finish_step,
+    "pr-created": svc_pr_created,
+    "step-start": svc_step_start,
+    "step-detail": svc_step_detail,
+    "step-link": svc_step_link,
+    "step-complete": svc_step_complete,
+    "step-error": svc_step_error,
+    "set-steps": svc_set_steps,
+    "event": svc_event,
+    "log": svc_event,
+    "check-control": svc_check_control,
+    "complete": svc_complete,
+    "error": svc_error,
+    "shutdown": svc_shutdown,
+    "dir": svc_dir,
+    "add-issue": svc_add_issue,
+    "update-issue": svc_update_issue,
+    "add-pr": svc_add_pr,
+    "update-pr": svc_update_pr,
+}
+
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+    all_commands = set(COMMANDS.keys()) | set(SERVICE_COMMANDS.keys())
+    if len(sys.argv) < 2 or sys.argv[1] not in all_commands:
         print("Usage: dash <command> [args...]", file=sys.stderr)
-        print(f"Commands: {', '.join(COMMANDS.keys())}", file=sys.stderr)
+        print(f"Commands: {', '.join(sorted(all_commands))}", file=sys.stderr)
         sys.exit(1)
 
-    COMMANDS[sys.argv[1]](sys.argv[2:])
+    cmd_name = sys.argv[1]
+    cmd_args = sys.argv[2:]
+
+    # Try the dashboard service first
+    client = _try_service()
+    if client and cmd_name in SERVICE_COMMANDS:
+        SERVICE_COMMANDS[cmd_name](client, cmd_args)
+    elif cmd_name in COMMANDS:
+        COMMANDS[cmd_name](cmd_args)
+    else:
+        print(f"ERROR: Command '{cmd_name}' requires the dashboard service", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
