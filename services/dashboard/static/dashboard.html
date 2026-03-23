@@ -831,14 +831,6 @@ function buildStepEl(step, index, isPaused) {
     bodyChildren.push(el('div', { className: 'step-detail' }, [issueLink]));
   }
 
-  // Always show PR link if present
-  if (step.pr_number) {
-    var prText = 'PR #' + step.pr_number;
-    if (step.pr_title) prText += ': ' + step.pr_title;
-    var prLink = el('a', { href: step.pr_url || '#', textContent: prText });
-    bodyChildren.push(el('div', { className: 'step-detail' }, [prLink]));
-  }
-
   if (step.detail) {
     bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
   }
