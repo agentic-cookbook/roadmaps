@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "13"
+version: "14"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v13
+   > implement-roadmap v14
 
 2. Print the worker agent version by running:
    ```bash
@@ -52,6 +52,20 @@ test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<feature_name>" && python3 "$DA
 
 **IMPORTANT**: Always set `export DASH_FEATURE="<feature_name>"` before ANY `dash` command. This ensures concurrent sessions don't interfere with each other. The `DASH_FEATURE` must be set in the shell so all subsequent `python3 "$DASH_CLI" ...` calls inherit it.
 
+## Step 2b: Create Feature Branch and Worktree
+
+Create a single feature branch and worktree for all steps:
+
+```bash
+FEATURE_BRANCH="feature/<feature_name>"
+WORKTREE_PATH="../$(basename $(pwd))-wt/<feature_name>"
+git worktree add "$WORKTREE_PATH" -b "$FEATURE_BRANCH"
+```
+
+Print: `Working on branch: $FEATURE_BRANCH`
+
+All steps will commit to this single branch. One PR will be created at the end.
+
 ## Step 3: Implementation Loop
 
 This is a loop. Repeat until done:
@@ -70,7 +84,7 @@ This outputs JSON. Parse it:
 - If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
 - If `"action": "done"` — all steps are complete. **Run the completion sequence immediately:**
 
-  **Write State and History files:**
+  **1. Write State and History files (inside the worktree):**
 
   Derive the roadmap directory from `<roadmap_path>` (its parent directory). Then:
 
@@ -108,14 +122,57 @@ This outputs JSON. Parse it:
 
   All auto steps finished for <feature_name>.
   HISTEOF
-
-  # Commit
-  git add -A Roadmaps/
-  git commit -m "docs: complete feature <feature_name> — all steps done"
-  git push
   ```
 
-  **Notify dashboard and stop:**
+  **2. Commit State/History to the feature branch:**
+  ```bash
+  git -C "$WORKTREE_PATH" add -A Roadmaps/
+  git -C "$WORKTREE_PATH" commit -m "docs: complete feature <feature_name> — all steps done"
+  ```
+
+  **3. Push the feature branch and create a PR:**
+
+  Build the PR body dynamically. For each step that had a GitHub issue, include `Closes #<issue_number>`.
+
+  ```bash
+  git -C "$WORKTREE_PATH" push -u origin "$FEATURE_BRANCH"
+  gh pr create --head "$FEATURE_BRANCH" --title "feat: <feature_name>" --body-file /tmp/gh-pr-body.md
+  ```
+
+  The PR body file (`/tmp/gh-pr-body.md`) should contain:
+  - A summary line: `Implements the <feature_name> feature.`
+  - A section listing all steps: `## Steps` with each step as a checkbox line
+  - A blank line, then `Closes #<issue>` for every step that had a GitHub issue (each on its own line)
+
+  **4. Run reviews on the PR:**
+
+  Always run:
+  - Code Review (use `/review-pr`)
+  - Security Review (use `/security-review`)
+
+  Run conditionally based on what changed:
+  - UI Review if HTML/CSS/JS changed
+  - API Review if API endpoints changed
+
+  Fix any issues found by reviews, committing fixes to the feature branch.
+
+  **5. Merge the PR:**
+  ```bash
+  gh pr merge --merge
+  ```
+
+  Use `--merge` (NOT `--squash`) to preserve individual step commits.
+
+  **6. Close any issues not auto-closed:**
+
+  If any step issues were not closed by the `Closes #N` lines (e.g., if merge didn't trigger auto-close), close them manually with `gh issue close`.
+
+  **7. Clean up the worktree:**
+  ```bash
+  git worktree remove "$WORKTREE_PATH"
+  ```
+
+  **8. Dashboard complete and shutdown:**
   ```bash
   python3 "$DASH_CLI" complete
   python3 "$DASH_CLI" shutdown
@@ -153,8 +210,11 @@ GitHub Issue: <issue>
 Complexity: <complexity>
 Roadmap file: <roadmap_path>
 Feature Definition: <roadmap_dir>/Definition.md
+Worktree path: <worktree_path>
 
-Implement ONLY this step. When done, update the roadmap to mark this step Complete, then return. Do not implement any other step.
+Implement ONLY this step. Commit your changes to the existing branch.
+When done, update the roadmap to mark this step Complete, then return.
+Do not implement any other step.
 ```
 
 ### 3e: After Worker Returns
