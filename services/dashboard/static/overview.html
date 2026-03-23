@@ -442,10 +442,14 @@ async function loadRoadmaps() {
   try {
     var resp = await fetch(API + '/roadmaps');
     var roadmaps = await resp.json();
-    allRoadmaps = await Promise.all(roadmaps.map(async function(r) {
-      var detail = await fetch(API + '/roadmaps/' + r.id);
-      return detail.json();
+    var details = await Promise.all(roadmaps.map(async function(r) {
+      try {
+        var detail = await fetch(API + '/roadmaps/' + encodeURIComponent(r.id));
+        if (!detail.ok) return r;
+        return await detail.json();
+      } catch (e) { return r; }
     }));
+    allRoadmaps = details;
     renderRoadmaps(allRoadmaps);
   } catch (e) {
     document.getElementById('subtitle').textContent = 'Failed to load roadmaps';
