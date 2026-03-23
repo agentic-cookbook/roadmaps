@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "12"
+version: "13"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v12
+   > implement-roadmap v13
 
 2. Print the worker agent version by running:
    ```bash
@@ -67,21 +67,48 @@ This outputs JSON. Parse it:
 - If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
 - If `"action": "done"` — all steps are complete. **Run the completion sequence immediately:**
 
-  **Archive the roadmap:**
+  **Write State and History files:**
+
+  Derive the roadmap directory from `<roadmap_path>` (its parent directory). Then:
+
   ```bash
-  # Set Status to Complete in the roadmap file
-  sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' "<roadmap_path>"
+  ROADMAP_DIR="$(dirname "<roadmap_path>")"
+  TODAY="$(date +%Y-%m-%d)"
+  NOW="$(date +%Y-%m-%d-%H%M%S)"
+  AUTHOR="$(git config user.name) <$(git config user.email)>"
 
-  # Move to Completed
-  mkdir -p Roadmaps/Completed
-  git mv "<roadmap_path>" "Roadmaps/Completed/$(basename <roadmap_path>)"
+  # Write Complete state file
+  cat > "$ROADMAP_DIR/State/$TODAY-Complete.md" << STATEEOF
+  ---
+  id: $(python3 -c "import uuid; print(uuid.uuid4())")
+  created: $TODAY
+  author: $AUTHOR
+  definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
+  previous-state: Implementing
+  ---
 
-  # Update Feature Definition status
-  sed -i '' 's/^\*\*Status\*\*: .*/\*\*Status\*\*: Complete/' "Roadmaps/Definitions/<feature_name>-Definition.md"
+  # State: Complete
+
+  All auto steps finished.
+  STATEEOF
+
+  # Write History entry
+  cat > "$ROADMAP_DIR/History/$NOW-ImplementationComplete.md" << HISTEOF
+  ---
+  id: $(python3 -c "import uuid; print(uuid.uuid4())")
+  created: $TODAY
+  author: $AUTHOR
+  definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
+  ---
+
+  # Event: ImplementationComplete
+
+  All auto steps finished for <feature_name>.
+  HISTEOF
 
   # Commit
   git add -A Roadmaps/
-  git commit -m "docs: complete feature <feature_name> — archive roadmap"
+  git commit -m "docs: complete feature <feature_name> — all steps done"
   git push
   ```
 
@@ -91,7 +118,7 @@ This outputs JSON. Parse it:
   python3 "$DASH_CLI" shutdown
   ```
 
-  Print: `All steps complete for <feature_name>. Roadmap archived.`
+  Print: `All steps complete for <feature_name>.`
   Then **STOP**.
 
 ### 3b: Print Step Info
@@ -122,7 +149,7 @@ Step <N>: <description>
 GitHub Issue: <issue>
 Complexity: <complexity>
 Roadmap file: <roadmap_path>
-Feature Definition: Roadmaps/Definitions/<feature_name>-Definition.md
+Feature Definition: <roadmap_dir>/Definition.md
 
 Implement ONLY this step. When done, update the roadmap to mark this step Complete, then return. Do not implement any other step.
 ```

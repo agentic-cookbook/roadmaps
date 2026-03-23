@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "2"
+version: "3"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Creates a worktree, implements, creates PR, reviews, merges, updates roadmap, closes issue, then returns.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v2
+> implement-step-agent v3
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -39,8 +39,8 @@ Your task prompt contains:
 - **Step number and description** — e.g., "Step 1: Fix step ordering display"
 - **GitHub Issue** — e.g., "#17"
 - **Complexity** — S, M, or L
-- **Roadmap file path** — where to update the step status when done
-- **Feature Definition path** — for acceptance criteria and verification strategy
+- **Roadmap file path** — e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`
+- **Feature Definition path** — sibling file in the same directory, e.g., `Roadmaps/2026-03-21-FeatureName/Definition.md`
 
 Read the Feature Definition to understand the verification strategy (build command, test command).
 

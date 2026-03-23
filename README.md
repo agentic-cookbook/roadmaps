@@ -66,14 +66,17 @@ Done → run /implement-roadmap-interactively to build it
 
 **Files created:**
 
-- `Roadmaps/Definitions/<Name>-Definition.md`
-- `Roadmaps/Active/<Name>-Roadmap.md`
+- `Roadmaps/YYYY-MM-DD-<Name>/Definition.md`
+- `Roadmaps/YYYY-MM-DD-<Name>/Roadmap.md`
+- `Roadmaps/YYYY-MM-DD-<Name>/State/` (lifecycle state files)
+- `Roadmaps/YYYY-MM-DD-<Name>/History/` (event log)
 - GitHub issues (one per implementation step)
 
 **Changelog:**
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v4 | 2026-03-23 | Per-directory File Record layout (`Roadmaps/YYYY-MM-DD-Name/`); YAML frontmatter; State/ directory for lifecycle; History/ for event log |
 | v2 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support; restructured into Discussion + Planning phases; added phase gate requiring user permission; added `Phase: Planning \| Ready` field to Roadmap; reinforced no-implementation-code guardrails; moved Active Guards to references/; added `disable-model-invocation: true`; shortened description for context budget |
 | v1 | 2026-03-20 | Initial release — single-phase workflow with checkpoint gates and no-implementation-code guardrails |
 
@@ -107,6 +110,7 @@ Pass issue numbers, or `all` to include every open issue.
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v3 | 2026-03-23 | Per-directory File Record layout; YAML frontmatter; State/ directory for lifecycle |
 | v1 | 2026-03-21 | Initial release — fetches issues from GitHub, groups by component, single-approval flow |
 
 ---
@@ -136,6 +140,7 @@ For interactive step-by-step control with checkpoints, use `/implement-roadmap-i
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v13 | 2026-03-23 | Per-directory File Record layout; completion writes State/Complete.md instead of git mv; History/ event logging; shared roadmap_lib |
 | v9 | 2026-03-22 | Per-feature dashboard URL lookup by slug |
 | v8 | 2026-03-22 | Show dashboard URL on startup |
 | v7 | 2026-03-22 | Python coordinator + single-step worker agent — deterministic step selection, no LLM skipping |
@@ -149,7 +154,7 @@ For interactive step-by-step control with checkpoints, use `/implement-roadmap-i
 
 Implementation skill for features planned with `/plan-roadmap`. Works through each Roadmap step with proper isolation, testing, and review.
 
-**What it does:** Picks up a Feature Roadmap from `Active/` and implements it step by step:
+**What it does:** Picks up an implementable Feature Roadmap and works through it step by step:
 
 1. **Selects** a feature from available roadmaps
 2. **Acquires a lock** so no other session works on the same feature
@@ -162,16 +167,15 @@ Implementation skill for features planned with `/plan-roadmap`. Works through ea
 /implement-roadmap-interactively
 ```
 
-Requires a Roadmap created by `/plan-roadmap` with `Phase: Ready`.
+Requires a Roadmap created by `/plan-roadmap` with State: Ready.
 
 **Workflow:**
 
 ```
 Startup
-  → Scans Active/
-  → Shows available features (filters out Planning phase and locked features)
+  → Scans Roadmaps/ directories
+  → Shows available features (filters by State: Ready)
   → You choose a feature
-  → Lock acquired
 
 Per Step (repeats for each Roadmap step)
   → Plan the step
@@ -190,26 +194,21 @@ Completion
   → Clean up worktrees
   → Update Feature Definition
   → Create Feature Summary
-  → Archive Roadmap
-  → Release lock
+  → Write State/Complete.md
 ```
 
 **Key rules:**
 
 - **One step = one PR** — never combine steps, even if they seem small.
 - **Never skip reviews** — every PR gets code review and security review.
-- **Concurrency lock** — `Implementing: Yes` prevents other sessions from working on the same feature.
-- **Phase guard** — features with `Phase: Planning` are not available for implementation.
+- **State guard** — only features with State: Ready are available for implementation.
 - **Checkpoint gates** — pause for your acknowledgment after every step.
-
-**Lock management:**
-
-The `Implementing` field in the Roadmap prevents concurrent work. If a session crashes, the lock stays — manually edit the Roadmap to set `Implementing: No` to release it.
 
 **Changelog:**
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v10 | 2026-03-23 | Per-directory File Record layout; State/ replaces inline Status/Phase; completion writes State/Complete.md instead of git mv |
 | v9 | 2026-03-22 | Inline bash grep/awk for step selection — self-enclosed, no external scripts |
 | v8 | 2026-03-22 | Use standalone `next-step` script for step selection — no dashboard dependency |
 | v7 | 2026-03-21 | Use `dash next-step` command for step selection — removes LLM judgment entirely |

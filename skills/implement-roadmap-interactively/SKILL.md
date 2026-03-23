@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap-interactively
-version: "9"
+version: "10"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v9
+> implement-roadmap-interactively v10
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -17,7 +17,7 @@ Then stop. Do not continue with the rest of the skill.
 
 # Implement Roadmap
 
-Implementation workflow for features that have been planned with `/plan-roadmap`. Picks up a Roadmap from `Active/` and works through each step with proper isolation, testing, and review.
+Implementation workflow for features that have been planned with `/plan-roadmap`. Picks up an implementable Roadmap and works through each step with proper isolation, testing, and review.
 
 ## CRITICAL RULES
 
@@ -79,22 +79,24 @@ test -f "$DASH_CLI" && echo "Dashboard available" || echo "NO_DASH"
 
 You will initialize the dashboard after the user selects a feature (since you need the feature name). For now, just confirm `DASH_CLI` exists. If not found, continue without the dashboard.
 
-### Step 1: Scan Active Roadmaps
+### Step 1: Scan Roadmaps
 
-Read all files in `Roadmaps/Active/`. For each `*-Roadmap.md` file, parse:
+Scan all roadmap directories under `Roadmaps/`. Each roadmap lives in its own directory (`Roadmaps/YYYY-MM-DD-FeatureName/`) containing `Roadmap.md`, `Definition.md`, `State/`, and `History/`.
 
-- The feature name (from `# Feature Roadmap: <name>`)
-- The `**Status**:` field
-- The `**Phase**:` field (if present — `Planning` or `Ready`)
-- The progress table (how many steps complete vs total)
+For each directory containing a `Roadmap.md`, determine:
+
+- The feature name (from directory name: `YYYY-MM-DD-Name` → `Name`, or from `# Feature Roadmap:` heading)
+- The current state (newest file in `State/` directory — filename format `YYYY-MM-DD-StateName.md`)
+- The progress (count `### Step` headers and `- **Status**: Complete` lines in `Roadmap.md`)
 
 ### Step 2: Build Available Features List
 
-Categorize each roadmap:
+Categorize each roadmap by its current state:
 
-- **Available**: `Status` is not `Complete` AND `Phase` is `Ready` (or `Phase` field is absent for backward compatibility)
-- **Not Ready (Still Planning)**: `Phase` is `Planning` — this feature is still being defined by `/plan-roadmap` and is not available for implementation
-- **Complete**: `Status` is `Complete` (nothing left to do)
+- **Available**: state is `Ready`
+- **Not Ready (Still Planning)**: state is `Created` or `Planning` — this feature is still being defined by `/plan-roadmap`
+- **In Progress**: state is `Implementing` — already being worked on
+- **Complete**: state is `Complete` (nothing left to do)
 
 If no features are available:
 - If there are "Not Ready" features, list them and explain: "The following features are still in the planning phase and not yet available for implementation. Run `/plan-roadmap` to complete their planning."
@@ -125,7 +127,7 @@ If `DASH_CLI` was found in Step 0, initialize and load the roadmap:
 
 ```bash
 python3 "$DASH_CLI" init "<FeatureName>"
-python3 "$DASH_CLI" load-roadmap "Roadmaps/Active/<FeatureName>-Roadmap.md"
+python3 "$DASH_CLI" load-roadmap "Roadmaps/<YYYY-MM-DD-FeatureName>/Roadmap.md"
 ```
 
 The `init` command opens the browser immediately. The `load-roadmap` command reads the roadmap markdown file and automatically populates all step names, GitHub issues, PRs, and completion status. You do NOT manually add steps, issues, or PRs — `load-roadmap` does it all.
@@ -155,7 +157,7 @@ Loop for each step in the Roadmap. **Run a control check before every sub-step**
 **Control check.** Then run this command to find the next step. It uses grep — no LLM judgment:
 
 ```bash
-ROADMAP="Roadmaps/Active/<FeatureName>-Roadmap.md" && LINE=$(grep -n '^\- \*\*Status\*\*:' "$ROADMAP" | grep -iv complete | head -1 | cut -d: -f1) && if [ -z "$LINE" ]; then echo "DONE"; else awk -v line="$LINE" 'NR<=line && /^### Step [0-9]+:/{last=$0} END{print last}' "$ROADMAP"; fi
+ROADMAP="Roadmaps/<YYYY-MM-DD-FeatureName>/Roadmap.md" && LINE=$(grep -n '^\- \*\*Status\*\*:' "$ROADMAP" | grep -iv complete | head -1 | cut -d: -f1) && if [ -z "$LINE" ]; then echo "DONE"; else awk -v line="$LINE" 'NR<=line && /^### Step [0-9]+:/{last=$0} END{print last}' "$ROADMAP"; fi
 ```
 
 - If output is `DONE`, all steps are complete — proceed to the Completion phase.
@@ -345,9 +347,7 @@ git worktree remove <path>
 
 ### Step 3: Update Feature Definition
 
-Edit the Feature Definition file:
-- Set status to "Complete"
-- Add the completion date
+Edit the Feature Definition file (`Roadmaps/<YYYY-MM-DD-FeatureName>/Definition.md`):
 - Fill in "Deviations from Plan" — what changed from the original plan and why
 
 ### Step 4: Update Project Docs
@@ -362,13 +362,22 @@ Only update docs that are relevant. Don't create docs that don't already exist i
 
 ### Step 5: Create Feature Summary
 
-Create `Roadmaps/Completed/<FeatureName>-Summary.md`:
+Create `Roadmaps/<YYYY-MM-DD-FeatureName>/Summary.md` with YAML frontmatter:
 
 ```markdown
-# Feature Summary: <FeatureName>
+---
+id: <generate UUID>
+created: <today>
+modified: <today>
+author: <git user.name> <<git user.email>>
+definition-id: <id from Definition.md frontmatter>
+change-history:
+  - date: <today>
+    author: <git user.name> <<git user.email>>
+    summary: Initial creation
+---
 
-**Completed**: <date>
-**Feature Definition**: `Roadmaps/Definitions/<FeatureName>-Definition.md`
+# Feature Summary: <FeatureName>
 
 ## Architecture Decisions
 
@@ -395,15 +404,43 @@ Create `Roadmaps/Completed/<FeatureName>-Summary.md`:
 <What changed from the original Feature Definition and why>
 ```
 
-### Step 6: Archive Roadmap
+### Step 6: Write Complete State
 
-Update the Roadmap:
-- Set `**Status**:` to `Complete`
-
-Move the Roadmap from `Active/` to `Completed/`:
+Write a Complete state file and history entry for the roadmap:
 
 ```bash
-git mv "Roadmaps/Active/<FeatureName>-Roadmap.md" "Roadmaps/Completed/<FeatureName>-Roadmap.md"
+ROADMAP_DIR="Roadmaps/<YYYY-MM-DD-FeatureName>"
+TODAY="$(date +%Y-%m-%d)"
+NOW="$(date +%Y-%m-%d-%H%M%S)"
+
+# Write Complete state (makes this roadmap "archived")
+cat > "$ROADMAP_DIR/State/$TODAY-Complete.md" << 'EOF'
+---
+id: <generate UUID>
+created: <today>
+author: <git author>
+definition-id: <from Definition.md>
+previous-state: Implementing
+---
+
+# State: Complete
+
+All steps finished.
+EOF
+
+# Write history entry
+cat > "$ROADMAP_DIR/History/$NOW-ImplementationComplete.md" << 'EOF'
+---
+id: <generate UUID>
+created: <today>
+author: <git author>
+definition-id: <from Definition.md>
+---
+
+# Event: ImplementationComplete
+
+All steps finished for <FeatureName>.
+EOF
 ```
 
 ### Step 7: Stop Dashboard

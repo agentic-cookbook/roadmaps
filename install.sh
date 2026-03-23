@@ -575,20 +575,37 @@ install_cli_scripts() {
         mkdir -p "$bin_dir"
     fi
 
+    # Library scripts (roadmap_lib.py etc.) — symlink to ~/.claude/scripts/
+    # so that installed skills can import them
+    local lib_dir="$HOME/.claude/scripts"
+    mkdir -p "$lib_dir"
+
     for script in "$scripts_dir"/*.py; do
         [ -f "$script" ] || continue
         local name
         name=$(basename "$script" .py)
-        local target="$bin_dir/$name"
 
-        if [ -L "$target" ] && [ "$(readlink "$target")" = "$script" ]; then
-            echo "  [ok] $name -> $target (symlink)"
-        else
-            if [ -e "$target" ]; then
-                rm -f "$target"
+        # Library scripts (no shebang / not executable) go to ~/.claude/scripts/
+        # CLI scripts (have shebang) go to bin_dir
+        if head -1 "$script" | grep -q '^#!/'; then
+            local target="$bin_dir/$name"
+            if [ -L "$target" ] && [ "$(readlink "$target")" = "$script" ]; then
+                echo "  [ok] $name -> $target (symlink)"
+            else
+                [ -e "$target" ] && rm -f "$target"
+                ln -s "$script" "$target"
+                echo "  [symlinked] $name -> $target"
             fi
-            ln -s "$script" "$target"
-            echo "  [symlinked] $name -> $target"
+        fi
+
+        # Always symlink to ~/.claude/scripts/ for import access
+        local lib_target="$lib_dir/$(basename "$script")"
+        if [ -L "$lib_target" ] && [ "$(readlink "$lib_target")" = "$script" ]; then
+            echo "  [ok] $(basename "$script") -> $lib_target (lib symlink)"
+        else
+            [ -e "$lib_target" ] && rm -f "$lib_target"
+            ln -s "$script" "$lib_target"
+            echo "  [symlinked] $(basename "$script") -> $lib_target (lib)"
         fi
     done
 }

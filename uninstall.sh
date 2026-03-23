@@ -249,6 +249,13 @@ remove_cli_scripts() {
                 echo "  [removed] $name from $bin_dir"
             fi
         done
+
+        # Also remove from ~/.claude/scripts/
+        local lib_target="$HOME/.claude/scripts/$(basename "$script")"
+        if [ -L "$lib_target" ]; then
+            rm -f "$lib_target"
+            echo "  [removed] $(basename "$script") from ~/.claude/scripts/"
+        fi
     done
 }
 

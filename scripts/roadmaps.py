@@ -29,38 +29,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-
-# --- Roadmap parsing (same logic as coordinator) ---
-
-def count_steps(roadmap_path):
-    """Count total and complete steps in a roadmap file."""
-    content = Path(roadmap_path).read_text()
-    total = len(re.findall(r"^### Step \d+:", content, re.MULTILINE))
-    complete = len(re.findall(r"^\- \*\*Status\*\*:\s*Complete", content, re.MULTILINE | re.IGNORECASE))
-    return total, complete
+# Add scripts/ to path for roadmap_lib
+sys.path.insert(0, str(Path(__file__).parent))
+import roadmap_lib as lib
 
 
-def parse_roadmap_meta(roadmap_path):
-    """Parse top-level metadata from a roadmap file."""
-    content = Path(roadmap_path).read_text()
-    name_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-    phase_match = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
-    status_match = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
-
-    name = name_match.group(1).strip() if name_match else Path(roadmap_path).stem.replace("-Roadmap", "")
-    phase = phase_match.group(1) if phase_match else "Ready"
-    status = status_match.group(1).strip() if status_match else "Not Started"
-    total, complete = count_steps(roadmap_path)
-
-    return {
-        "name": name,
-        "path": str(roadmap_path),
-        "phase": phase,
-        "status": status,
-        "total": total,
-        "complete": complete,
-    }
-
+# --- Roadmap scanning ---
 
 def find_all_roadmaps(projects_dir, include_archived=False):
     """Scan all repos for roadmaps. Optionally include completed/archived ones."""
@@ -75,24 +49,47 @@ def find_all_roadmaps(projects_dir, include_archived=False):
 
         roadmaps = []
 
-        # Active roadmaps — check new path first, fall back to old path
-        roadmap_dir = repo_dir / "Roadmaps" / "Active"
-        if not roadmap_dir.exists():
-            roadmap_dir = repo_dir / ".claude" / "Features" / "Active-Roadmaps"
-        if roadmap_dir.exists():
-            for f in sorted(list(roadmap_dir.glob("*-Roadmap.md")) + list(roadmap_dir.glob("*-FeatureRoadmap.md"))):
-                meta = parse_roadmap_meta(f)
-                if meta["status"].lower() != "complete":
-                    roadmaps.append(meta)
-
-        # Archived/completed roadmaps
-        if include_archived:
-            completed_dir = repo_dir / "Roadmaps" / "Completed"
-            if completed_dir.exists():
-                for f in sorted(list(completed_dir.glob("*-Roadmap.md")) + list(completed_dir.glob("*-FeatureRoadmap.md"))):
-                    meta = parse_roadmap_meta(f)
-                    meta["archived"] = True
-                    roadmaps.append(meta)
+        # New per-directory layout: Roadmaps/YYYY-MM-DD-Name/
+        roadmap_dirs = lib.find_roadmap_dirs(repo_dir)
+        if roadmap_dirs:
+            for rd in roadmap_dirs:
+                state = lib.current_state(rd)
+                active = lib.is_active(rd)
+                if not active and not include_archived:
+                    continue
+                rm_file = lib.roadmap_path(rd)
+                name = lib.get_feature_name(rd)
+                total, complete = lib.count_steps(rm_file)
+                meta = {
+                    "name": name,
+                    "path": str(rm_file),
+                    "state": state,
+                    "total": total,
+                    "complete": complete,
+                    "archived": not active,
+                }
+                roadmaps.append(meta)
+        else:
+            # Old flat layout fallback
+            old = lib.find_roadmaps_old_layout(repo_dir)
+            for entry in old:
+                if not entry.get("roadmap_path"):
+                    continue
+                rm_path = entry["roadmap_path"]
+                is_completed = entry["location"] == "completed"
+                if is_completed and not include_archived:
+                    continue
+                name = lib.parse_roadmap_heading(rm_path) or entry["name"]
+                total, complete = lib.count_steps(rm_path)
+                meta = {
+                    "name": name,
+                    "path": str(rm_path),
+                    "state": "Complete" if is_completed else "Ready",
+                    "total": total,
+                    "complete": complete,
+                    "archived": is_completed,
+                }
+                roadmaps.append(meta)
 
         if roadmaps:
             results[repo_dir.name] = roadmaps
@@ -230,9 +227,10 @@ def cmd_list(projects_dir, project=None, include_archived=False):
         for r in roadmaps:
             pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
             bar = progress_bar(r["complete"], r["total"])
-            phase_tag = f"  \033[90m[{r['phase']}]\033[0m" if r["phase"] != "Ready" else ""
+            state = r.get("state", "")
+            state_tag = f"  \033[90m[{state}]\033[0m" if state not in ("Ready", "") else ""
             archived_tag = "  \033[32m[Archived]\033[0m" if r.get("archived") else ""
-            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{phase_tag}{archived_tag}")
+            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}{archived_tag}")
         print()
 
 
@@ -405,8 +403,9 @@ def cmd_monitor(projects_dir, interval, project=None):
                     for r in roadmaps:
                         pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
                         bar = progress_bar(r["complete"], r["total"])
-                        phase_tag = f"  \033[90m[{r['phase']}]\033[0m" if r["phase"] != "Ready" else ""
-                        print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{phase_tag}")
+                        state = r.get("state", "")
+                        state_tag = f"  \033[90m[{state}]\033[0m" if state not in ("Ready", "") else ""
+                        print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}")
                     print()
 
             # Dashboards

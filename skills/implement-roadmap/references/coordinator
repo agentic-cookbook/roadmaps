@@ -19,8 +19,19 @@ import re
 import sys
 from pathlib import Path
 
+# Add scripts/ to path for roadmap_lib
+_scripts_dir = Path(__file__).resolve().parent.parent.parent.parent / "scripts"
+if _scripts_dir.exists():
+    sys.path.insert(0, str(_scripts_dir))
+# Also check installed location
+_installed_scripts = Path.home() / ".claude" / "scripts"
+if _installed_scripts.exists():
+    sys.path.insert(0, str(_installed_scripts))
 
-# --- Roadmap parsing ---
+import roadmap_lib as lib
+
+
+# --- Step parsing (operates on Roadmap.md content) ---
 
 def parse_step_fields(block):
     """Extract key-value pairs from lines like '- **Key**: value'."""
@@ -53,41 +64,6 @@ def list_all_steps(roadmap_path):
     return steps
 
 
-def count_steps(roadmap_path):
-    """Count total and complete steps."""
-    content = Path(roadmap_path).read_text()
-    total = len(re.findall(r"^### Step \d+:", content, re.MULTILINE))
-    complete = len(re.findall(r"^\- \*\*Status\*\*:\s*Complete", content, re.MULTILINE | re.IGNORECASE))
-    return total, complete
-
-
-def find_roadmaps(base="Roadmaps/Active"):
-    """Find all active roadmaps with Phase: Ready."""
-    roadmaps = []
-    base_path = Path(base)
-    if not base_path.exists():
-        return roadmaps
-    for f in sorted(base_path.glob("*-Roadmap.md")):
-        content = f.read_text()
-        phase_match = re.search(r"\*\*Phase\*\*:\s*(\w+)", content)
-        status_match = re.search(r"^\*\*Status\*\*:\s*(.+)", content, re.MULTILINE)
-        phase = phase_match.group(1) if phase_match else "Ready"
-        status = status_match.group(1).strip() if status_match else "Not Started"
-        if phase == "Ready" and status.lower() != "complete":
-            name_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-            name = name_match.group(1).strip() if name_match else f.stem.replace("-Roadmap", "")
-            total, complete = count_steps(str(f))
-            roadmaps.append({"name": name, "path": str(f), "total": total, "complete": complete})
-    return roadmaps
-
-
-def get_feature_name(roadmap_path):
-    """Extract feature name from roadmap file."""
-    content = Path(roadmap_path).read_text()
-    m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
-    return m.group(1).strip() if m else Path(roadmap_path).stem.replace("-Roadmap", "")
-
-
 # --- Commands ---
 
 def cmd_next_step(args):
@@ -110,8 +86,9 @@ def cmd_next_step(args):
             manual_skipped.append(s)
             continue
         # Found the next implementable step
-        feature_name = get_feature_name(roadmap_path)
-        total, complete = count_steps(roadmap_path)
+        roadmap_dir = Path(roadmap_path).parent
+        feature_name = lib.get_feature_name(roadmap_dir)
+        total, complete = lib.count_steps(roadmap_path)
         print(json.dumps({
             "action": "implement",
             "step": s["step"],
@@ -128,8 +105,9 @@ def cmd_next_step(args):
         return
 
     # All done (or only manual steps left)
-    feature_name = get_feature_name(roadmap_path)
-    total, complete = count_steps(roadmap_path)
+    roadmap_dir = Path(roadmap_path).parent
+    feature_name = lib.get_feature_name(roadmap_dir)
+    total, complete = lib.count_steps(roadmap_path)
     print(json.dumps({
         "action": "done",
         "feature": feature_name,
@@ -144,25 +122,49 @@ def cmd_resolve(args):
     """Find and select a roadmap file."""
     feature_name = args[0] if args else None
 
+    # Scan for roadmap directories
+    roadmap_dirs = lib.find_roadmap_dirs(".")
+    if not roadmap_dirs:
+        # Fallback to old layout
+        old = lib.find_roadmaps_old_layout(".")
+        if old:
+            roadmap_dirs = []
+            for entry in old:
+                if entry.get("roadmap_path") and entry["location"] == "active":
+                    roadmap_dirs.append(entry["roadmap_path"].parent)
+
     if feature_name:
-        # Look for matching roadmap
-        base = Path("Roadmaps/Active")
-        matches = list(base.glob(f"*{feature_name}*-Roadmap.md"))
+        # Filter by name match
+        matches = []
+        for rd in roadmap_dirs:
+            name = lib.get_feature_name(rd)
+            rm_file = lib.roadmap_path(rd)
+            if not rm_file.exists():
+                continue
+            if feature_name.lower() in name.lower():
+                if lib.is_implementable(rd):
+                    total, complete = lib.count_steps(rm_file)
+                    matches.append({"path": str(rm_file), "name": name,
+                                    "total": total, "complete": complete})
         if len(matches) == 1:
-            total, complete = count_steps(str(matches[0]))
-            name = get_feature_name(str(matches[0]))
-            print(json.dumps({"path": str(matches[0]), "name": name, "total": total, "complete": complete}))
+            print(json.dumps(matches[0]))
         elif len(matches) > 1:
-            results = []
-            for m in matches:
-                total, complete = count_steps(str(m))
-                results.append({"path": str(m), "name": get_feature_name(str(m)), "total": total, "complete": complete})
-            print(json.dumps({"choose": results}))
+            print(json.dumps({"choose": matches}))
         else:
-            print(json.dumps({"error": f"No roadmap matching '{feature_name}'"}))
+            print(json.dumps({"error": f"No implementable roadmap matching '{feature_name}'"}))
             sys.exit(1)
     else:
-        roadmaps = find_roadmaps()
+        # Show all implementable roadmaps
+        roadmaps = []
+        for rd in roadmap_dirs:
+            rm_file = lib.roadmap_path(rd)
+            if not rm_file.exists():
+                continue
+            if lib.is_implementable(rd):
+                name = lib.get_feature_name(rd)
+                total, complete = lib.count_steps(rm_file)
+                roadmaps.append({"path": str(rm_file), "name": name,
+                                 "total": total, "complete": complete})
         if len(roadmaps) == 0:
             print(json.dumps({"error": "No available roadmaps. Run /plan-roadmap first."}))
             sys.exit(1)
@@ -179,8 +181,9 @@ def cmd_summary(args):
         sys.exit(1)
     roadmap_path = args[0]
     steps = list_all_steps(roadmap_path)
-    total, complete = count_steps(roadmap_path)
-    feature_name = get_feature_name(roadmap_path)
+    total, complete = lib.count_steps(roadmap_path)
+    roadmap_dir = Path(roadmap_path).parent
+    feature_name = lib.get_feature_name(roadmap_dir)
     print(json.dumps({
         "feature": feature_name,
         "roadmap": roadmap_path,
