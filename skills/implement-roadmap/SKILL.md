@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "14"
+version: "15"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v14
+   > implement-roadmap v15
 
 2. Print the worker agent version by running:
    ```bash
@@ -74,7 +74,7 @@ All steps will commit to this single branch. One PR will be created at the end.
 WT_ROADMAP_PATH="$WORKTREE_PATH/<roadmap_path>"
 ```
 
-Where `<roadmap_path>` is the relative path from Step 1 (e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`).
+Where `<roadmap_path>` is the **relative** path from Step 1 (e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`). It must be relative to the repo root — do not use an absolute path here, or the concatenation will break.
 
 This is a loop. Repeat until done:
 
@@ -140,7 +140,7 @@ This outputs JSON. Parse it:
 
   **3. Push the feature branch and create a PR:**
 
-  Build the PR body file. For each step that had a GitHub issue, include `Closes #<issue_number>`:
+  Build the PR body file. **You must substitute all `<...>` placeholders with actual values before writing the file** — do not pass placeholder text through literally. The `Closes #N` lines are critical for auto-closing issues on merge.
 
   ```bash
   cat > /tmp/gh-pr-body.md <<'PRBODYEOF'
@@ -150,11 +150,15 @@ This outputs JSON. Parse it:
 
   ## Steps
 
-  <For each step, add a line: - [x] Step N: description>
+  - [x] Step 1: <actual step 1 description>
+  - [x] Step 2: <actual step 2 description>
+  ...etc for each completed step...
 
   ## Linked Issues
 
-  <For each step with a GitHub issue, add: Closes #<issue_number>>
+  Closes #<actual_issue_number_for_step_1>
+  Closes #<actual_issue_number_for_step_2>
+  ...etc for each step with a GitHub issue...
 
   ## Testing
 
@@ -249,6 +253,27 @@ Do not implement any other step.
 ```
 
 ### 3e: After Worker Returns
+
+**Check if the step was actually completed.** Read the roadmap file and verify the step's `**Status**:` is now `Complete`. If it is NOT:
+
+1. The worker failed. Print: `Step <N> FAILED — worker did not mark it Complete.`
+2. Update dashboard:
+   ```bash
+   python3 "$DASH_CLI" fail-step <N>
+   ```
+3. **Do NOT retry.** Stop the loop and report the failure:
+   ```
+   Implementation stopped at step <N>.
+   Worktree preserved at: $WORKTREE_PATH
+   Branch: $FEATURE_BRANCH
+   Completed steps: <list of completed step numbers>
+   ```
+4. Shut down the dashboard and **STOP**:
+   ```bash
+   python3 "$DASH_CLI" shutdown
+   ```
+
+If the step IS marked Complete:
 
 Update dashboard:
 ```bash
