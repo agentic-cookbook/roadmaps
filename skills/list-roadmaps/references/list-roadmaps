@@ -137,7 +137,8 @@ def main():
             if n:
                 remaining.append(f"{n} {label}")
 
-        state_label = f"  [{state}]" if state else ""
+        display_state = "Running" if state == "Implementing" else state
+        state_label = f"  [{display_state}]" if display_state else ""
         print(f"  {name}{state_label}  {bar}  {complete}/{total} done", end="")
         if remaining:
             print(f"  ({', '.join(remaining)})")

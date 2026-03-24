@@ -74,7 +74,7 @@ def find_all_roadmaps(projects_dir):
                     "complete": complete,
                     "is_complete": state == "Complete",
                     "is_active": active and state != "Complete",
-                    "is_running": active and complete > 0 and complete < total,
+                    "is_running": state == "Implementing",
                     "is_archived": state in ("Archived", "Declined"),
                 })
         else:
@@ -269,14 +269,15 @@ def cmd_list(projects_dir, project=None, show_running=True, show_active=True,
 
             # State in parens with color
             state = r.get("state", "Unknown")
+            display_state = "Running" if r["is_running"] else state
             if r["is_archived"]:
-                state_str = f"\033[90m({state})\033[0m"
+                state_str = f"\033[90m({display_state})\033[0m"
             elif r["is_complete"]:
-                state_str = f"\033[32m({state})\033[0m"
+                state_str = f"\033[32m({display_state})\033[0m"
             elif r["is_running"]:
-                state_str = f"\033[33m({state})\033[0m"
+                state_str = f"\033[33m({display_state})\033[0m"
             else:
-                state_str = f"\033[90m({state})\033[0m"
+                state_str = f"\033[90m({display_state})\033[0m"
 
             print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%  {state_str}")
         print()
@@ -449,7 +450,8 @@ def cmd_monitor(projects_dir, interval, project=None):
                         pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
                         bar = progress_bar(r["complete"], r["total"])
                         state = r.get("state", "")
-                        state_tag = f"  \033[33m[Running]\033[0m" if r["is_running"] else (f"  \033[90m[{state}]\033[0m" if state not in ("Ready", "") else "")
+                        display_state = "Running" if r["is_running"] else state
+                        state_tag = f"  \033[33m[Running]\033[0m" if r["is_running"] else (f"  \033[90m[{display_state}]\033[0m" if display_state not in ("Ready", "") else "")
                         print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}")
                     print()
 
