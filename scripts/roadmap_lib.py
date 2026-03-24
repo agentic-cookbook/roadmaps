@@ -473,32 +473,44 @@ def replace_issue_placeholders(roadmap_file, step_issue_map):
     return count
 
 
-def draft_dir_for(project_name, base=None):
-    """Return the Path to the draft directory for a project.
+def roadmap_work_dir(project_name, base=None):
+    """Return the working directory for a project's roadmaps.
 
-    Returns <base>/drafts/<project_name>. Default base is ~/.roadmaps.
+    Returns <base>/<project_name>. Default base is ~/.roadmaps.
+    Roadmaps live here throughout their lifecycle (planning + implementation).
     Does not create the directory.
     """
     if base is None:
         base = Path.home() / ".roadmaps"
-    return Path(base) / "drafts" / project_name
+    return Path(base) / project_name
 
 
-def move_draft_to_repo(draft_dir, repo_dir):
-    """Move a draft roadmap directory into <repo_dir>/Roadmaps/.
+def copy_roadmap_to_branch(roadmap_dir, target_dir):
+    """Copy a finished roadmap directory into a target (e.g., worktree/Roadmaps/).
 
-    Creates Roadmaps/ under repo_dir if it does not exist.
-    Raises FileExistsError if the target directory already exists.
+    Creates parent directories if needed.
+    Raises FileExistsError if the target already exists.
     Returns the new Path.
     """
-    src = Path(draft_dir)
-    roadmaps_dir = Path(repo_dir) / "Roadmaps"
-    roadmaps_dir.mkdir(parents=True, exist_ok=True)
-    dest = roadmaps_dir / src.name
+    src = Path(roadmap_dir)
+    dest = Path(target_dir) / src.name
     if dest.exists():
         raise FileExistsError(f"Target already exists: {dest}")
-    shutil.move(str(src), str(dest))
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(str(src), str(dest))
     return dest
+
+
+def cleanup_roadmap(roadmap_dir):
+    """Remove a finished roadmap from the working directory after merge.
+
+    Returns True if removed, False if it didn't exist.
+    """
+    rd = Path(roadmap_dir)
+    if rd.exists():
+        shutil.rmtree(str(rd))
+        return True
+    return False
 
 
 def validate_planning_complete(roadmap_dir, allow_placeholders=False):

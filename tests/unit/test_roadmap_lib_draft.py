@@ -1,4 +1,4 @@
-"""Tests for draft helper functions in scripts/roadmap_lib.py."""
+"""Tests for roadmap working directory functions in scripts/roadmap_lib.py."""
 
 import importlib
 import sys
@@ -17,97 +17,117 @@ import roadmap_lib as lib
 
 
 # ---------------------------------------------------------------------------
-# draft_dir_for
+# roadmap_work_dir
 # ---------------------------------------------------------------------------
 
-class TestDraftDirFor:
+class TestRoadmapWorkDir:
     def test_returns_path_under_default_base(self):
-        result = lib.draft_dir_for("my-project")
-        expected = Path.home() / ".roadmaps" / "drafts" / "my-project"
+        result = lib.roadmap_work_dir("my-project")
+        expected = Path.home() / ".roadmaps" / "my-project"
         assert result == expected
 
     def test_returns_path_under_custom_base(self, tmp_path):
-        result = lib.draft_dir_for("my-project", base=tmp_path)
-        assert result == tmp_path / "drafts" / "my-project"
+        result = lib.roadmap_work_dir("my-project", base=tmp_path)
+        assert result == tmp_path / "my-project"
 
     def test_does_not_create_directory(self, tmp_path):
-        result = lib.draft_dir_for("phantom", base=tmp_path)
+        result = lib.roadmap_work_dir("phantom", base=tmp_path)
         assert not result.exists()
 
     def test_project_name_is_last_component(self, tmp_path):
-        result = lib.draft_dir_for("some-feature", base=tmp_path)
+        result = lib.roadmap_work_dir("some-feature", base=tmp_path)
         assert result.name == "some-feature"
 
-    def test_drafts_is_intermediate_component(self, tmp_path):
-        result = lib.draft_dir_for("feat", base=tmp_path)
-        assert result.parent.name == "drafts"
+    def test_no_drafts_intermediate_dir(self, tmp_path):
+        result = lib.roadmap_work_dir("feat", base=tmp_path)
+        assert result.parent == tmp_path
 
 
 # ---------------------------------------------------------------------------
-# move_draft_to_repo
+# copy_roadmap_to_branch
 # ---------------------------------------------------------------------------
 
-class TestMoveDraftToRepo:
-    def _make_draft(self, base, name="2026-03-24-MyFeature"):
-        """Create a minimal draft directory with a file inside."""
-        draft = base / name
-        draft.mkdir(parents=True)
-        (draft / "Definition.md").write_text("# Draft\n")
-        return draft
+class TestCopyRoadmapToBranch:
+    def _make_roadmap(self, base, name="2026-03-24-MyFeature"):
+        """Create a minimal roadmap directory with files."""
+        rd = base / name
+        rd.mkdir(parents=True)
+        (rd / "Definition.md").write_text("# Definition\n")
+        (rd / "Roadmap.md").write_text("# Roadmap\n")
+        (rd / "State").mkdir()
+        (rd / "State" / "2026-03-24-Ready.md").write_text("ready\n")
+        return rd
 
-    def test_moves_directory_to_roadmaps(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        result = lib.move_draft_to_repo(draft, repo)
-        assert result == repo / "Roadmaps" / "2026-03-24-MyFeature"
+    def test_copies_to_target(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "worktree" / "Roadmaps"
+        target.mkdir(parents=True)
+        result = lib.copy_roadmap_to_branch(rd, target)
+        assert result == target / "2026-03-24-MyFeature"
         assert result.is_dir()
 
-    def test_source_no_longer_exists(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        lib.move_draft_to_repo(draft, repo)
-        assert not draft.exists()
+    def test_source_still_exists(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "worktree" / "Roadmaps"
+        target.mkdir(parents=True)
+        lib.copy_roadmap_to_branch(rd, target)
+        assert rd.exists()  # copy, not move
 
     def test_contents_are_preserved(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        result = lib.move_draft_to_repo(draft, repo)
-        assert (result / "Definition.md").read_text() == "# Draft\n"
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "worktree" / "Roadmaps"
+        target.mkdir(parents=True)
+        result = lib.copy_roadmap_to_branch(rd, target)
+        assert (result / "Definition.md").read_text() == "# Definition\n"
+        assert (result / "Roadmap.md").read_text() == "# Roadmap\n"
+        assert (result / "State" / "2026-03-24-Ready.md").exists()
 
-    def test_creates_roadmaps_dir_if_missing(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        assert not (repo / "Roadmaps").exists()
-        lib.move_draft_to_repo(draft, repo)
-        assert (repo / "Roadmaps").is_dir()
+    def test_creates_parent_dirs(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "worktree" / "Roadmaps"
+        assert not target.exists()
+        lib.copy_roadmap_to_branch(rd, target)
+        assert target.is_dir()
 
-    def test_raises_if_target_already_exists(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        # Pre-create the target
-        (repo / "Roadmaps" / "2026-03-24-MyFeature").mkdir(parents=True)
+    def test_raises_if_target_exists(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "worktree" / "Roadmaps"
+        (target / "2026-03-24-MyFeature").mkdir(parents=True)
         with pytest.raises(FileExistsError):
-            lib.move_draft_to_repo(draft, repo)
+            lib.copy_roadmap_to_branch(rd, target)
 
-    def test_returns_new_path(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        result = lib.move_draft_to_repo(draft, repo)
-        assert isinstance(result, Path)
-        assert result.is_dir()
+    def test_dirname_preserved(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work", name="2026-01-01-Special")
+        target = tmp_path / "worktree" / "Roadmaps"
+        target.mkdir(parents=True)
+        result = lib.copy_roadmap_to_branch(rd, target)
+        assert result.name == "2026-01-01-Special"
 
-    def test_dirname_is_preserved(self, tmp_path):
-        draft = self._make_draft(tmp_path / "drafts", name="2026-01-15-SpecialFeature")
-        repo = tmp_path / "repo"
-        repo.mkdir()
-        result = lib.move_draft_to_repo(draft, repo)
-        assert result.name == "2026-01-15-SpecialFeature"
+
+# ---------------------------------------------------------------------------
+# cleanup_roadmap
+# ---------------------------------------------------------------------------
+
+class TestCleanupRoadmap:
+    def test_removes_directory(self, tmp_path):
+        rd = tmp_path / "2026-03-24-Feature"
+        rd.mkdir()
+        (rd / "Roadmap.md").write_text("# test\n")
+        assert lib.cleanup_roadmap(rd) is True
+        assert not rd.exists()
+
+    def test_returns_false_if_not_exists(self, tmp_path):
+        rd = tmp_path / "nonexistent"
+        assert lib.cleanup_roadmap(rd) is False
+
+    def test_removes_nested_contents(self, tmp_path):
+        rd = tmp_path / "2026-03-24-Feature"
+        rd.mkdir()
+        (rd / "State").mkdir()
+        (rd / "State" / "file.md").write_text("x")
+        (rd / "History").mkdir()
+        lib.cleanup_roadmap(rd)
+        assert not rd.exists()
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
-"""Integration tests for the draft roadmap workflow.
+"""Integration tests for the roadmap working directory workflow.
 
-Tests the full draft lifecycle: validate → move → resolve → implement.
+Tests the full lifecycle: validate → copy to branch → resolve → implement → cleanup.
 These tests do NOT use GitHub — they work purely with the filesystem
 and the coordinator subprocess.
 """
@@ -47,49 +47,45 @@ def _run_coordinator(args, cwd):
     return json.loads(result.stdout)
 
 
-class TestDraftLifecycle:
-    """Full draft flow WITHOUT GitHub: validate → move → resolve → next-step."""
+class TestRoadmapWorkDirLifecycle:
+    """Full lifecycle WITHOUT GitHub: validate → copy to branch → resolve → cleanup."""
 
-    def test_draft_lifecycle(self, tmp_path):
-        # 1. Set up draft directory at ~/.roadmaps/drafts/<project>/SimpleDraft
-        drafts_root = tmp_path / ".roadmaps" / "drafts" / "test-project"
-        drafts_root.mkdir(parents=True)
-        draft_dir = _copy_fixture_as("SimpleDraft", drafts_root)
+    def test_full_lifecycle(self, tmp_path):
+        # 1. Set up working directory at ~/.roadmaps/<project>/SimpleDraft
+        work_root = tmp_path / ".roadmaps" / "test-project"
+        work_root.mkdir(parents=True)
+        roadmap_dir = _copy_fixture_as("SimpleDraft", work_root)
 
         # 2. Validate with allow_placeholders=True — should pass
-        ok, errors = lib.validate_planning_complete(draft_dir, allow_placeholders=True)
+        ok, errors = lib.validate_planning_complete(roadmap_dir, allow_placeholders=True)
         assert ok is True, f"validate_planning_complete failed: {errors}"
-        assert errors == []
 
-        # 3. Move draft to repo
-        repo_path = tmp_path / "my-repo"
-        repo_path.mkdir()
-        new_path = lib.move_draft_to_repo(draft_dir, repo_path)
+        # 3. Copy roadmap to a simulated worktree/Roadmaps/
+        worktree = tmp_path / "worktree"
+        worktree.mkdir()
+        target = worktree / "Roadmaps"
+        new_path = lib.copy_roadmap_to_branch(roadmap_dir, target)
         assert new_path.exists()
+        assert (new_path / "Roadmap.md").exists()
 
-        # 4. Verify roadmap is at <repo>/Roadmaps/SimpleDraft/Roadmap.md
-        expected_roadmap = repo_path / "Roadmaps" / "SimpleDraft" / "Roadmap.md"
-        assert expected_roadmap.exists(), (
-            f"Roadmap.md not found at {expected_roadmap}"
-        )
+        # 4. Source still exists (copy, not move)
+        assert roadmap_dir.exists()
 
-        # 5. Verify the draft directory is gone
-        assert not draft_dir.exists(), "Draft directory should be gone after move"
-
-        # 6. Run coordinator resolve against the repo — should find the roadmap
-        resolve_result = _run_coordinator(["resolve", "SimpleDraft"], cwd=repo_path)
-        assert "error" not in resolve_result, (
-            f"resolve returned error: {resolve_result}"
-        )
+        # 5. Coordinator can resolve from the worktree
+        resolve_result = _run_coordinator(["resolve", "SimpleDraft"], cwd=worktree)
         assert "path" in resolve_result
         assert "SimpleDraft" in resolve_result["path"]
 
-        # 7. Run coordinator next-step — should return Step 1
+        # 6. Coordinator returns Step 1 first
         roadmap_file = resolve_result["path"]
-        next_result = _run_coordinator(["next-step", roadmap_file], cwd=repo_path)
+        next_result = _run_coordinator(["next-step", roadmap_file], cwd=worktree)
         assert next_result["action"] == "implement"
         assert next_result["step"] == 1
         assert "Create GitHub Issues" in next_result["description"]
+
+        # 7. After "merge", cleanup the working directory
+        assert lib.cleanup_roadmap(roadmap_dir) is True
+        assert not roadmap_dir.exists()
 
 
 class TestValidateCatchesIncompleteDraft:
@@ -146,25 +142,25 @@ class TestValidateCatchesIncompleteDraft:
         assert any("Roadmap.md" in e for e in errors)
 
 
-class TestMoveDraftFailsIfExists:
-    """move_draft_to_repo raises FileExistsError when target already exists."""
+class TestCopyFailsIfExists:
+    """copy_roadmap_to_branch raises FileExistsError when target already exists."""
 
-    def test_move_fails_if_target_exists(self, tmp_path):
-        # Copy fixture into draft area
-        drafts_root = tmp_path / "drafts"
-        drafts_root.mkdir()
-        draft_dir = _copy_fixture_as("SimpleDraft", drafts_root)
+    def test_copy_fails_if_target_exists(self, tmp_path):
+        # Copy fixture into working area
+        work_root = tmp_path / "work"
+        work_root.mkdir()
+        roadmap_dir = _copy_fixture_as("SimpleDraft", work_root)
 
-        # Pre-create the same directory in the repo
-        repo_path = tmp_path / "repo"
-        (repo_path / "Roadmaps" / "SimpleDraft").mkdir(parents=True)
+        # Pre-create the same directory in the target
+        target = tmp_path / "worktree" / "Roadmaps"
+        (target / "SimpleDraft").mkdir(parents=True)
 
         # Should raise FileExistsError
         with pytest.raises(FileExistsError):
-            lib.move_draft_to_repo(draft_dir, repo_path)
+            lib.copy_roadmap_to_branch(roadmap_dir, target)
 
-        # Draft should still be there (move was aborted)
-        assert draft_dir.exists(), "Draft should remain if move was rejected"
+        # Source should still be there
+        assert roadmap_dir.exists()
 
 
 class TestPlaceholderReplacement:

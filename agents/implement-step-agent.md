@@ -100,48 +100,52 @@ Then stop. Do not continue to other steps.
 
 If the step description contains **"Create & Review Feature PR"**, perform the following instead of the standard implementation flow:
 
-1. **Push the feature branch**:
+1. **Copy the finished roadmap to the feature branch**:
+   If the roadmap lives in `~/.roadmaps/<project>/` (not in the repo's `Roadmaps/`), copy it to the worktree so it's included in the PR:
+   ```bash
+   cp -r <roadmap_dir> <worktree_path>/Roadmaps/
+   git -C <worktree_path> add Roadmaps/
+   git -C <worktree_path> commit -m "docs: add finished roadmap for <feature_name>"
+   ```
+   Skip this if the roadmap is already in the repo's `Roadmaps/` directory.
+
+2. **Push the feature branch**:
    ```bash
    git -C <worktree_path> push -u origin <feature_branch>
    ```
 
-2. **Build the PR body**:
+3. **Build the PR body**:
    - Read the Roadmap.md to collect all issue numbers from every step.
    - Write a PR body file at `/tmp/gh-pr-body.md` containing:
      - Summary of the feature
      - A `Closes #N` line for **every** step's GitHub issue
      - List of steps implemented
 
-3. **Create the PR**:
+4. **Create the PR**:
    ```bash
    gh pr create --head <feature_branch> --title "feat: <feature_name>" --body-file /tmp/gh-pr-body.md
    ```
 
-4. **Run code review and security review** on the PR. Use `gh pr diff` and review the changes for:
+5. **Run code review and security review** on the PR. Use `gh pr diff` and review the changes for:
    - Code quality issues
    - Security concerns
    - Test coverage gaps
 
-5. **If reviews find issues**, fix them, commit, push, and re-review (max 3 iterations):
+6. **If reviews find issues**, fix them, commit, push, and re-review (max 3 iterations):
    ```bash
    git -C <worktree_path> add -A
    git -C <worktree_path> commit -m "fix: address review feedback (#<pr_number>)"
    git -C <worktree_path> push
    ```
 
-6. **If reviews pass**, merge with `--merge` (NOT `--squash`):
+7. **If reviews pass**, merge with `--merge` (NOT `--squash`):
    ```bash
    gh pr merge <pr_number> --merge
    ```
 
-7. **Close any issues** not auto-closed by the `Closes #N` lines:
+8. **Close any issues** not auto-closed by the `Closes #N` lines:
    ```bash
    gh issue close <number>
-   ```
-
-8. **Clean up the worktree**:
-   ```bash
-   git worktree remove <worktree_path>
    ```
 
 9. **Mark this step as Complete** in the Roadmap.md and commit:
@@ -149,9 +153,20 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    git -C <worktree_path> add <roadmap_file>
    git -C <worktree_path> commit -m "docs: mark step <N> complete"
    ```
-   Note: This commit happens before worktree removal. If the worktree is already removed, update the roadmap from the main repo checkout instead.
+   Note: This commit happens before worktree removal.
 
-10. **Return** with a summary including the PR URL and merge status.
+10. **Clean up the worktree**:
+    ```bash
+    git worktree remove <worktree_path>
+    ```
+
+11. **Clean up the working directory roadmap** (if it was in `~/.roadmaps/`):
+    ```bash
+    rm -rf ~/.roadmaps/<project>/<roadmap_dir_name>
+    ```
+    The finished roadmap is now in the repo via the merged PR.
+
+12. **Return** with a summary including the PR URL and merge status.
 
 Then stop. Do not continue to other steps.
 

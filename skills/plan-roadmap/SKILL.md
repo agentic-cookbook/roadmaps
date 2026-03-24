@@ -24,8 +24,8 @@ Two-phase collaborative planning workflow for new features.
 
 Produces exactly **two deliverables** (all in Phase 2):
 
-1. A **Feature Definition** file (drafted in `~/.roadmaps/drafts/`, then moved to repo)
-2. A **Feature Roadmap** file (drafted in `~/.roadmaps/drafts/`, then moved to repo)
+1. A **Feature Definition** file (drafted in `~/.roadmaps/`, then moved to repo)
+2. A **Feature Roadmap** file (drafted in `~/.roadmaps/`, then moved to repo)
 
 GitHub issues are **not** created during planning — the Roadmap uses `{{REPO}}#{{ISSUE_NUMBER}}` placeholders. Issues are created by `/implement-roadmap`.
 
@@ -37,7 +37,7 @@ When planning is complete, tell the user to run `/implement-roadmap` to begin im
 
 **This skill produces planning documents. Nothing else.**
 
-Your only permitted outputs are: Markdown files inside `~/.roadmaps/drafts/<project>/` and `Roadmaps/`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside these directories, STOP. You are off course.
+Your only permitted outputs are: Markdown files inside `~/.roadmaps/<project>/` and `Roadmaps/`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside these directories, STOP. You are off course.
 
 Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for the complete list of hard-stop guardrails.
 
@@ -71,11 +71,11 @@ If this fails, **STOP**. Tell the user to run `gh auth login` first.
 
 ### 0c: Create directory structure
 
-Drafts are written to `~/.roadmaps/drafts/<project>/` before being moved to the repo. The feature subdirectory is created in Step 5e once the feature name is known. This step ensures the top-level drafts directory and the repo's `Roadmaps/` directory exist.
+Drafts are written to `~/.roadmaps/<project>/` before being moved to the repo. The feature subdirectory is created in Step 5e once the feature name is known. This step ensures the top-level drafts directory and the repo's `Roadmaps/` directory exist.
 
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
-mkdir -p "$HOME/.roadmaps/drafts/$PROJECT"
+mkdir -p "$HOME/.roadmaps/$PROJECT"
 mkdir -p Roadmaps
 ```
 
@@ -83,7 +83,7 @@ mkdir -p Roadmaps
 
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
-touch "$HOME/.roadmaps/drafts/$PROJECT/.verify" && rm "$HOME/.roadmaps/drafts/$PROJECT/.verify"
+touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify"
 touch Roadmaps/.verify && rm Roadmaps/.verify
 ```
 
@@ -179,7 +179,7 @@ Issues are created later by /implement-roadmap.
 
 # PHASE 2: PLANNING
 
-> **Goal**: Transform the discussion into structured planning artifacts. Files are drafted in `~/.roadmaps/drafts/<project>/` then moved to `Roadmaps/` and committed.
+> **Goal**: Transform the discussion into structured planning artifacts. Files are drafted in `~/.roadmaps/<project>/` then moved to `Roadmaps/` and committed.
 
 ---
 
@@ -287,25 +287,25 @@ Use today's date (YYYY-MM-DD) for the directory prefix. Write to the **draft dir
 
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
-DRAFT_DIR="$HOME/.roadmaps/drafts/$PROJECT/YYYY-MM-DD-<FeatureName>"
+DRAFT_DIR="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>"
 mkdir -p "$DRAFT_DIR/State" "$DRAFT_DIR/History"
 ```
 
 Write the Feature Definition to:
 ```
-~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/Definition.md
+~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md
 ```
 
 Write the Feature Roadmap to:
 ```
-~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
+~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
 ```
 
 ### 5f: Create initial state files
 
 After writing both documents, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
 
-Write to `~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
+Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
 
 ```
 ---
@@ -314,7 +314,7 @@ date: YYYY-MM-DD
 ---
 ```
 
-Write to `~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md`:
+Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md`:
 
 ```
 ---
@@ -327,12 +327,12 @@ date: YYYY-MM-DD
 
 Use the **Read tool** to read the first few lines of each file. If any file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
 
-Read: `~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/Definition.md`
-Read: `~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 
 Use the **Glob tool** to verify state files exist:
 
-Glob: `~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/State/*.md`
+Glob: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/*.md`
 
 Expected: two files (Created.md and Planning.md).
 
@@ -340,7 +340,7 @@ Expected: two files (Created.md and Planning.md).
 
 Create the Ready state file in the draft directory. Use the **Write tool**:
 
-Write to `~/.roadmaps/drafts/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md`:
+Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md`:
 
 ```
 ---
@@ -358,7 +358,7 @@ Print: **"Draft complete. Moving to repo..."**
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
 REPO_ROOT=$(git rev-parse --show-toplevel)
-DRAFT_DIR="$HOME/.roadmaps/drafts/$PROJECT/YYYY-MM-DD-<FeatureName>"
+DRAFT_DIR="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>"
 
 # Save current state
 CURRENT_BRANCH=$(git branch --show-current)
