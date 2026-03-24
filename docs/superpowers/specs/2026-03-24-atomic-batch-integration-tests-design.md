@@ -46,6 +46,7 @@ tests/
       test_definition.py
     step_ordering/
       fixtures/
+        all_auto_3step/
         with_dependencies/
         partial_complete/
       test_definition.py
@@ -80,13 +81,26 @@ Session-scoped. Points to the local clone of `cat-herding-tests`. Verifies the r
 
 Function-scoped. Creates a fresh orphan branch named `test/<test_name>-<short_uuid>` in the test repo. Commits an initial empty commit. Pushes the branch. Yields the branch name. Teardown: deletes the branch locally and remotely, removes any worktrees created for it.
 
-### `roadmap_in_repo(test_branch, fixture_path)`
+### `roadmap_in_repo(test_branch)`
 
-Helper function (not a fixture — called explicitly). Copies a fixture's roadmap directory into the test repo's `Roadmaps/` directory on the test branch. Commits and pushes. Returns the relative roadmap path (e.g., `Roadmaps/2026-03-24-TestFeature/Roadmap.md`).
+Fixture factory (function-scoped). Returns a callable `_copy(fixture_path, issue_map=None)` that:
+1. Copies the fixture's roadmap directory into the test repo's `Roadmaps/` on the test branch
+2. If `issue_map` is provided (dict of step_number → issue_number), patches the `Roadmap.md` to replace placeholder issue references with actual GitHub issue numbers
+3. Commits and pushes
+4. Returns the relative roadmap path (e.g., `Roadmaps/2026-03-24-TestFeature/Roadmap.md`)
+
+Example usage in a test:
+```python
+def test_example(roadmap_in_repo, gh):
+    issues = {1: gh.create_issue(REPO, "Step 1"), 2: gh.create_issue(REPO, "Step 2")}
+    roadmap_path = roadmap_in_repo("happy_path/fixtures/all_auto_3step", issue_map=issues)
+```
 
 ### `dashboard_server`
 
-Function-scoped. Starts the Flask dashboard app on a random available port with a temp SQLite DB. Yields a `DashboardHelper` object with:
+Function-scoped. Starts the Flask dashboard app in a daemon thread (`threading.Thread(daemon=True)`) on a random available port with a temp SQLite DB. Uses `app.run(threaded=True, use_reloader=False)`. Waits for the port to accept connections before yielding.
+
+Yields a `DashboardHelper` object with:
 - `url` — base URL (e.g., `http://localhost:54321`)
 - `client` — configured `dashboard_client` instance
 - `api(path)` — shortcut for GET requests to the API
@@ -99,6 +113,8 @@ Session-scoped. Returns a `CoordinatorHelper` with:
 - `next_step(roadmap_path)` — calls `coordinator next-step` via subprocess, returns parsed JSON
 - `resolve(feature_name, cwd)` — calls `coordinator resolve`, returns parsed JSON
 - `summary(roadmap_path)` — calls `coordinator summary`, returns parsed JSON
+
+All methods pass `cwd` to `subprocess.run` so the coordinator operates in the correct directory (the test repo, not the pytest working directory). `next_step` and `summary` derive `cwd` from the roadmap path's parent. `resolve` takes an explicit `cwd` parameter.
 
 ### `gh`
 
@@ -132,7 +148,7 @@ Each fixture is a complete File Record directory. Steps describe trivial work (c
 
 ### all_auto_3step
 
-3 auto steps, no dependencies, no manual steps. Each step creates `step_N_output.txt`. GitHub issues: #101, #102, #103 (created during test setup).
+3 auto steps, no dependencies, no manual steps. Each step creates `step_N_output.txt`. The `Roadmap.md` uses placeholder issue references (`__ISSUE_1__`, `__ISSUE_2__`, `__ISSUE_3__`) which `roadmap_in_repo` patches with actual issue numbers created via `gh.create_issue()` at test setup time.
 
 ### mixed_auto_manual
 
@@ -158,7 +174,7 @@ Each fixture is a complete File Record directory. Steps describe trivial work (c
 
 ### happy_path/test_definition.py (3 tests)
 
-**`test_all_auto_steps_single_pr`** — Fixture: `all_auto_3step`. Create worktree + branch. Run coordinator loop: for each step, simulate_step, verify coordinator advances. After all steps: push branch, create PR with `Closes #N` lines, merge with `--merge`. Assert: single PR exists, all 3 issues closed, 3 step commits + completion commit visible in main history.
+**`test_all_auto_steps_single_pr`** — Fixture: `all_auto_3step`. Create worktree + branch. Run coordinator loop: for each step, simulate_step, verify coordinator advances. After all steps: push branch, create PR with `Closes #N` lines (using actual issue numbers from setup), merge with `--merge`. Review steps are skipped in integration tests — they require LLM invocation. Assert: single PR exists, all 3 issues closed, 3 step commits + completion commit visible in main history.
 
 **`test_mixed_auto_manual_skips_manual`** — Fixture: `mixed_auto_manual`. Run coordinator loop. Assert: steps 1, 2, 4 dispatched (step 3 skipped as manual). PR body lists only auto steps. Manual step's issue NOT closed.
 
@@ -166,7 +182,7 @@ Each fixture is a complete File Record directory. Steps describe trivial work (c
 
 ### step_ordering/test_definition.py (3 tests)
 
-**`test_steps_execute_in_numerical_order`** — Fixture: `all_auto_3step` (from happy_path, duplicated). Call `coordinator next-step` repeatedly, simulating completion between calls. Assert: returns step 1, then 2, then 3, then done.
+**`test_steps_execute_in_numerical_order`** — Fixture: `all_auto_3step`. Call `coordinator next-step` repeatedly, simulating completion between calls. Assert: returns step 1, then 2, then 3, then done.
 
 **`test_skips_already_complete_steps`** — Fixture: `partial_complete`. Call `coordinator next-step`. Assert: returns step 2 (step 1 already complete).
 
@@ -186,7 +202,7 @@ Each fixture is a complete File Record directory. Steps describe trivial work (c
 
 ### error_conditions/test_definition.py (4 tests)
 
-**`test_worker_failure_stops_loop`** — Fixture: `all_auto_3step`. Simulate step 1 success, step 2 failure (step not marked Complete). Call `coordinator next-step` — returns step 2 again (not step 3). Assert: the loop would re-dispatch step 2, which is the signal to stop. Verify worktree still exists.
+**`test_worker_failure_stops_loop`** — Fixture: `all_auto_3step`. Simulate step 1 success, step 2 failure (step not marked Complete). Call `coordinator next-step` — returns step 2 again (because it is still Not Started). This is what the skill detects in step 3e: after a worker returns, it checks whether the step's status changed to Complete. If it didn't, the skill stops the loop. This test verifies the coordinator returns the same step (enabling that detection) and that the worktree is preserved for manual recovery.
 
 **`test_worker_failure_dashboard_shows_error`** — After simulated failure, call `step_error` on the dashboard. GET the step. Assert status is `error` and the roadmap's step reflects the failure.
 
@@ -204,7 +220,7 @@ Each fixture is a complete File Record directory. Steps describe trivial work (c
 
 **`test_pr_uses_merge_not_squash`** — Create PR, merge with `--merge`. Assert: individual step commits are visible in the target branch's history (not squashed into one).
 
-**`test_pr_body_contains_closes_lines`** — Create PR with the template body. Assert: body contains `Closes #101`, `Closes #102`, `Closes #103` (one per step issue).
+**`test_pr_body_contains_closes_lines`** — Create PR with the template body using actual issue numbers from `gh.create_issue()`. Assert: body contains `Closes #N` for each step's actual issue number.
 
 ### cleanup/test_definition.py (2 tests)
 
