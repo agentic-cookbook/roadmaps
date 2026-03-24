@@ -15,6 +15,7 @@ Usage:
     roadmaps --list-dashboards              List all dashboard URLs
     roadmaps --open-dashboards              Open all dashboard URLs in browser
     roadmaps --monitor [SECONDS]            Live monitor roadmaps + dashboards (default: 30s)
+    roadmaps --archive-completed             Archive all completed roadmaps
     roadmaps --cleanup                      Remove dead dashboard dirs and kill orphaned servers
     roadmaps --projects-dir <path>          Override projects directory (default: ~/projects)
 
@@ -68,13 +69,14 @@ def find_all_roadmaps(projects_dir):
                     "repo": repo_dir.name,
                     "path": str(rm_file),
                     "dir": dirname,
+                    "roadmap_dir": str(rd),
                     "state": state,
                     "total": total,
                     "complete": complete,
                     "is_complete": state == "Complete",
                     "is_active": active and state != "Complete",
                     "is_running": active and complete > 0 and complete < total,
-                    "is_archived": not active and state == "Complete",
+                    "is_archived": state == "Archived",
                 })
         else:
             # Old flat layout fallback
@@ -266,20 +268,18 @@ def cmd_list(projects_dir, project=None, show_running=True, show_active=True,
             pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
             bar = progress_bar(r["complete"], r["total"])
 
-            # State tag with color
-            state = r.get("state", "")
+            # State in parens with color
+            state = r.get("state", "Unknown")
             if r["is_archived"]:
-                state_tag = "  \033[90m[Archived]\033[0m"
+                state_str = f"\033[90m({state} - Archived)\033[0m"
             elif r["is_complete"]:
-                state_tag = "  \033[32m[Complete]\033[0m"
+                state_str = f"\033[32m({state})\033[0m"
             elif r["is_running"]:
-                state_tag = "  \033[33m[Running]\033[0m"
-            elif state not in ("Ready", ""):
-                state_tag = f"  \033[90m[{state}]\033[0m"
+                state_str = f"\033[33m({state})\033[0m"
             else:
-                state_tag = ""
+                state_str = f"\033[90m({state})\033[0m"
 
-            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%{state_tag}")
+            print(f"  {r['name']:<35} {r['complete']:>2}/{r['total']:<2} steps  {bar} {pct:>3}%  {state_str}")
         print()
 
 
@@ -430,6 +430,32 @@ def cmd_cleanup():
     print("Cleanup complete.")
 
 
+def cmd_archive_completed(projects_dir, project=None):
+    """Archive all completed roadmaps by transitioning them to Archived state."""
+    all_roadmaps = find_all_roadmaps(projects_dir)
+
+    if project:
+        all_roadmaps = [r for r in all_roadmaps if r["repo"] == project]
+
+    completed = [r for r in all_roadmaps if r["is_complete"]]
+
+    if not completed:
+        print("No completed roadmaps to archive.")
+        return
+
+    archived = 0
+    for r in completed:
+        roadmap_dir = r.get("roadmap_dir")
+        if not roadmap_dir:
+            print(f"  \033[90mSkipped: {r['name']} ({r['repo']}) — old layout\033[0m")
+            continue
+        if lib.archive_roadmap(roadmap_dir):
+            print(f"  Archived: {r['name']} ({r['repo']})")
+            archived += 1
+
+    print(f"\nArchived {archived} roadmap(s).")
+
+
 def cmd_monitor(projects_dir, interval, project=None):
     """Live monitor: show roadmaps and dashboards, refresh in a loop."""
     try:
@@ -512,12 +538,17 @@ def main():
     parser.add_argument("--list-dashboards", action="store_true", help="List all dashboard URLs")
     parser.add_argument("--open-dashboards", action="store_true", help="Open all dashboard URLs in browser")
     parser.add_argument("--monitor", nargs="?", const=30, type=int, metavar="SECONDS", help="Live monitor (default: 30s interval)")
+    parser.add_argument("--archive-completed", action="store_true", help="Archive all completed roadmaps")
     parser.add_argument("--cleanup", action="store_true", help="Remove dead dashboard dirs and kill orphaned servers")
     parser.add_argument("--projects-dir", default=None, help="Projects directory (default: ~/projects)")
     args = parser.parse_args()
 
     projects_dir = args.projects_dir or os.environ.get("ROADMAPS_PROJECTS_DIR", "~/projects")
     project = detect_project(projects_dir)
+
+    if args.archive_completed:
+        cmd_archive_completed(projects_dir, project=project)
+        return
 
     if args.list or not (args.list_dashboards or args.open_dashboards or args.monitor is not None or args.cleanup):
         # Determine which filters are active
