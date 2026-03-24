@@ -785,7 +785,7 @@ function el(tag, attrs, children) {
 
 function buildStepEl(step, index, isPaused, allStepEvents) {
   var isActive = step.status === 'in_progress';
-  var stepNum = step.number || (index + 1);
+  var stepNum = step.number != null ? step.number : (index + 1);
   var stepName = step.description || '';
   var stepType = step.step_type || '';
 
