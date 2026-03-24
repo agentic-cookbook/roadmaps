@@ -237,7 +237,7 @@ Otherwise, tell me what to change in either document.
 Use today's date (YYYY-MM-DD) for the directory prefix:
 
 ```bash
-mkdir -p "Roadmaps/YYYY-MM-DD-<FeatureName>/{State,History}"
+mkdir -p "Roadmaps/YYYY-MM-DD-<FeatureName>/State" "Roadmaps/YYYY-MM-DD-<FeatureName>/History"
 ```
 
 Write the Feature Definition to:
