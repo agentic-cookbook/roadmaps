@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 # The coordinator script location (no .py extension — it's a directly executable script)
-COORDINATOR = Path(__file__).resolve().parent.parent / "skills" / "implement-roadmap" / "references" / "coordinator"
+COORDINATOR = Path(__file__).resolve().parent.parent.parent / "skills" / "implement-roadmap" / "references" / "coordinator"
 
 # Import coordinator functions directly by loading it with an explicit SourceFileLoader
 import importlib.util
