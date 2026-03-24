@@ -157,7 +157,9 @@ If this looks right, I'll move to Planning and create:
 
 No implementation code will be written. Only planning documents.
 
-Proceed? (yes / revise name / keep discussing)
+[x] yes — move to Planning
+[ ] revise name
+[ ] keep discussing
 ```
 
 **STOP. Wait for the user's response.**
@@ -221,16 +223,16 @@ Above are the draft Feature Definition and Feature Roadmap (<N> implementation s
 
 Sections marked _NEEDS INPUT_ need your input.
 
-If both look good, say "approved" and I'll write them to disk and commit.
-Otherwise, tell me what to change in either document.
+[x] approved — write to disk and commit
+[ ] <describe changes needed>
 ```
 
 **STOP. Wait for the user's response. Do NOT proceed until they respond.**
 
 ### 5d: Revise or write
 
-- If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until "approved."
-- If the user says "approved": proceed to write both files.
+- If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until approved.
+- If the user selects **approved**: proceed to write both files.
 
 ### 5e: Create the roadmap directory and write both files
 
@@ -453,9 +455,8 @@ GitHub Issues:
 
 All artifacts verified. All commits saved.
 
-Ready to implement? (yes/no)
-  yes — I'll run /implement-roadmap to launch the agent in the background.
-  no  — Run /implement-roadmap when you're ready.
+[x] yes — run /implement-roadmap
+[ ] no — I'll run it later
 ```
 
 **STOP. Wait for the user's response.**
