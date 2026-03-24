@@ -421,13 +421,26 @@
 
   /* --- Per-step event log --- */
   .step-event-log {
-    margin-top: 0.4rem;
-    border-top: 1px solid var(--border);
-    padding-top: 0.3rem;
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+  .step-event-log-header {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.1);
   }
   .step-event-scroll {
-    max-height: 120px;
+    max-height: 140px;
     overflow-y: auto;
+    padding: 0.25rem 0.5rem;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
@@ -607,7 +620,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v9</span>
+    <span class="footer-version">Dashboard Service v10</span>
   </div>
 </div><!-- /main-wrap -->
 
@@ -794,59 +807,34 @@ function buildStepEl(step, index, isPaused, allStepEvents) {
     bodyChildren.push(el('div', { className: 'step-detail' }, [issueLink]));
   }
 
-  if (step.detail) {
-    bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
-  }
-
-  // Additional links (not issue/PR which are shown above)
-  if (step.links && step.links.length > 0) {
-    var extraLinks = step.links.filter(function(l) {
-      return l.label.indexOf('Issue #') !== 0 && l.label.indexOf('PR #') !== 0;
-    });
-    if (extraLinks.length > 0) {
-      var linksDiv = el('div', { className: 'step-detail' });
-      extraLinks.forEach(function(link, li) {
-        if (li > 0) linksDiv.appendChild(document.createTextNode(' \u00B7 '));
-        linksDiv.appendChild(el('a', { href: link.url, textContent: link.label }));
-      });
-      bodyChildren.push(linksDiv);
-    }
-  }
-
-  // Debug info at end of step
+  // Debug info
   if (debugEnabled) {
     bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
   }
 
-  // Per-step event log
+  // Per-step event log — includes events + current detail as latest entry
   var stepEvents = (allStepEvents || []).filter(function(e) {
-    // Match events by step_number field or by "Step N" in message
     if (e.step_number === stepNum) return true;
     if (e.message && e.message.indexOf('Step ' + stepNum) >= 0) return true;
     return false;
   });
 
-  // Show commit SHA from events
-  var commitEvents = stepEvents.filter(function(e) {
-    return e.message && (e.message.toLowerCase().indexOf('commit') >= 0);
-  });
-  if (commitEvents.length > 0) {
-    var lastCommit = commitEvents[commitEvents.length - 1];
-    // Try to extract SHA from message
-    var shaMatch = lastCommit.message.match(/\b([0-9a-f]{7,40})\b/);
-    if (shaMatch) {
-      bodyChildren.push(el('div', { className: 'step-detail', textContent: 'Commit: ' + shaMatch[1] }));
-    }
+  // Add current detail text as the latest log entry if present
+  if (step.detail) {
+    stepEvents.push({ time: step.updated_at || new Date().toISOString(), message: step.detail, colorClass: '' });
   }
 
   if (stepEvents.length > 0) {
     var logContainer = el('div', { className: 'step-event-log' });
+    logContainer.appendChild(el('div', { className: 'step-event-log-header', textContent: 'Event Log' }));
     var logScroll = el('div', { className: 'step-event-scroll' });
     stepEvents.forEach(function(evt) {
       logScroll.appendChild(buildEventEl(evt));
     });
     logContainer.appendChild(logScroll);
     bodyChildren.push(logContainer);
+    // Auto-scroll to bottom
+    setTimeout(function() { logScroll.scrollTop = logScroll.scrollHeight; }, 0);
   }
 
   var stepChildren = [iconEl, el('div', { className: 'step-body' }, bodyChildren)];
