@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "17"
+version: "19"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v17
+   > implement-roadmap v19
 
 2. Print the worker agent version by running:
    ```bash
@@ -29,6 +29,23 @@ Uses a deterministic Python script for step selection (no LLM judgment) and the 
 
 **Do NOT modify the coordinator script, the worker agent, or any skill files.** If something fails, report the error.
 
+## Preflight: Dashboard Server Check
+
+Verify the dashboard server is running and serving pages:
+
+```bash
+DASH_URL="${DASHBOARD_URL:-http://localhost:8888}"
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DASH_URL/" 2>/dev/null || echo "000")
+```
+
+- If `HTTP_STATUS` is `200` — the server is running. Print: `Dashboard server OK ($DASH_URL)` and continue.
+- If `HTTP_STATUS` is anything else (including `000` for connection refused) — print the error and **STOP**:
+  ```
+  ERROR: Dashboard server is not running or not serving pages (HTTP $HTTP_STATUS at $DASH_URL/).
+  Start it with: bash <project_root>/services/dashboard/server.sh start
+  ```
+  Do NOT continue with the rest of the skill.
+
 ## Step 1: Resolve Roadmap
 
 Run the coordinator to find the roadmap:
@@ -41,6 +58,17 @@ This outputs JSON. Parse it:
 - If it has `"path"` — use that roadmap. Print: `Implementing: <name> (<complete>/<total> steps complete)`
 - If it has `"choose"` — present the list to the user and ask them to pick. Then use the chosen path.
 - If it has `"error"` — print the error and **STOP**.
+
+## Step 1b: Mark Roadmap as Implementing
+
+Write an Implementing state file so other sessions won't try to start this roadmap:
+
+```bash
+ROADMAP_DIR="$(dirname "<roadmap_path>")"
+TODAY="$(date +%Y-%m-%d)"
+printf -- '---\nevent: implementing\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$TODAY-Implementing.md"
+git -C "$(dirname "$ROADMAP_DIR")" add -A Roadmaps/ && git -C "$(dirname "$ROADMAP_DIR")" commit -m "state: mark <feature_name> as Implementing" && git -C "$(dirname "$ROADMAP_DIR")" push
+```
 
 ## Step 2: Start Dashboard
 
