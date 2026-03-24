@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import (
+from tests.integration.helpers import (
     _run_git,
     _run_gh,
     simulate_step,

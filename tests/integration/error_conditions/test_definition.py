@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import _run_git, simulate_step, simulate_failed_step
+from tests.integration.helpers import _run_git, simulate_step, simulate_failed_step
 
 
 class TestWorkerFailureStopsLoop:
