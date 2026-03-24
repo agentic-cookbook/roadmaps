@@ -7,7 +7,7 @@ Add a one-line description to each roadmap so someone unfamiliar with the projec
 ## Data Flow
 
 1. `/plan-roadmap` writes `description:` in Roadmap.md YAML frontmatter during Step 5b
-2. `/implement-roadmap` reads it via `parse_frontmatter()` and includes it in the dashboard sync payload
+2. The `dash load-roadmap` command reads it from frontmatter and includes it in the sync payload
 3. Dashboard stores it in a `description` column on the `roadmaps` table
 4. Overview HTML renders it on each card under the repo name, above the progress bar
 
@@ -20,16 +20,22 @@ Add a one-line description to each roadmap so someone unfamiliar with the projec
 ## Changes
 
 ### Database: `services/dashboard/db.py`
-- Add `description TEXT` column to `roadmaps` table
-- Schema migration: `ALTER TABLE roadmaps ADD COLUMN description TEXT`
+- Add `description TEXT` column to `roadmaps` CREATE TABLE in `SCHEMA_SQL`
+- Bump `SCHEMA_VERSION` to 3
+- Add migration entry `3: ["ALTER TABLE roadmaps ADD COLUMN description TEXT"]` to `MIGRATIONS` dict
 
 ### Models: `services/dashboard/models.py`
-- Include `description` in create_roadmap, update_roadmap, sync_roadmap, and get_roadmap
-- Read from sync payload: `data.get("description")`
+- `create_roadmap`: add `description` to the INSERT column list and extract from `data.get("description")`
+- `update_roadmap`: add `"description"` to the `allowed` list
+- `sync_roadmap`: add `"description": data.get("description")` to the `roadmap_data` dict
+- `get_roadmap` / `get_all_roadmaps`: no changes needed — SELECT * already returns all columns
 
-### API: No route changes
-- `description` is already covered by the generic field handling in create/update/sync
-- GET response includes it automatically once it's in the model
+### Dashboard client: `scripts/dashboard_client.py`
+- `create_roadmap`: add `description=None` parameter, include in data dict
+- `sync`: no changes needed — already passes through arbitrary dict
+
+### Dash CLI: `skills/progress-dashboard/references/dash`
+- `svc_load_roadmap`: read `description` from Roadmap.md frontmatter via `parse_frontmatter()` and include it in the sync payload
 
 ### Overview UI: `services/dashboard/static/overview.html`
 - Render `r.description` between the repo name and progress bar
@@ -43,6 +49,12 @@ Add a one-line description to each roadmap so someone unfamiliar with the projec
 
 ### Roadmap template: `skills/plan-roadmap/references/feature-roadmap-template.md`
 - Add `description:` to the YAML frontmatter section
+
+### Tests
+- `tests/unit/test_models.py`: test create/update/sync with description field
+- `tests/unit/test_api_roadmaps.py`: test description in CRUD responses
+- `tests/unit/test_api_sync.py`: test description passes through sync
+- `tests/unit/test_db.py`: test migration to schema version 3
 
 ## Card Layout (Option B)
 
