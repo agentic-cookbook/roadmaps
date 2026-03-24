@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "16"
+version: "17"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v16
+   > implement-roadmap v17
 
 2. Print the worker agent version by running:
    ```bash
@@ -65,6 +65,36 @@ git worktree add "$WORKTREE_PATH" -b "$FEATURE_BRANCH"
 Print: `Working on branch: $FEATURE_BRANCH`
 
 All steps will commit to this single branch. One PR will be created at the end.
+
+## Step 2c: Add PR Step to Dashboard
+
+Get the total step count from the coordinator's resolve output, then add the PR step as step N+1:
+
+```bash
+PR_STEP=$((total + 1))
+python3 "$DASH_CLI" log "Adding PR step as step $PR_STEP"
+```
+
+Use the dashboard client to add the PR step. Get the current steps from the API, append the PR step, and set them all:
+
+```python
+python3 -c "
+import os, sys, json, urllib.request
+base = os.environ.get('DASHBOARD_URL', 'http://localhost:8888')
+rid = '<roadmap_id>'
+# Get current steps
+resp = urllib.request.urlopen(f'{base}/api/v1/roadmaps/{rid}/steps')
+steps = json.loads(resp.read())
+# Add PR step
+steps.append({'number': $PR_STEP, 'description': 'Create & Review Feature PR', 'status': 'not_started', 'step_type': 'Auto', 'complexity': 'S'})
+# Set all steps
+data = json.dumps(steps).encode()
+req = urllib.request.Request(f'{base}/api/v1/roadmaps/{rid}/steps', data=data, headers={'Content-Type': 'application/json'}, method='POST')
+urllib.request.urlopen(req)
+"
+```
+
+If the above is too complex, simply add the step via the `dash` CLI's `set-steps` command — but note this replaces ALL steps, so only use it if you can reconstruct the full list.
 
 ## Step 3: Implementation Loop
 
@@ -334,10 +364,10 @@ Do not implement any other step.
 
 If the step IS marked Complete:
 
-Log the commit SHA to the dashboard:
+Log the commit to the dashboard with SHA, author, date, and message:
 ```bash
-STEP_SHA=$(git -C "$WORKTREE_PATH" rev-parse --short HEAD)
-python3 "$DASH_CLI" log "Step <N> committed $STEP_SHA to $FEATURE_BRANCH"
+COMMIT_INFO=$(git -C "$WORKTREE_PATH" log -1 --format="%h %an  %ad  %s" --date=short)
+python3 "$DASH_CLI" log "Step <N>: $COMMIT_INFO"
 ```
 
 Update dashboard:

@@ -221,7 +221,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v19</span>
+  <span>Dashboard Service v20</span>
 </div>
 
 <script>
@@ -583,6 +583,19 @@ async function loadRoadmaps() {
   try {
     var resp = await fetch(API + '/roadmaps?detail=true&archived=all');
     allRoadmaps = await resp.json();
+    // Validate saved project filter against actual data — clear stale projects
+    if (selectedProjects.length > 0) {
+      var knownProjects = {};
+      allRoadmaps.forEach(function(r) {
+        var proj = (r.repo || '').split('/')[0];
+        if (proj) knownProjects[proj] = true;
+      });
+      var valid = selectedProjects.filter(function(p) { return knownProjects[p]; });
+      if (valid.length === 0) {
+        selectedProjects = [];
+        buildProjectDropdown(allRoadmaps);
+      }
+    }
     renderRoadmaps(allRoadmaps);
   } catch (e) {
     document.getElementById('subtitle').textContent = 'Failed to load roadmaps';
