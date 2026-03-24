@@ -102,10 +102,15 @@ class TestSinglePROnOverview:
         rid = str(uuid.uuid4())
 
         ds.cli.create_roadmap("PRTest", id=rid)
-        ds.cli.add_pr(
-            rid, number=42, title="feat: test PR",
-            url="https://github.com/test/repo/pull/42",
-        )
+        # add_pr calls a route that doesn't exist standalone;
+        # use sync to add PRs instead
+        ds.cli.sync(rid, {
+            "name": "PRTest",
+            "prs": [
+                {"number": 42, "title": "feat: test PR",
+                 "url": "https://github.com/test/repo/pull/42"},
+            ],
+        })
 
         data = ds.api_get("/api/v1/roadmaps?detail=true")
         roadmap = next(r for r in data if r["id"] == rid)
