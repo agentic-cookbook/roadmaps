@@ -365,3 +365,263 @@ class TestSync:
         assert r["issues"][0]["number"] == 99
         assert len(r["prs"]) == 1
         assert r["prs"][0]["number"] == 88
+
+
+# ---------------------------------------------------------------------------
+# TestListRoadmapsFilters
+# ---------------------------------------------------------------------------
+
+class TestListRoadmapsFilters:
+    def test_filter_by_state_and_status(self, db_conn):
+        _create_roadmap(db_conn, name="A", state="Ready", status="idle")
+        _create_roadmap(db_conn, name="B", state="Ready", status="running")
+        _create_roadmap(db_conn, name="C", state="Complete", status="idle")
+
+        results = models.list_roadmaps(db_conn, state="Ready", status="running")
+        assert len(results) == 1
+        assert results[0]["name"] == "B"
+
+    def test_filter_archived(self, db_conn):
+        rid = _create_roadmap(db_conn, name="Active")
+        rid_arch = _create_roadmap(db_conn, name="Archived")
+        models.update_roadmap(db_conn, rid_arch, {"archived": 1})
+
+        active = models.list_roadmaps(db_conn, archived=False)
+        assert all(r["archived"] == 0 for r in active)
+        assert any(r["id"] == rid for r in active)
+        assert not any(r["id"] == rid_arch for r in active)
+
+        archived = models.list_roadmaps(db_conn, archived=True)
+        assert all(r["archived"] == 1 for r in archived)
+        assert any(r["id"] == rid_arch for r in archived)
+        assert not any(r["id"] == rid for r in archived)
+
+    def test_list_with_detail_flag(self, db_conn):
+        rid = _create_roadmap(db_conn, name="WithSteps")
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+        ])
+        # get_roadmap always returns full detail (steps/issues/prs/events)
+        r = models.get_roadmap(db_conn, rid)
+        assert "steps" in r
+        assert len(r["steps"]) == 1
+        assert r["steps"][0]["description"] == "Step 1"
+
+
+# ---------------------------------------------------------------------------
+# TestBulkCreateStepsEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestBulkCreateStepsEdgeCases:
+    def test_empty_steps_list(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        # Should not raise
+        models.bulk_create_steps(db_conn, rid, [])
+        assert models.list_steps(db_conn, rid) == []
+
+    def test_steps_replace_existing(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Original"},
+            {"number": 2, "description": "Also original"},
+        ])
+        assert len(models.list_steps(db_conn, rid)) == 2
+
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Replacement"},
+        ])
+        steps = models.list_steps(db_conn, rid)
+        assert len(steps) == 1
+        assert steps[0]["description"] == "Replacement"
+
+    def test_step_default_values(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Minimal step"},
+        ])
+        step = models.get_step(db_conn, rid, 1)
+        assert step["status"] == "not_started"
+        assert step["step_type"] == "Auto"
+        assert step["complexity"] is None
+        assert step["detail"] is None
+        assert step["started_at"] is None
+        assert step["completed_at"] is None
+
+
+# ---------------------------------------------------------------------------
+# TestStepLifecycleEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestStepLifecycleEdgeCases:
+    def test_begin_already_in_progress(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+        ])
+        models.begin_step(db_conn, rid, 1)
+        # begin again on same step — should not raise; prior in_progress gets
+        # auto-completed, then the step is set in_progress again
+        models.begin_step(db_conn, rid, 1)
+        step = models.get_step(db_conn, rid, 1)
+        assert step["status"] == "in_progress"
+
+    def test_finish_not_started(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+        ])
+        # finish without begin — should not raise
+        models.finish_step(db_conn, rid, 1)
+        step = models.get_step(db_conn, rid, 1)
+        assert step["status"] == "complete"
+        assert step["completed_at"] is not None
+
+    def test_error_step_with_message(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+        ])
+        models.begin_step(db_conn, rid, 1)
+        models.error_step(db_conn, rid, 1, "Detailed error message")
+        step = models.get_step(db_conn, rid, 1)
+        assert step["status"] == "error"
+        assert step["detail"] == "Detailed error message"
+        r = models.get_roadmap(db_conn, rid)
+        assert r["status"] == "error"
+
+
+# ---------------------------------------------------------------------------
+# TestStateTransitionEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestStateTransitionEdgeCases:
+    def test_transition_to_same_state(self, db_conn):
+        rid = _create_roadmap(db_conn, state="Ready")
+        models.add_state_transition(db_conn, rid, "Ready")
+        r = models.get_roadmap(db_conn, rid)
+        assert r["state"] == "Ready"
+        transitions = models.list_state_transitions(db_conn, rid)
+        assert len(transitions) == 1
+        assert transitions[0]["state"] == "Ready"
+        assert transitions[0]["previous_state"] == "Ready"
+
+    def test_multiple_transitions(self, db_conn):
+        rid = _create_roadmap(db_conn, state="Ready")
+        for state in ["Implementing", "Paused", "Implementing", "Complete"]:
+            models.add_state_transition(db_conn, rid, state)
+        r = models.get_roadmap(db_conn, rid)
+        assert r["state"] == "Complete"
+        transitions = models.list_state_transitions(db_conn, rid)
+        assert len(transitions) == 4
+        assert [t["state"] for t in transitions] == [
+            "Implementing", "Paused", "Implementing", "Complete"
+        ]
+
+    def test_list_transitions_ordered(self, db_conn):
+        rid = _create_roadmap(db_conn, state="Created")
+        models.add_state_transition(db_conn, rid, "Ready")
+        models.add_state_transition(db_conn, rid, "Implementing")
+        models.add_state_transition(db_conn, rid, "Complete")
+        transitions = models.list_state_transitions(db_conn, rid)
+        states = [t["state"] for t in transitions]
+        assert states == ["Ready", "Implementing", "Complete"]
+        # Verify timestamps are non-decreasing
+        for i in range(len(transitions) - 1):
+            assert transitions[i]["created"] <= transitions[i + 1]["created"]
+
+
+# ---------------------------------------------------------------------------
+# TestDeleteCascade
+# ---------------------------------------------------------------------------
+
+class TestDeleteCascade:
+    def test_delete_roadmap_cascades_steps(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+            {"number": 2, "description": "Step 2"},
+        ])
+        assert len(models.list_steps(db_conn, rid)) == 2
+
+        models.delete_roadmap(db_conn, rid)
+        assert models.list_steps(db_conn, rid) == []
+
+    def test_delete_roadmap_cascades_issues(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.upsert_issue(db_conn, rid, 1, title="Issue 1")
+        models.upsert_issue(db_conn, rid, 2, title="Issue 2")
+        assert len(models.list_issues(db_conn, rid)) == 2
+
+        models.delete_roadmap(db_conn, rid)
+        assert models.list_issues(db_conn, rid) == []
+        assert models.list_prs(db_conn, rid) == []
+
+    def test_delete_roadmap_cascades_history(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.add_history_event(db_conn, rid, "step_complete", step_number=1)
+        models.add_history_event(db_conn, rid, "step_complete", step_number=2)
+        models.add_state_transition(db_conn, rid, "Implementing")
+        assert len(models.list_history_events(db_conn, rid)) == 2
+        assert len(models.list_state_transitions(db_conn, rid)) == 1
+
+        models.delete_roadmap(db_conn, rid)
+        assert models.list_history_events(db_conn, rid) == []
+        assert models.list_state_transitions(db_conn, rid) == []
+
+
+# ---------------------------------------------------------------------------
+# TestSyncEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestSyncEdgeCases:
+    def test_sync_empty_lists(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [{"number": 1, "description": "Old"}])
+        models.upsert_issue(db_conn, rid, 1, title="Old issue")
+        models.upsert_pr(db_conn, rid, 1, title="Old PR")
+
+        # Sync with empty lists — should clear existing data
+        models.sync_roadmap(db_conn, rid, {
+            "title": "Cleared",
+            "steps": [],
+            "issues": [],
+            "prs": [],
+        })
+        r = models.get_roadmap(db_conn, rid)
+        assert r["steps"] == []
+        assert r["issues"] == []
+        assert r["prs"] == []
+
+    def test_sync_creates_if_nonexistent(self, db_conn):
+        new_rid = _rid()
+        assert models.get_roadmap(db_conn, new_rid) is None
+
+        models.sync_roadmap(db_conn, new_rid, {
+            "title": "BrandNew",
+            "state": "Ready",
+            "status": "idle",
+            "steps": [{"number": 1, "description": "First"}],
+        })
+        r = models.get_roadmap(db_conn, new_rid)
+        assert r is not None
+        assert r["name"] == "BrandNew"
+        assert len(r["steps"]) == 1
+
+    def test_sync_updates_existing_steps(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Original", "status": "not_started"},
+        ])
+
+        models.sync_roadmap(db_conn, rid, {
+            "title": "Updated",
+            "steps": [
+                {"number": 1, "description": "Overwritten", "status": "complete"},
+                {"number": 2, "description": "Added"},
+            ],
+        })
+        r = models.get_roadmap(db_conn, rid)
+        assert len(r["steps"]) == 2
+        assert r["steps"][0]["description"] == "Overwritten"
+        assert r["steps"][0]["status"] == "complete"
+        assert r["steps"][1]["description"] == "Added"
