@@ -88,7 +88,11 @@ def _read_frontmatter_id(filepath):
         for line in fm.split("\n"):
             m = re.match(r"^id:\s*(.+)", line)
             if m:
-                return m.group(1).strip()
+                val = m.group(1).strip()
+                if (val.startswith('"') and val.endswith('"')) or \
+                   (val.startswith("'") and val.endswith("'")):
+                    val = val[1:-1]
+                return val
     except (OSError, ValueError):
         pass
     return None
