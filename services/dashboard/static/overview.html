@@ -151,6 +151,7 @@
   .badge.ready { background: rgba(88,166,255,0.2); color: var(--accent); }
   .badge.badge-archived { background: rgba(139,148,158,0.2); color: var(--text-muted); }
   .card-meta { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+  .card-description { font-size: 0.8rem; color: #c8c8d0; font-style: italic; margin-bottom: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .progress-bar-bg { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
   .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
   .progress-bar-fill.complete-fill { background: var(--green); }
@@ -221,7 +222,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v20</span>
+  <span>Dashboard Service v21</span>
 </div>
 
 <script>
@@ -561,15 +562,20 @@ function renderRoadmaps(roadmaps) {
 
     var footerRight = el('div', { className: 'footer-right' }, footerRightItems);
 
-    var card = el('div', { className: cardClass, onclick: function() { location.href = '/roadmap/' + r.id; } }, [
+    var cardChildren = [
       el('div', { className: 'card-header' }, [
         el('span', null, [numberSpan, nameSpan]),
         el('div', { className: 'card-badges' }, badges),
       ]),
       el('div', { className: 'card-meta' }, metaItems),
-      el('div', { className: 'progress-bar-bg' }, [fill]),
-      el('div', { className: 'card-footer-row' }, [footerLeft, footerRight]),
-    ]);
+    ];
+    if (r.description) {
+      cardChildren.push(el('div', { className: 'card-description' }, r.description));
+    }
+    cardChildren.push(el('div', { className: 'progress-bar-bg' }, [fill]));
+    cardChildren.push(el('div', { className: 'card-footer-row' }, [footerLeft, footerRight]));
+
+    var card = el('div', { className: cardClass, onclick: function() { location.href = '/roadmap/' + r.id; } }, cardChildren);
     list.appendChild(card);
   });
 

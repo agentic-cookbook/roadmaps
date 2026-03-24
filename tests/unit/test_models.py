@@ -80,6 +80,22 @@ class TestRoadmapCRUD:
         results = models.list_roadmaps(db_conn, status="running")
         assert all(r["status"] == "running" for r in results)
 
+    def test_create_with_description(self, db_conn):
+        rid = _create_roadmap(db_conn, description="Build a menu bar status monitor")
+        r = models.get_roadmap(db_conn, rid)
+        assert r["description"] == "Build a menu bar status monitor"
+
+    def test_update_description(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        models.update_roadmap(db_conn, rid, {"description": "Updated desc"})
+        r = models.get_roadmap(db_conn, rid)
+        assert r["description"] == "Updated desc"
+
+    def test_create_without_description(self, db_conn):
+        rid = _create_roadmap(db_conn)
+        r = models.get_roadmap(db_conn, rid)
+        assert r["description"] is None
+
 
 # ---------------------------------------------------------------------------
 # Steps

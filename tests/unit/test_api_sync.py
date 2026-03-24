@@ -107,3 +107,35 @@ class TestSyncUpdatesExisting:
         assert len(events) == 2
         assert events[0]["message"] == "Started sync"
         assert events[1]["message"] == "Step 1 done"
+
+
+class TestSyncDescription:
+    def test_sync_creates_with_description(self, client):
+        rid = str(uuid.uuid4())
+        payload = _full_sync_payload()
+        payload["description"] = "Menu bar app for session monitoring"
+        resp = client.post(f"/api/v1/roadmaps/{rid}/sync", json=payload)
+        assert resp.status_code == 200
+
+        data = client.get(f"/api/v1/roadmaps/{rid}").get_json()
+        assert data["description"] == "Menu bar app for session monitoring"
+
+    def test_sync_updates_description(self, client, sample_roadmap):
+        payload = _full_sync_payload()
+        payload["description"] = "Original description"
+        client.post(f"/api/v1/roadmaps/{sample_roadmap}/sync", json=payload)
+
+        payload["description"] = "Updated description"
+        client.post(f"/api/v1/roadmaps/{sample_roadmap}/sync", json=payload)
+
+        data = client.get(f"/api/v1/roadmaps/{sample_roadmap}").get_json()
+        assert data["description"] == "Updated description"
+
+    def test_sync_without_description_is_null(self, client):
+        rid = str(uuid.uuid4())
+        payload = _full_sync_payload()
+        resp = client.post(f"/api/v1/roadmaps/{rid}/sync", json=payload)
+        assert resp.status_code == 200
+
+        data = client.get(f"/api/v1/roadmaps/{rid}").get_json()
+        assert data["description"] is None

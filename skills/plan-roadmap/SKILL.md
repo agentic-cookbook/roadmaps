@@ -198,7 +198,9 @@ Read:
 
 **Feature Definition**: Using everything from the Discussion phase, fill in as many sections of the template as you can. The discussion content should be captured in the Extended Description and Goal sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
 
-**Feature Roadmap**: Break the feature into ordered implementation steps. Each step must be:
+**Feature Roadmap**: Write a `description` field in the Roadmap frontmatter — a single sentence (~80 chars) summarizing what this feature does, written for someone unfamiliar with the project. This appears on the dashboard overview.
+
+Break the feature into ordered implementation steps. Each step must be:
 
 - **Small enough for a single PR** (reviewable in one sitting)
 - **Independently testable** with clear acceptance criteria
