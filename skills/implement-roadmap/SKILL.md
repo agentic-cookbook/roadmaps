@@ -334,6 +334,12 @@ Do not implement any other step.
 
 If the step IS marked Complete:
 
+Log the commit SHA to the dashboard:
+```bash
+STEP_SHA=$(git -C "$WORKTREE_PATH" rev-parse --short HEAD)
+python3 "$DASH_CLI" log "Step <N> committed $STEP_SHA to $FEATURE_BRANCH"
+```
+
 Update dashboard:
 ```bash
 python3 "$DASH_CLI" finish-step <N>

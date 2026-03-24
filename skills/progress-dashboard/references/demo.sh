@@ -144,7 +144,7 @@ pause 2
 
 echo "[step 1] Committing to shared branch..."
 dash step-detail 1 "Committed: feat: complete step 1"
-dash log "Step 1 committed to feature/WidgetSystem"
+dash log "Step 1 committed a3f7b21 to feature/WidgetSystem"
 pause 2
 
 echo "[step 1] Updating roadmap — step 1 complete"
@@ -190,7 +190,7 @@ pause 2
 
 echo "[step 2] Committing to shared branch..."
 dash step-detail 2 "Committed: feat: complete step 2"
-dash log "Step 2 committed to feature/WidgetSystem"
+dash log "Step 2 committed e8c4d09 to feature/WidgetSystem"
 pause 2
 
 echo "[step 2] Updating roadmap — step 2 complete"
@@ -238,7 +238,7 @@ pause 2
 
 echo "[step 3] Committing to shared branch..."
 dash step-detail 3 "Committed: feat: complete step 3"
-dash log "Step 3 committed to feature/WidgetSystem"
+dash log "Step 3 committed 1b5f6e3 to feature/WidgetSystem"
 pause 2
 
 echo "[step 3] Updating roadmap — step 3 complete"
@@ -275,7 +275,7 @@ pause 3
 
 echo "[step 4] Fixing review feedback..."
 dash step-detail 4 "Fixing: addressed code review warning"
-dash log "Fix committed: address review feedback (iteration 1)"
+dash log "Fix committed 7d2a4c8: address review feedback (iteration 1)"
 pause 2
 
 echo "[step 4] Review iteration 2: re-reviewing..."
