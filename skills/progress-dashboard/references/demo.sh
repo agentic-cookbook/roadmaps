@@ -230,17 +230,15 @@ dash log "Pushing feature/WidgetSystem to origin"
 pause 2
 
 echo "[pr] Creating PR: feat: WidgetSystem"
-dash pr-created 0 200 "https://github.com/example/widget-system/pull/200"
 dash log "PR #200 created — feat: WidgetSystem (Closes #50, Closes #51, Closes #52)"
 pause 3
 
 echo "[pr] Running reviews on feature PR..."
-dash step-detail 3 "PR #200: running code review + security review"
+dash log "PR #200: running code review + security review"
 dash log "Code review: 1 warning (addressed). Security review: 0 issues."
 pause 3
 
 echo "[pr] Reviews passed. Merging PR #200 with --merge..."
-dash update-pr 200 merged
 dash log "PR #200 merged (--merge, preserving step commits)"
 pause 2
 
