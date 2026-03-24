@@ -60,6 +60,14 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: M
+
+---
+
+### Step 4: Create & Review Feature PR
+
+- **Type**: Auto
+- **Status**: Not Started
+- **Complexity**: S
 ROADMAP_EOF
 
 echo "=== Progress Dashboard Demo (Atomic Batch PR) ==="
@@ -224,34 +232,59 @@ echo "[step 3] Done"
 echo ""
 pause 2
 
-# --- ALL STEPS DONE — CREATE SINGLE PR ---
-echo "[pr] All steps complete. Pushing branch and creating feature PR..."
+# --- STEP 4: CREATE & REVIEW FEATURE PR ---
+echo "[step 4] Starting: Create & Review Feature PR"
+dash begin-step 4
+pause 2
+
+echo "[step 4] Writing state and history files..."
+dash step-detail 4 "Writing Complete state and ImplementationComplete history"
+dash log "State: Complete, History: ImplementationComplete"
+pause 2
+
+echo "[step 4] Pushing branch..."
+dash step-detail 4 "Pushing feature/WidgetSystem to origin"
 dash log "Pushing feature/WidgetSystem to origin"
 pause 2
 
-echo "[pr] Creating PR: feat: WidgetSystem"
+echo "[step 4] Creating PR: feat: WidgetSystem"
+dash step-detail 4 "PR #200 created — Closes #50, #51, #52"
 dash log "PR #200 created — feat: WidgetSystem (Closes #50, Closes #51, Closes #52)"
 pause 3
 
-echo "[pr] Running reviews on feature PR..."
-dash log "PR #200: running code review + security review"
-dash log "Code review: 1 warning (addressed). Security review: 0 issues."
+echo "[step 4] Review iteration 1: running code review + security review..."
+dash step-detail 4 "Review iteration 1/3: code review + security review"
+dash log "Code review: 1 warning found"
 pause 3
 
-echo "[pr] Reviews passed. Merging PR #200 with --merge..."
+echo "[step 4] Fixing review feedback..."
+dash step-detail 4 "Fixing: addressed code review warning"
+dash log "Fix committed: address review feedback (iteration 1)"
+pause 2
+
+echo "[step 4] Review iteration 2: re-reviewing..."
+dash step-detail 4 "Review iteration 2/3: re-running reviews"
+dash log "Code review: 0 issues. Security review: 0 issues."
+pause 3
+
+echo "[step 4] Reviews passed. Merging PR #200 with --merge..."
+dash step-detail 4 "PR #200 merged (--merge, preserving step commits)"
 dash log "PR #200 merged (--merge, preserving step commits)"
 pause 2
 
-echo "[pr] Closing issues..."
+echo "[step 4] Closing issues..."
 dash update-issue 50 closed
 dash update-issue 51 closed
 dash update-issue 52 closed
 dash log "Issues #50, #51, #52 closed"
 pause 2
 
-echo "[cleanup] Removing worktree..."
+echo "[step 4] Cleaning up worktree..."
 dash log "Worktree removed: ../repo-wt/WidgetSystem"
-pause 1
+dash finish-step 4
+echo "[step 4] Done"
+echo ""
+pause 2
 
 # --- COMPLETION ---
 echo "[complete] All steps done. Marking complete..."
