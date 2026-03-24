@@ -1,16 +1,15 @@
 ---
 name: plan-roadmap
-version: "4"
+version: "5"
 description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), Bash(gh api *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(git status *), Bash(git diff *), Bash(git log *), Bash(cat *)
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v4
+> plan-roadmap v5
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -158,7 +157,9 @@ If this looks right, I'll move to Planning and create:
 
 No implementation code will be written. Only planning documents.
 
-Proceed? (yes / revise name / keep discussing)
+[x] yes — move to Planning
+[ ] revise name
+[ ] keep discussing
 ```
 
 **STOP. Wait for the user's response.**
@@ -222,23 +223,23 @@ Above are the draft Feature Definition and Feature Roadmap (<N> implementation s
 
 Sections marked _NEEDS INPUT_ need your input.
 
-If both look good, say "approved" and I'll write them to disk and commit.
-Otherwise, tell me what to change in either document.
+[x] approved — write to disk and commit
+[ ] <describe changes needed>
 ```
 
 **STOP. Wait for the user's response. Do NOT proceed until they respond.**
 
 ### 5d: Revise or write
 
-- If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until "approved."
-- If the user says "approved": proceed to write both files.
+- If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until approved.
+- If the user selects **approved**: proceed to write both files.
 
 ### 5e: Create the roadmap directory and write both files
 
 Use today's date (YYYY-MM-DD) for the directory prefix:
 
 ```bash
-mkdir -p "Roadmaps/YYYY-MM-DD-<FeatureName>/{State,History}"
+mkdir -p "Roadmaps/YYYY-MM-DD-<FeatureName>/State" "Roadmaps/YYYY-MM-DD-<FeatureName>/History"
 ```
 
 Write the Feature Definition to:
@@ -253,24 +254,38 @@ Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
 
 ### 5f: Create initial state files
 
-After writing both documents, create state marker files to record the lifecycle events:
+After writing both documents, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
 
-```bash
-printf -- '---\nevent: created\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md"
-printf -- '---\nevent: planning\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md"
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
+
+```
+---
+event: created
+date: YYYY-MM-DD
+---
+```
+
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md`:
+
+```
+---
+event: planning
+date: YYYY-MM-DD
+---
 ```
 
 ### 5g: Verify all files exist and have content
 
-```bash
-wc -l "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md"
-head -5 "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md"
-wc -l "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md"
-head -5 "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md"
-ls "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"
-```
+Use the **Read tool** to read the first few lines of each file. If any file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
 
-If any file does not exist or is empty: **STOP. Tell the user. Re-attempt the write.**
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+
+Use the **Glob tool** to verify state files exist:
+
+Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
+
+Expected: two files (Created.md and Planning.md).
 
 ### 5h: Commit and push all files
 
@@ -290,12 +305,13 @@ The user already approved the Roadmap content. Issues are a mechanical translati
 
 ### 6a: Create issues one at a time
 
-For each step in the Roadmap, create a GitHub issue:
+For each step in the Roadmap, create a GitHub issue.
 
-Write the issue body to a temp file, then create the issue using `--body-file` to avoid quoted-newline permission warnings:
+Use the **Write tool** to write the issue body to a temp file inside the roadmap directory, then create the issue using `--body-file` to avoid quoted-newline permission warnings:
 
-```bash
-cat > /tmp/gh-issue-body.md <<'EOF'
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md`:
+
+```
 ## Context
 
 Part of the <FeatureName> feature.
@@ -317,17 +333,16 @@ Roadmap: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 ## Dependencies
 
 <Dependencies from the roadmap>
-EOF
 ```
 
 For **Auto** steps:
 ```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file /tmp/gh-issue-body.md
+gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md"
 ```
 
 For **Manual** steps, assign to the current user:
 ```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription> [Manual]" --body-file /tmp/gh-issue-body.md --assignee @me
+gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription> [Manual]" --body-file "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md" --assignee @me
 ```
 
 ### 6b: Verify each issue was created
@@ -350,12 +365,23 @@ For each step in the Roadmap file, replace the `{{REPO}}#{{ISSUE_NUMBER}}` place
 
 Read the Roadmap file back. Confirm that every step has a real issue number (not a placeholder). If any placeholder remains, fix it.
 
-### 6e: Create Ready state file
-
-All planning artifacts are now complete. Create a `Ready` state file to signal that this feature is available for `/implement-roadmap`:
+Clean up the temp file:
 
 ```bash
-printf -- '---\nevent: ready\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md"
+rm "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md"
+```
+
+### 6e: Create Ready state file
+
+All planning artifacts are now complete. Use the **Write tool** to create a `Ready` state file signaling this feature is available for `/implement-roadmap`:
+
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md`:
+
+```
+---
+event: ready
+date: YYYY-MM-DD
+---
 ```
 
 ### 6f: Commit and push the updated Roadmap and state
@@ -374,30 +400,29 @@ git push
 
 Execute all of the following checks. **Every check must pass.**
 
-```bash
-# Check Feature Definition exists and has content
-test -s "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md" && echo "PASS: Feature Definition exists" || echo "FAIL: Feature Definition missing"
-```
+Use the **Read tool** to verify each file exists and has content:
+
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
+— PASS if file exists and is not empty.
+
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+— PASS if file exists and is not empty.
+
+Use the **Glob tool** to verify state files:
+
+Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*-Ready.md`
+— PASS if exactly one match.
+
+Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
+— PASS if at least three files (Created, Planning, Ready).
+
+Verify GitHub issues:
 
 ```bash
-# Check Roadmap exists and has content
-test -s "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md" && echo "PASS: Roadmap exists" || echo "FAIL: Roadmap missing"
-```
-
-```bash
-# Check State/Ready file exists
-test -f "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"*"-Ready.md" && echo "PASS: Ready state exists" || echo "FAIL: Ready state missing"
-```
-
-```bash
-# Check State/ directory has Created, Planning, and Ready markers
-ls "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"
-```
-
-```bash
-# List all issues for this feature
 gh issue list --search "Feature: [<FeatureName>]" --json number,title,state
 ```
+
+— PASS if issue count matches roadmap step count.
 
 If **any check fails**, **STOP. Tell the user which check failed. Fix the issue before continuing.**
 
@@ -430,9 +455,8 @@ GitHub Issues:
 
 All artifacts verified. All commits saved.
 
-Ready to implement? (yes/no)
-  yes — I'll run /implement-roadmap to launch the agent in the background.
-  no  — Run /implement-roadmap when you're ready.
+[x] yes — run /implement-roadmap
+[ ] no — I'll run it later
 ```
 
 **STOP. Wait for the user's response.**
