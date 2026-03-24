@@ -85,6 +85,11 @@ class TestAllAutoStepsSinglePR:
             str(pr_number), "--merge",
         ])
 
+        # Close issues explicitly — GitHub auto-close only works on default branch,
+        # but our test PRs merge to orphan test branches
+        for issue_num in issues.values():
+            gh.close_issue(issue_num)
+
         # Verify: all issues closed
         for issue_num in issues.values():
             issue_data = gh.get_issue(issue_num)
@@ -169,6 +174,10 @@ class TestMixedAutoManualSkipsManual:
             str(pr_number), "--merge",
         ])
 
+        # Close auto issues explicitly — GitHub auto-close only works on default branch
+        for i in [1, 2, 4]:
+            gh.close_issue(issues[i])
+
         # Auto issues closed, manual issue still open
         for i in [1, 2, 4]:
             assert gh.get_issue(issues[i])["state"] == "CLOSED"
@@ -231,4 +240,6 @@ class TestSingleStepRoadmap:
             str(pr_number), "--merge",
         ])
 
+        # Close issue explicitly — auto-close only works on default branch
+        gh.close_issue(issues[1])
         assert gh.get_issue(issues[1])["state"] == "CLOSED"

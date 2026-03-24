@@ -56,12 +56,13 @@ class TestAllCommitsOnSingleBranch:
         for step_num in [1, 2, 3]:
             assert f"complete step {step_num}" in log_result.stdout
 
-        # No per-step branches created
+        # No per-step branches created for THIS test's feature
         branch_result = _run_git(
-            ["branch", "--list", "feature/*-step-*"], cwd=repo_path,
+            ["branch", "--list", f"feature/BranchTest-{suffix}-step-*"],
+            cwd=repo_path,
         )
         assert branch_result.stdout.strip() == "", (
-            "Per-step branches should not exist"
+            "Per-step branches should not exist for this test"
         )
 
 
