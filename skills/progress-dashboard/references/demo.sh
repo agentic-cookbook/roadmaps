@@ -1,9 +1,12 @@
 #!/bin/bash
-# Simulates a complete implement-roadmap-agent run against the progress dashboard.
+# Simulates a complete implement-roadmap run against the progress dashboard.
 # Usage: ./demo.sh
 #
 # Opens the dashboard in a browser and walks through a 3-step feature
 # implementation with realistic delays between state changes.
+#
+# Demonstrates the atomic-batch-pr workflow: all steps commit to a single
+# shared branch, one PR is created at the end covering all steps.
 
 set -e
 
@@ -39,7 +42,6 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: S
-- **PR**: _TBD_
 
 ---
 
@@ -49,7 +51,6 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: M
-- **PR**: _TBD_
 
 ---
 
@@ -59,10 +60,9 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: M
-- **PR**: _TBD_
 ROADMAP_EOF
 
-echo "=== Progress Dashboard Demo ==="
+echo "=== Progress Dashboard Demo (Atomic Batch PR) ==="
 echo ""
 
 # --- STARTUP ---
@@ -74,6 +74,16 @@ dash load-roadmap "$ROADMAP"
 echo "[startup] Dashboard is open in your browser"
 echo ""
 pause 3
+
+# --- Create shared branch ---
+echo "[branch] Creating feature branch and worktree..."
+dash log "Creating branch: feature/WidgetSystem"
+dash log "Worktree: ../repo-wt/WidgetSystem"
+pause 2
+
+echo "[branch] All steps will commit to this single branch"
+echo ""
+pause 1
 
 # --- Check controls (should be none) ---
 echo "[control] Checking for user controls..."
@@ -87,33 +97,22 @@ echo "[step 1] Starting: Project scaffolding and configuration"
 dash begin-step 1
 pause 3
 
-echo "[step 1] Creating worktree and branch..."
-dash step-detail 1 "Creating worktree: feature/widget-system-step-1"
-dash log "Worktree created: feature/widget-system-step-1"
-pause 2
-
 echo "[step 1] Implementing..."
 dash step-detail 1 "Writing project config and directory structure"
 pause 3
 
 echo "[step 1] Building and testing..."
 dash step-detail 1 "Build passed, 12 tests passing"
-dash log "Build clean, all tests pass"
+dash log "Step 1: build clean, all tests pass"
 pause 2
 
-echo "[step 1] Creating PR..."
-dash pr-created 1 101 "https://github.com/example/widget-system/pull/101"
-dash step-detail 1 "PR #101 created — running reviews"
-pause 3
-
-echo "[step 1] Running reviews..."
-dash step-detail 1 "Code review: 0 issues. Security review: 0 issues."
-dash log "Reviews passed: code review + security review"
+echo "[step 1] Committing to shared branch..."
+dash step-detail 1 "Committed: feat: complete step 1"
+dash log "Step 1 committed to feature/WidgetSystem"
 pause 2
 
-echo "[step 1] Merging PR and closing issue..."
-dash update-pr 101 merged
-dash update-issue 50 closed
+echo "[step 1] Updating roadmap — step 1 complete"
+dash update-issue 50 open
 dash finish-step 1
 echo "[step 1] Done"
 echo ""
@@ -150,22 +149,16 @@ pause 3
 
 echo "[step 2] Building and testing..."
 dash step-detail 2 "Build passed, 47 tests passing (35 new)"
-dash log "Build clean, 47 tests pass"
+dash log "Step 2: build clean, 47 tests pass"
 pause 2
 
-echo "[step 2] Creating PR..."
-dash pr-created 2 102 "https://github.com/example/widget-system/pull/102"
-dash step-detail 2 "PR #102 created — running reviews"
-pause 3
-
-echo "[step 2] Running reviews..."
-dash step-detail 2 "Code review: 1 warning (resolved). Security review: 0 issues."
-dash log "Reviews passed: 1 warning addressed"
+echo "[step 2] Committing to shared branch..."
+dash step-detail 2 "Committed: feat: complete step 2"
+dash log "Step 2 committed to feature/WidgetSystem"
 pause 2
 
-echo "[step 2] Merging PR and closing issue..."
-dash update-pr 102 merged
-dash update-issue 51 closed
+echo "[step 2] Updating roadmap — step 2 complete"
+dash update-issue 51 open
 dash finish-step 2
 echo "[step 2] Done"
 echo ""
@@ -216,26 +209,51 @@ pause 3
 
 echo "[step 3] Building and testing..."
 dash step-detail 3 "Build passed, 83 tests passing (36 new integration tests)"
-dash log "Build clean, 83 tests pass"
+dash log "Step 3: build clean, 83 tests pass"
 pause 2
 
-echo "[step 3] Creating PR..."
-dash pr-created 3 103 "https://github.com/example/widget-system/pull/103"
-dash step-detail 3 "PR #103 created — running reviews"
-pause 3
-
-echo "[step 3] Running reviews..."
-dash step-detail 3 "Code review: 0 issues. Security review: 0 issues. API review: 0 issues."
-dash log "Reviews passed: code + security + API contract"
+echo "[step 3] Committing to shared branch..."
+dash step-detail 3 "Committed: feat: complete step 3"
+dash log "Step 3 committed to feature/WidgetSystem"
 pause 2
 
-echo "[step 3] Merging PR and closing issue..."
-dash update-pr 103 merged
-dash update-issue 52 closed
+echo "[step 3] Updating roadmap — step 3 complete"
+dash update-issue 52 open
 dash finish-step 3
 echo "[step 3] Done"
 echo ""
 pause 2
+
+# --- ALL STEPS DONE — CREATE SINGLE PR ---
+echo "[pr] All steps complete. Pushing branch and creating feature PR..."
+dash log "Pushing feature/WidgetSystem to origin"
+pause 2
+
+echo "[pr] Creating PR: feat: WidgetSystem"
+dash pr-created 0 200 "https://github.com/example/widget-system/pull/200"
+dash log "PR #200 created — feat: WidgetSystem (Closes #50, Closes #51, Closes #52)"
+pause 3
+
+echo "[pr] Running reviews on feature PR..."
+dash step-detail 3 "PR #200: running code review + security review"
+dash log "Code review: 1 warning (addressed). Security review: 0 issues."
+pause 3
+
+echo "[pr] Reviews passed. Merging PR #200 with --merge..."
+dash update-pr 200 merged
+dash log "PR #200 merged (--merge, preserving step commits)"
+pause 2
+
+echo "[pr] Closing issues..."
+dash update-issue 50 closed
+dash update-issue 51 closed
+dash update-issue 52 closed
+dash log "Issues #50, #51, #52 closed"
+pause 2
+
+echo "[cleanup] Removing worktree..."
+dash log "Worktree removed: ../repo-wt/WidgetSystem"
+pause 1
 
 # --- COMPLETION ---
 echo "[complete] All steps done. Marking complete..."
@@ -250,5 +268,9 @@ rm -f "$ROADMAP"
 
 echo ""
 echo "=== Demo Complete ==="
-echo "The dashboard should show all 3 steps as complete."
+echo "The dashboard showed the atomic-batch-pr workflow:"
+echo "  - 3 steps committed to a single shared branch"
+echo "  - 1 feature PR created after all steps finished"
+echo "  - PR merged with --merge (preserving individual step commits)"
+echo "  - All issues closed after PR merge"
 echo "You can close the browser tab now."
