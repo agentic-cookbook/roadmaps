@@ -271,7 +271,7 @@ def cmd_list(projects_dir, project=None, show_running=True, show_active=True,
             # State in parens with color
             state = r.get("state", "Unknown")
             if r["is_archived"]:
-                state_str = f"\033[90m({state} - Archived)\033[0m"
+                state_str = f"\033[90m(Archived)\033[0m"
             elif r["is_complete"]:
                 state_str = f"\033[32m({state})\033[0m"
             elif r["is_running"]:
