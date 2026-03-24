@@ -54,12 +54,13 @@ def create_roadmap(conn, data, clock=None, id_gen=None):
     roadmap_number = data.get("roadmap_number") or db.next_roadmap_number(conn)
     conn.execute(
         """INSERT INTO roadmaps (id, roadmap_number, name, created, modified, author, state, status,
-           archived, definition_id, repo, repo_url, branch, machine, worktree)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+           archived, definition_id, repo, repo_url, branch, machine, worktree, description)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (rid, roadmap_number, data["name"], data.get("created", now), now,
          data.get("author"), data.get("state", "Created"), data.get("status", "idle"),
          0, data.get("definition_id"), data.get("repo"), data.get("repo_url"),
-         data.get("branch"), data.get("machine"), data.get("worktree")),
+         data.get("branch"), data.get("machine"), data.get("worktree"),
+         data.get("description")),
     )
     conn.commit()
     return rid
@@ -70,7 +71,7 @@ def update_roadmap(conn, roadmap_id, data, clock=None):
     fields = []
     params = []
     allowed = ["name", "author", "state", "status", "archived", "definition_id",
-               "repo", "repo_url", "branch", "machine", "worktree"]
+               "repo", "repo_url", "branch", "machine", "worktree", "description"]
     for key in allowed:
         if key in data:
             fields.append(f"{key} = ?")
@@ -398,6 +399,7 @@ def sync_roadmap(conn, roadmap_id, data, clock=None, id_gen=None):
         "state": data.get("state", "Ready"),
         "status": data.get("status", "running"),
         "author": data.get("author"),
+        "description": data.get("description"),
         "repo": env.get("repo"),
         "repo_url": env.get("repo_url"),
         "branch": env.get("branch"),

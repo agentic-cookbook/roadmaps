@@ -4,6 +4,7 @@ created: "{{DATE}}"
 modified: "{{DATE}}"
 author: "{{AUTHOR}}"
 definition-id: "{{FEATURE_ID}}"
+description: "{{DESCRIPTION}}"
 change-history:
   - date: "{{DATE}}"
     description: "Initial draft"

@@ -1092,6 +1092,22 @@ def svc_load_roadmap(client, args):
     title_match = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
     title = title_match.group(1).strip() if title_match else "Unknown"
 
+    # Extract description from frontmatter
+    description = None
+    if content.startswith("---"):
+        fm_end = content.find("\n---", 3)
+        if fm_end != -1:
+            fm = content[4:fm_end]
+            for line in fm.split("\n"):
+                m = re.match(r"^description:\s*(.+)", line)
+                if m:
+                    val = m.group(1).strip()
+                    if (val.startswith('"') and val.endswith('"')) or \
+                       (val.startswith("'") and val.endswith("'")):
+                        val = val[1:-1]
+                    description = val
+                    break
+
     # Get repo URL for links
     env = detect_environment()
     repo_url = env.get("repo_url")
@@ -1142,11 +1158,14 @@ def svc_load_roadmap(client, args):
         steps.append(step)
 
     # Sync to service
-    client.sync(rid, {
+    sync_data = {
         "title": title, "state": "Ready", "status": "running",
         "environment": env, "steps": steps, "issues": issues, "prs": prs,
         "events": [{"time": now_iso(), "message": f"Loaded roadmap: {len(steps)} steps"}],
-    })
+    }
+    if description:
+        sync_data["description"] = description
+    client.sync(rid, sync_data)
     complete_count = sum(1 for s in steps if s["status"] == "complete")
     print(f"Loaded {len(steps)} steps ({complete_count} complete, {len(issues)} issues, {len(prs)} PRs)")
 

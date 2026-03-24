@@ -4,7 +4,7 @@ import os
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 DEFAULT_DB_PATH = os.path.join(Path.home(), ".claude", "dashboard.db")
 
@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS roadmaps (
     repo_url TEXT,
     branch TEXT,
     machine TEXT,
-    worktree TEXT
+    worktree TEXT,
+    description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS definitions (
@@ -153,6 +154,9 @@ MIGRATIONS = {
         "ALTER TABLE roadmaps ADD COLUMN roadmap_number INTEGER",
         "ALTER TABLE roadmaps ADD COLUMN archived INTEGER NOT NULL DEFAULT 0",
         "CREATE TABLE IF NOT EXISTS ui_preferences (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+    ],
+    3: [
+        "ALTER TABLE roadmaps ADD COLUMN description TEXT",
     ],
 }
 

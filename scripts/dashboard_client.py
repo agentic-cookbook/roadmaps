@@ -108,7 +108,7 @@ class DashboardClient:
 
     def create_roadmap(self, name, id=None, state="Created", status="idle",
                        author=None, repo=None, repo_url=None, branch=None,
-                       machine=None, worktree=None):
+                       machine=None, worktree=None, description=None):
         data = {"name": name, "state": state, "status": status}
         if id:
             data["id"] = id
@@ -124,6 +124,8 @@ class DashboardClient:
             data["machine"] = machine
         if worktree:
             data["worktree"] = worktree
+        if description:
+            data["description"] = description
         return self._post("/roadmaps", data)
 
     def get_roadmap(self, roadmap_id):
