@@ -225,7 +225,9 @@ def is_new_layout(repo_dir):
 # ---------------------------------------------------------------------------
 
 ACTIVE_STATES = {"Created", "Planning", "Ready", "Implementing", "Paused"}
+HIDDEN_STATES = {"Archived", "Declined"}
 COMPLETE_STATES = {"Complete"}
+ARCHIVED_STATES = {"Archived"}
 
 
 def current_state(roadmap_dir):
@@ -324,6 +326,47 @@ def parse_roadmap_heading(roadmap_file):
 # ---------------------------------------------------------------------------
 # Inline field parsing (old layout — for migration and backward compat)
 # ---------------------------------------------------------------------------
+
+def archive_roadmap(roadmap_dir):
+    """Transition a Complete roadmap to Archived state.
+
+    Creates a new state file YYYY-MM-DD-Archived.md in the State/ directory.
+    Returns True if archived, False if not eligible (not in Complete state).
+    """
+    state = current_state(roadmap_dir)
+    if state != "Complete":
+        return False
+
+    state_dir = Path(roadmap_dir) / "State"
+    state_dir.mkdir(exist_ok=True)
+
+    from datetime import date
+    today = date.today().isoformat()
+    state_file = state_dir / f"{today}-Archived.md"
+    state_file.write_text(f"Archived on {today}\n")
+    return True
+
+
+def decline_roadmap(roadmap_dir):
+    """Transition a roadmap to Declined state.
+
+    Creates a new state file YYYY-MM-DD-Declined.md in the State/ directory.
+    Can decline from any active state (not already Archived or Declined).
+    Returns True if declined, False if not eligible.
+    """
+    state = current_state(roadmap_dir)
+    if state in HIDDEN_STATES:
+        return False
+
+    state_dir = Path(roadmap_dir) / "State"
+    state_dir.mkdir(exist_ok=True)
+
+    from datetime import date
+    today = date.today().isoformat()
+    state_file = state_dir / f"{today}-Declined.md"
+    state_file.write_text(f"Declined on {today}\n")
+    return True
+
 
 def parse_inline_fields(content):
     """Parse **Field**: value pairs from markdown content.

@@ -16,6 +16,7 @@ Usage:
     roadmaps --open-dashboards              Open all dashboard URLs in browser
     roadmaps --monitor [SECONDS]            Live monitor roadmaps + dashboards (default: 30s)
     roadmaps --archive-completed             Archive all completed roadmaps
+    roadmaps --decline                      Interactively decline roadmaps
     roadmaps --projects-dir <path>          Override projects directory (default: ~/projects)
 
 Environment:
@@ -74,7 +75,7 @@ def find_all_roadmaps(projects_dir):
                     "is_complete": state == "Complete",
                     "is_active": active and state != "Complete",
                     "is_running": active and complete > 0 and complete < total,
-                    "is_archived": state == "Archived",
+                    "is_archived": state in ("Archived", "Declined"),
                 })
         else:
             # Old flat layout fallback
@@ -269,7 +270,7 @@ def cmd_list(projects_dir, project=None, show_running=True, show_active=True,
             # State in parens with color
             state = r.get("state", "Unknown")
             if r["is_archived"]:
-                state_str = f"\033[90m(Archived)\033[0m"
+                state_str = f"\033[90m({state})\033[0m"
             elif r["is_complete"]:
                 state_str = f"\033[32m({state})\033[0m"
             elif r["is_running"]:
@@ -367,6 +368,59 @@ def cmd_archive_completed(projects_dir, project=None):
     print(f"\nArchived {archived} roadmap(s).")
 
 
+def cmd_decline(projects_dir, project=None):
+    """Interactively decline roadmaps. Shows eligible roadmaps and prompts for selection."""
+    all_roadmaps = find_all_roadmaps(projects_dir)
+
+    if project:
+        all_roadmaps = [r for r in all_roadmaps if r["repo"] == project]
+
+    # Eligible: any active (non-archived, non-declined, non-complete) roadmap
+    eligible = [r for r in all_roadmaps if not r["is_archived"] and not r["is_complete"]]
+
+    if not eligible:
+        print("No eligible roadmaps to decline.")
+        return
+
+    print("\033[1mRoadmaps eligible for decline:\033[0m\n")
+    for i, r in enumerate(eligible, 1):
+        pct = round(r["complete"] / r["total"] * 100) if r["total"] > 0 else 0
+        state = r.get("state", "Unknown")
+        print(f"  {i}) {r['name']:<30} {r['complete']:>2}/{r['total']:<2} steps  {pct:>3}%  \033[90m({state})\033[0m  [{r['repo']}]")
+
+    print()
+    selection = input("Enter numbers to decline (comma-separated, or 'all', or 'q' to cancel): ").strip()
+
+    if not selection or selection.lower() == 'q':
+        print("Cancelled.")
+        return
+
+    if selection.lower() == 'all':
+        indices = list(range(len(eligible)))
+    else:
+        try:
+            indices = [int(s.strip()) - 1 for s in selection.split(",")]
+        except ValueError:
+            print("Invalid input.")
+            return
+
+    declined = 0
+    for idx in indices:
+        if idx < 0 or idx >= len(eligible):
+            print(f"  \033[31mSkipped: #{idx + 1} out of range\033[0m")
+            continue
+        r = eligible[idx]
+        roadmap_dir = r.get("roadmap_dir")
+        if not roadmap_dir:
+            print(f"  \033[90mSkipped: {r['name']} — old layout\033[0m")
+            continue
+        if lib.decline_roadmap(roadmap_dir):
+            print(f"  Declined: {r['name']} ({r['repo']})")
+            declined += 1
+
+    print(f"\nDeclined {declined} roadmap(s).")
+
+
 def cmd_monitor(projects_dir, interval, project=None):
     """Live monitor: show roadmaps and dashboards, refresh in a loop."""
     try:
@@ -450,6 +504,7 @@ def main():
     parser.add_argument("--open-dashboards", action="store_true", help="Open all dashboard URLs in browser")
     parser.add_argument("--monitor", nargs="?", const=30, type=int, metavar="SECONDS", help="Live monitor (default: 30s interval)")
     parser.add_argument("--archive-completed", action="store_true", help="Archive all completed roadmaps")
+    parser.add_argument("--decline", action="store_true", help="Interactively decline roadmaps in current/child dirs")
     parser.add_argument("--projects-dir", default=None, help="Projects directory (default: ~/projects)")
     args = parser.parse_args()
 
@@ -458,6 +513,10 @@ def main():
 
     if args.archive_completed:
         cmd_archive_completed(projects_dir, project=project)
+        return
+
+    if args.decline:
+        cmd_decline(projects_dir, project=project)
         return
 
     if args.list or not (args.list_dashboards or args.open_dashboards or args.monitor is not None):
