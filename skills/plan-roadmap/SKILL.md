@@ -1,16 +1,15 @@
 ---
 name: plan-roadmap
-version: "4"
+version: "5"
 description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
 disable-model-invocation: true
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), Bash(gh api *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(git status *), Bash(git diff *), Bash(git log *), Bash(cat *)
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v4
+> plan-roadmap v5
 
 Then stop. Do not continue with the rest of the skill.
 
