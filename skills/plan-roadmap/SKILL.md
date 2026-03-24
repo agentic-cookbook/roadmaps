@@ -252,11 +252,24 @@ Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
 
 ### 5f: Create initial state files
 
-After writing both documents, create state marker files to record the lifecycle events:
+After writing both documents, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
 
-```bash
-printf -- '---\nevent: created\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md"
-printf -- '---\nevent: planning\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md"
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
+
+```
+---
+event: created
+date: YYYY-MM-DD
+---
+```
+
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md`:
+
+```
+---
+event: planning
+date: YYYY-MM-DD
+---
 ```
 
 ### 5g: Verify all files exist and have content
@@ -351,10 +364,15 @@ Read the Roadmap file back. Confirm that every step has a real issue number (not
 
 ### 6e: Create Ready state file
 
-All planning artifacts are now complete. Create a `Ready` state file to signal that this feature is available for `/implement-roadmap`:
+All planning artifacts are now complete. Use the **Write tool** to create a `Ready` state file signaling this feature is available for `/implement-roadmap`:
 
-```bash
-printf -- '---\nevent: ready\ndate: YYYY-MM-DD\n---\n' > "Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md"
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md`:
+
+```
+---
+event: ready
+date: YYYY-MM-DD
+---
 ```
 
 ### 6f: Commit and push the updated Roadmap and state
