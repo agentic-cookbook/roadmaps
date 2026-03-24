@@ -9,30 +9,49 @@ from flask import Response, g, jsonify, request
 from . import api
 from .. import models
 
-# In-process SSE client queues
-_clients = []
-_clients_lock = threading.Lock()
+
+class BroadcastSystem:
+    """Manages SSE client queues and event broadcasting."""
+
+    def __init__(self):
+        self._clients = []
+        self._lock = threading.Lock()
+
+    def register(self, q):
+        with self._lock:
+            self._clients.append(q)
+
+    def unregister(self, q):
+        with self._lock:
+            if q in self._clients:
+                self._clients.remove(q)
+
+    def broadcast(self, event_type, data):
+        msg = {"type": event_type, "data": data}
+        with self._lock:
+            dead = []
+            for q in self._clients:
+                try:
+                    q.put_nowait(msg)
+                except queue.Full:
+                    dead.append(q)
+            for q in dead:
+                self._clients.remove(q)
+
+
+# Module-level default instance
+_default_system = BroadcastSystem()
 
 
 def broadcast(event_type, data):
-    """Push an event to all connected SSE clients."""
-    msg = {"type": event_type, "data": data}
-    with _clients_lock:
-        dead = []
-        for q in _clients:
-            try:
-                q.put_nowait(msg)
-            except queue.Full:
-                dead.append(q)
-        for q in dead:
-            _clients.remove(q)
+    """Module-level broadcast function for backward compatibility."""
+    _default_system.broadcast(event_type, data)
 
 
 def _sse_stream(roadmap_id=None):
     """Generator that yields SSE-formatted events."""
     q = queue.Queue(maxsize=256)
-    with _clients_lock:
-        _clients.append(q)
+    _default_system.register(q)
     try:
         # Send initial keepalive
         yield ": connected\n\n"
@@ -48,9 +67,7 @@ def _sse_stream(roadmap_id=None):
                 continue
             yield f"event: {msg['type']}\ndata: {json.dumps(msg['data'])}\n\n"
     finally:
-        with _clients_lock:
-            if q in _clients:
-                _clients.remove(q)
+        _default_system.unregister(q)
 
 
 @api.route("/events/stream", methods=["GET"])

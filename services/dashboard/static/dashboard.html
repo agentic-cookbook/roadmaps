@@ -225,21 +225,11 @@
     min-height: 0;
   }
   .pane-left {
-    flex-shrink: 0;
+    flex: 1;
     display: flex;
     flex-direction: column;
     min-height: 0;
     position: relative;
-  }
-  .pane-right {
-    flex: 1;
-    min-width: 0;
-    border-left: 1px solid var(--border);
-    padding-left: 1.25rem;
-    margin-left: 1.25rem;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
   }
 
   .pane-header {
@@ -429,6 +419,43 @@
   .event-msg-error { color: var(--red); }
   .event-msg-success { color: var(--green); }
 
+  /* --- Per-step event log --- */
+  .step-event-log {
+    margin-top: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: rgba(0,0,0,0.15);
+    overflow: hidden;
+  }
+  .step-event-log-header {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.1);
+  }
+  .step-event-scroll {
+    min-height: 5.5em;
+    max-height: 140px;
+    overflow-y: auto;
+    padding: 0.25rem 0.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .step-event-empty {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    opacity: 0.4;
+    font-style: italic;
+    padding: 0.3rem 0;
+  }
+  .step-event-scroll::-webkit-scrollbar { width: 4px; }
+  .step-event-scroll::-webkit-scrollbar-track { background: transparent; }
+  .step-event-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
   /* --- Footer --- */
   .footer {
     flex-shrink: 0;
@@ -531,15 +558,6 @@
     animation: spin 0.8s linear infinite;
   }
 
-  /* --- Measuring element (hidden) --- */
-  .measure {
-    position: absolute;
-    visibility: hidden;
-    white-space: nowrap;
-    font-weight: 600;
-    font-size: 0.85rem;
-    font-family: inherit;
-  }
 </style>
 </head>
 <body>
@@ -605,36 +623,14 @@
         <div id="debug-log" class="debug-log"></div>
       </div>
     </div>
-    <div class="pane pane-right">
-      <div id="right-panels" class="right-panels" style="display:none">
-        <div class="right-panel">
-          <div class="right-panel-header">Issues</div>
-          <div id="issues"></div>
-        </div>
-        <div class="right-panel">
-          <div class="right-panel-header">Pull Requests</div>
-          <div id="prs"></div>
-        </div>
-      </div>
-      <div class="events-section" id="events-section">
-        <div class="events-toolbar" id="events-toolbar">
-          <span class="pane-header">Event Log</span>
-        </div>
-        <div class="pane-scroll" id="events-scroll">
-          <div id="events"></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v7</span>
+    <span class="footer-version">Dashboard Service v11</span>
   </div>
 </div><!-- /main-wrap -->
-
-<span id="measure" class="measure"></span>
 
 <script>
 var API = '/api/v1';
@@ -734,7 +730,6 @@ function makeResizable(panelId, toolbarId) {
   });
 }
 
-makeResizable('events-section', 'events-toolbar');
 makeResizable('debug-panel', 'debug-toolbar');
 
 function copyDebugLog() {
@@ -788,18 +783,7 @@ function el(tag, attrs, children) {
   return e;
 }
 
-function measureStepWidth(steps) {
-  var ruler = document.getElementById('measure');
-  var maxW = 200;
-  steps.forEach(function(step, i) {
-    ruler.textContent = 'Step ' + (step.number || (i + 1)) + ': ' + (step.description || '');
-    var w = ruler.offsetWidth;
-    if (w > maxW) maxW = w;
-  });
-  return maxW + 175;
-}
-
-function buildStepEl(step, index, isPaused) {
+function buildStepEl(step, index, isPaused, allStepEvents) {
   var isActive = step.status === 'in_progress';
   var stepNum = step.number || (index + 1);
   var stepName = step.description || '';
@@ -831,36 +815,47 @@ function buildStepEl(step, index, isPaused) {
     bodyChildren.push(el('div', { className: 'step-detail' }, [issueLink]));
   }
 
-  // Always show PR link if present
-  if (step.pr_number) {
-    var prText = 'PR #' + step.pr_number;
-    if (step.pr_title) prText += ': ' + step.pr_title;
-    var prLink = el('a', { href: step.pr_url || '#', textContent: prText });
-    bodyChildren.push(el('div', { className: 'step-detail' }, [prLink]));
-  }
-
-  if (step.detail) {
-    bodyChildren.push(el('div', { className: 'step-detail', textContent: step.detail }));
-  }
-
-  // Additional links (not issue/PR which are shown above)
-  if (step.links && step.links.length > 0) {
-    var extraLinks = step.links.filter(function(l) {
-      return l.label.indexOf('Issue #') !== 0 && l.label.indexOf('PR #') !== 0;
-    });
-    if (extraLinks.length > 0) {
-      var linksDiv = el('div', { className: 'step-detail' });
-      extraLinks.forEach(function(link, li) {
-        if (li > 0) linksDiv.appendChild(document.createTextNode(' \u00B7 '));
-        linksDiv.appendChild(el('a', { href: link.url, textContent: link.label }));
-      });
-      bodyChildren.push(linksDiv);
-    }
-  }
-
-  // Debug info at end of step
+  // Debug info
   if (debugEnabled) {
     bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
+  }
+
+  // Per-step event log — filter by time range (between started_at and completed_at)
+  var stepStart = step.started_at ? new Date(step.started_at).getTime() : null;
+  var stepEnd = step.completed_at ? new Date(step.completed_at).getTime() : null;
+  var stepEvents = (allStepEvents || []).filter(function(e) {
+    // Explicit step_number match
+    if (e.step_number === stepNum) return true;
+    // "Step N" in message (begin/finish/started/complete events)
+    if (e.message && e.message.indexOf('Step ' + stepNum) >= 0) return true;
+    // Time-range match: event occurred while this step was in progress
+    if (stepStart && e.time) {
+      var evtTime = new Date(e.time).getTime();
+      if (evtTime >= stepStart && (stepEnd ? evtTime <= stepEnd : true)) return true;
+    }
+    return false;
+  });
+
+  // Add current detail text as the latest log entry if present
+  if (step.detail) {
+    stepEvents.push({ time: step.updated_at || new Date().toISOString(), message: step.detail, colorClass: '' });
+  }
+
+  // Always show event log — empty with placeholder if no events
+  var logContainer = el('div', { className: 'step-event-log' });
+  logContainer.appendChild(el('div', { className: 'step-event-log-header', textContent: 'Event Log' }));
+  var logScroll = el('div', { className: 'step-event-scroll' });
+  if (stepEvents.length > 0) {
+    stepEvents.forEach(function(evt) {
+      logScroll.appendChild(buildEventEl(evt));
+    });
+  } else {
+    logScroll.appendChild(el('div', { className: 'step-event-empty', textContent: 'Waiting for events...' }));
+  }
+  logContainer.appendChild(logScroll);
+  bodyChildren.push(logContainer);
+  if (stepEvents.length > 0) {
+    setTimeout(function() { logScroll.scrollTop = logScroll.scrollHeight; }, 0);
   }
 
   var stepChildren = [iconEl, el('div', { className: 'step-body' }, bodyChildren)];
@@ -970,35 +965,6 @@ function renderEnv(data) {
   }
 }
 
-function renderTickets(container, items, type) {
-  while (container.firstChild) container.removeChild(container.firstChild);
-  if (items.length === 0) {
-    var empty = document.createElement('div');
-    empty.className = 'right-panel-empty';
-    empty.textContent = 'Nothing yet, stay tuned...';
-    container.appendChild(empty);
-    return;
-  }
-  items.forEach(function(item) {
-    var row = document.createElement('div');
-    row.className = 'ticket';
-    var dot = document.createElement('span');
-    dot.className = 'ticket-dot ticket-dot-' + (item.status || 'open');
-    row.appendChild(dot);
-    var prefix = type === 'pr' ? 'PR' : '';
-    var link = document.createElement('a');
-    link.href = item.url || '#';
-    link.target = '_blank';
-    link.textContent = (prefix ? prefix + ' ' : '') + '#' + item.number + ' ' + (item.title || '');
-    row.appendChild(link);
-    var status = document.createElement('span');
-    status.className = 'ticket-status';
-    status.textContent = item.status || 'open';
-    row.appendChild(status);
-    container.appendChild(row);
-  });
-}
-
 // --- Main render ---
 function render(data) {
   lastData = data;
@@ -1068,17 +1034,21 @@ function render(data) {
     }
   }
 
-  // Size steps pane
-  var paneSteps = document.getElementById('pane-steps');
-  var stepsWidth = measureStepWidth(steps);
-  paneSteps.style.width = stepsWidth + 'px';
+  // Prepare events for per-step display
+  var allStepEvents = (data.events || []).map(function(e) {
+    var cls = '';
+    if (e.message && e.message.indexOf('Stop received') >= 0) cls = 'event-msg-error';
+    else if (e.message && e.message.indexOf('Pause received') >= 0) cls = 'event-msg-warn';
+    else if (e.message && e.message.indexOf('Resume received') >= 0) cls = 'event-msg-success';
+    return { time: e.time, message: e.message, colorClass: cls, step_number: e.step_number };
+  });
 
   // Render steps
   var stepsEl = document.getElementById('steps');
   while (stepsEl.firstChild) stepsEl.removeChild(stepsEl.firstChild);
   var activeIndex = -1;
   steps.forEach(function(step, i) {
-    stepsEl.appendChild(buildStepEl(step, i, currentControl === 'pause'));
+    stepsEl.appendChild(buildStepEl(step, i, currentControl === 'pause', allStepEvents));
     if (step.status === 'in_progress') activeIndex = i;
   });
 
@@ -1092,37 +1062,6 @@ function render(data) {
     var stepSummary = steps.map(function(s, i) { return (i + 1) + ':' + s.status; }).join(' ');
     debugLog('steps: ' + stepSummary);
   }
-
-  // Render issues & PRs
-  var issues = data.issues || [];
-  var prs = data.prs || [];
-  document.getElementById('right-panels').style.display = '';
-  renderTickets(document.getElementById('issues'), issues, 'issue');
-  renderTickets(document.getElementById('prs'), prs, 'pr');
-
-  // Render events
-  var serverEvents = (data.events || []).map(function(e) {
-    var cls = '';
-    if (e.message && e.message.indexOf('Stop received') >= 0) cls = 'event-msg-error';
-    else if (e.message && e.message.indexOf('Pause received') >= 0) cls = 'event-msg-warn';
-    else if (e.message && e.message.indexOf('Resume received') >= 0) cls = 'event-msg-success';
-    return { time: e.time, message: e.message, colorClass: cls };
-  });
-  var allEvents = serverEvents.concat(localEvents);
-  allEvents.sort(function(a, b) { return a.time < b.time ? -1 : a.time > b.time ? 1 : 0; });
-
-  var eventsEl = document.getElementById('events');
-  while (eventsEl.firstChild) eventsEl.removeChild(eventsEl.firstChild);
-  allEvents.forEach(function(evt) {
-    var msgEl = el('span', { className: 'event-msg' + (evt.colorClass ? ' ' + evt.colorClass : ''), textContent: evt.message });
-    var row = el('div', { className: 'event' }, [
-      el('span', { className: 'event-time', textContent: formatTime(evt.time) }),
-      msgEl
-    ]);
-    eventsEl.appendChild(row);
-  });
-  var eventsScroll = document.getElementById('events-scroll');
-  if (isScrolledToBottom(eventsScroll)) eventsScroll.scrollTop = eventsScroll.scrollHeight;
 
   // Footer and inline status indicator (no overlays)
   var footerEl = document.getElementById('poll-status');

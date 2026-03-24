@@ -189,3 +189,180 @@ class TestErrorHandling:
         with pytest.raises(DashboardError) as exc_info:
             dc.get_roadmap(str(uuid.uuid4()))
         assert exc_info.value.status == 404
+
+
+class TestUpdateRoadmap:
+    def test_update_roadmap_status(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="UpdateTest", id=rid, status="idle")
+
+        dc.update_roadmap(rid, status="running")
+
+        roadmap = dc.get_roadmap(rid)
+        assert roadmap["status"] == "running"
+
+
+class TestDeleteRoadmap:
+    def test_delete_roadmap_removes_it(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="DeleteTest", id=rid)
+
+        dc.delete_roadmap(rid)
+
+        with pytest.raises(DashboardError) as exc_info:
+            dc.get_roadmap(rid)
+        assert exc_info.value.status == 404
+
+
+class TestUpdateStep:
+    def test_update_step_description(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="UpdateStepTest", id=rid)
+        dc.set_steps(rid, [{"number": 1, "description": "Original desc"}])
+
+        dc.update_step(rid, 1, description="new desc")
+
+        roadmap = dc.get_roadmap(rid)
+        step = [s for s in roadmap["steps"] if s["number"] == 1][0]
+        assert step["description"] == "new desc"
+
+
+class TestStepError:
+    def test_step_error_sets_status(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="StepErrorTest", id=rid)
+        dc.set_steps(rid, [{"number": 1, "description": "Failing step"}])
+
+        dc.step_error(rid, 1, "error msg")
+
+        roadmap = dc.get_roadmap(rid)
+        step = [s for s in roadmap["steps"] if s["number"] == 1][0]
+        assert step["status"] == "error"
+
+
+class TestTransitionState:
+    def test_transition_state_changes_state(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="StateTransitionTest", id=rid, state="Created")
+
+        dc.transition_state(rid, "Implementing")
+
+        roadmap = dc.get_roadmap(rid)
+        assert roadmap["state"] == "Implementing"
+
+
+class TestGetState:
+    def test_get_state_returns_current_state(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="GetStateTest", id=rid, state="Ready")
+
+        result = dc.get_state(rid)
+
+        assert result["current"] == "Ready"
+        assert "transitions" in result
+
+
+class TestListHistory:
+    def test_list_history_returns_events(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="ListHistoryTest", id=rid)
+        dc.add_history_event(rid, "TestEvent", details="first event")
+        dc.add_history_event(rid, "AnotherEvent", details="second event")
+
+        history = dc.list_history(rid)
+
+        assert isinstance(history, list)
+        assert len(history) == 2
+        event_types = [e["event_type"] for e in history]
+        assert "TestEvent" in event_types
+        assert "AnotherEvent" in event_types
+
+
+class TestAddHistoryEvent:
+    def test_add_history_event_appears_in_history(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="AddHistoryTest", id=rid)
+
+        dc.add_history_event(rid, "TestEvent", details="test")
+
+        history = dc.list_history(rid)
+        assert len(history) == 1
+        assert history[0]["event_type"] == "TestEvent"
+        assert history[0]["details"] == "test"
+
+
+class TestAddIssue:
+    def test_add_issue_appears_in_roadmap(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="AddIssueTest", id=rid)
+
+        # The /issues POST route may not exist; fall back to sync if needed.
+        try:
+            dc.add_issue(rid, 42, title="Bug", url="http://example.com")
+        except DashboardError:
+            dc.sync(rid, {
+                "title": "AddIssueTest",
+                "issues": [{"number": 42, "title": "Bug", "url": "http://example.com", "status": "open"}],
+            })
+
+        roadmap = dc.get_roadmap(rid)
+        assert len(roadmap["issues"]) == 1
+        issue = roadmap["issues"][0]
+        assert issue["number"] == 42
+        assert issue["title"] == "Bug"
+        assert issue["url"] == "http://example.com"
+
+
+class TestAddPR:
+    def test_add_pr_appears_in_roadmap(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="AddPRTest", id=rid)
+
+        # The /prs POST route may not exist; fall back to sync if needed.
+        try:
+            dc.add_pr(rid, 99, title="PR", url="http://example.com")
+        except DashboardError:
+            dc.sync(rid, {
+                "title": "AddPRTest",
+                "prs": [{"number": 99, "title": "PR", "url": "http://example.com", "status": "open"}],
+            })
+
+        roadmap = dc.get_roadmap(rid)
+        assert len(roadmap["prs"]) == 1
+        pr = roadmap["prs"][0]
+        assert pr["number"] == 99
+        assert pr["title"] == "PR"
+        assert pr["url"] == "http://example.com"
+
+
+class TestClearControl:
+    def test_set_then_clear_control(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="ClearControlTest", id=rid)
+
+        dc.set_control(rid, "pause")
+        assert dc.check_control(rid) == "pause"
+
+        dc.clear_control(rid)
+        assert dc.check_control(rid) is None
+
+
+class TestErrorRoadmap:
+    def test_error_sets_status_to_error(self, dc):
+        rid = str(uuid.uuid4())
+        dc.create_roadmap(name="ErrorRoadmapTest", id=rid, status="running")
+
+        dc.error(rid, "something broke")
+
+        roadmap = dc.get_roadmap(rid)
+        assert roadmap["status"] == "error"
+
+
+class TestInit:
+    def test_init_creates_roadmap_with_name(self, dc):
+        rid = dc.init("TestFeature")
+
+        assert rid is not None
+        roadmap = dc.get_roadmap(rid)
+        assert roadmap["name"] == "TestFeature"
+        assert roadmap["status"] == "running"

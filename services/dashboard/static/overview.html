@@ -164,6 +164,10 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .archive-btn:hover { border-color: var(--accent); color: var(--text); }
+  .card-pr-link {
+    font-size: 0.75rem; color: var(--accent); text-decoration: none;
+  }
+  .card-pr-link:hover { text-decoration: underline; }
   .empty { color: var(--text-muted); text-align: center; padding: 3rem; }
 
   /* --- Footer pinned to bottom --- */
@@ -217,7 +221,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v17</span>
+  <span>Dashboard Service v20</span>
 </div>
 
 <script>
@@ -545,6 +549,16 @@ function renderRoadmaps(roadmaps) {
       }, 'Archive'));
     }
 
+    if (r.prs && r.prs.length > 0) {
+      var pr = r.prs[0];
+      var prLink = el('a', {
+        href: pr.url || '#',
+        className: 'card-pr-link',
+        onclick: function(ev) { ev.stopPropagation(); }
+      }, 'PR #' + pr.number);
+      footerRightItems.push(prLink);
+    }
+
     var footerRight = el('div', { className: 'footer-right' }, footerRightItems);
 
     var card = el('div', { className: cardClass, onclick: function() { location.href = '/roadmap/' + r.id; } }, [
@@ -567,8 +581,21 @@ function renderRoadmaps(roadmaps) {
 
 async function loadRoadmaps() {
   try {
-    var resp = await fetch(API + '/roadmaps?detail=true');
+    var resp = await fetch(API + '/roadmaps?detail=true&archived=all');
     allRoadmaps = await resp.json();
+    // Validate saved project filter against actual data — clear stale projects
+    if (selectedProjects.length > 0) {
+      var knownProjects = {};
+      allRoadmaps.forEach(function(r) {
+        var proj = (r.repo || '').split('/')[0];
+        if (proj) knownProjects[proj] = true;
+      });
+      var valid = selectedProjects.filter(function(p) { return knownProjects[p]; });
+      if (valid.length === 0) {
+        selectedProjects = [];
+        buildProjectDropdown(allRoadmaps);
+      }
+    }
     renderRoadmaps(allRoadmaps);
   } catch (e) {
     document.getElementById('subtitle').textContent = 'Failed to load roadmaps';

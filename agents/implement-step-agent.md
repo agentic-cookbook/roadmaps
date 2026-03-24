@@ -1,7 +1,7 @@
 ---
 name: implement-step-agent
-version: "3"
-description: Implement a single roadmap step. Receives step number and details in the prompt. Creates a worktree, implements, creates PR, reviews, merges, updates roadmap, closes issue, then returns.
+version: "4"
+description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns.
 permissionMode: bypassPermissions
 ---
 
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v3
+> implement-step-agent v4
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -23,7 +23,7 @@ You implement **exactly one step** of a feature roadmap. Your task prompt tells 
 
 1. **Implement ONLY the step specified in your prompt.** Do not look at other steps.
 2. **NEVER skip the step** because you think it's already done. Implement it regardless.
-3. **One step = one worktree, one PR, one review, one merge.**
+3. **One step = implement, test, commit. The coordinator manages the branch and PR.**
 4. **On failure, log the error and return.** Do not retry silently.
 5. **NEVER use `cd /path && git ...` compound commands.** Use `git -C /path` instead. Compound `cd && git` commands trigger a security prompt that blocks execution. Always use single commands:
    - Instead of: `cd /path && git push` → Use: `git -C /path push`
@@ -39,6 +39,7 @@ Your task prompt contains:
 - **Step number and description** — e.g., "Step 1: Fix step ordering display"
 - **GitHub Issue** — e.g., "#17"
 - **Complexity** — S, M, or L
+- **Worktree path** — the shared worktree where all steps are implemented
 - **Roadmap file path** — e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`
 - **Feature Definition path** — sibling file in the same directory, e.g., `Roadmaps/2026-03-21-FeatureName/Definition.md`
 
@@ -48,13 +49,10 @@ Read the Feature Definition to understand the verification strategy (build comma
 
 ## IMPLEMENTATION
 
-### 1. Create Worktree
+### 1. Use Provided Worktree
 
-```bash
-git worktree add ../<repo>-wt/<feature>-step-<N> -b feature/<feature>-step-<N>
-```
-
-Work inside the worktree for all implementation.
+Your task prompt includes a `Worktree path`. All implementation work happens there.
+Use `git -C <worktree_path>` for all git commands. Do NOT create a new worktree or branch.
 
 ### 2. Implement
 
@@ -76,88 +74,35 @@ Run the test suite from the Feature Definition's verification strategy:
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass
 
-### 5. Create PR
-
-Write the PR body to a temp file, then create the PR:
-
-```bash
-cat > /tmp/gh-pr-body.md <<'EOF'
-## Summary
-
-<What this PR does>
-
-## Linked Issue
-
-Closes #<issue_number>
-
-## Changes
-
-<Bulleted list of changes>
-
-## Testing
-
-<How this was tested>
-
-## Checklist
-
-- [ ] Build passes
-- [ ] Tests pass
-- [ ] Follows project conventions
-EOF
-```
-
-```bash
-gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
-```
-
-### 6. Run Reviews
-
-Select and run reviews based on what changed:
-
-- **Always**: Code Review + Security Review
-- **Conditionally**: Performance, Testing, Accessibility, API Contract, Documentation reviews based on files touched
-
-Delegate to available review agents (`pr-review-toolkit:code-reviewer`, `pr-review-toolkit:silent-failure-hunter`, etc.).
-
-### 7. Address Findings
-
-Fix high and critical issues. Re-run relevant reviews to confirm resolution.
-
-### 8. Merge PR
-
-```bash
-gh pr merge --squash
-```
-
-### 9. Update Roadmap
+### 5. Update Roadmap
 
 In the roadmap file:
 - Mark this step's `**Status**:` as `Complete`
-- Add the PR link to the `**PR**:` field
 - Update the progress table
-- Commit and push
+- Commit (do not push — the coordinator pushes the branch at the end):
+  ```bash
+  git -C <worktree_path> add <roadmap_file>
+  git -C <worktree_path> commit -m "docs: mark step <N> complete (#<issue>)"
+  ```
 
-### 10. Close GitHub Issue
+### 6. Comment on Issue
+
+If the step has a GitHub issue:
 
 ```bash
-gh issue comment <number> --body "Completed in PR #<pr_number>. <Brief summary of what was done.>"
-gh issue close <number>
+gh issue comment <number> --body "Step <N> implemented on shared branch. Will be included in feature PR."
 ```
 
-### 11. Clean Up Worktree
+Do NOT close the issue — it will be closed when the feature PR merges.
 
-```bash
-git worktree remove ../<repo>-wt/<feature>-step-<N>
-```
-
-### 12. Return
+### 7. Return
 
 Print a summary:
 
 ```
 Step <N> complete:
-  PR: #<number> — merged
-  Issue: #<number> — closed
+  Commits: <count> commits on shared branch
+  Issue: #<number> — commented (not closed)
 ```
 
 Then stop. Do not continue to other steps.
@@ -168,6 +113,4 @@ Then stop. Do not continue to other steps.
 
 - **Build failure**: Attempt to fix. If fix fails after 3 attempts, log the error and return.
 - **Test failure**: Attempt to fix. If fix fails after 3 attempts, log the error and return.
-- **PR creation failure**: Log the gh error output and return.
-- **Merge conflict**: Attempt to resolve. If resolution fails, log the conflict details and return.
-- **Review tool unavailable**: Perform the review yourself using standard code review criteria.
+- **Commit failure**: Log the git error output and return.

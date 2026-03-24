@@ -243,3 +243,197 @@ class TestParseInlineFields:
     def test_no_matching_fields(self):
         fields = lib.parse_inline_fields("Just plain text\nNo fields here\n")
         assert fields == {}
+
+
+# ---------------------------------------------------------------------------
+# TestPathHelpers
+# ---------------------------------------------------------------------------
+
+class TestPathHelpers:
+    def test_roadmap_path(self, tmp_path):
+        rd = tmp_path / "2026-03-21-FeatureAlpha"
+        rd.mkdir()
+        result = lib.roadmap_path(rd)
+        assert result == rd / "Roadmap.md"
+
+    def test_definition_path(self, tmp_path):
+        rd = tmp_path / "2026-03-21-FeatureAlpha"
+        rd.mkdir()
+        result = lib.definition_path(rd)
+        assert result == rd / "Definition.md"
+
+    def test_summary_path(self, tmp_path):
+        rd = tmp_path / "2026-03-21-FeatureAlpha"
+        rd.mkdir()
+        result = lib.summary_path(rd)
+        assert result == rd / "Summary.md"
+
+
+# ---------------------------------------------------------------------------
+# TestIsNewLayout
+# ---------------------------------------------------------------------------
+
+class TestIsNewLayout:
+    def test_new_layout_detected(self, tmp_path):
+        # Directory with State/ and History/ subdirs and a Roadmap.md
+        rd = tmp_path / "Roadmaps" / "2026-03-21-FeatureAlpha"
+        rd.mkdir(parents=True)
+        (rd / "State").mkdir()
+        (rd / "History").mkdir()
+        (rd / "Roadmap.md").write_text("# Feature Roadmap: FeatureAlpha\n")
+        assert lib.is_new_layout(tmp_path) is True
+
+    def test_old_layout_detected(self, tmp_path):
+        # Directory with no roadmap dirs containing Roadmap.md
+        roadmaps = tmp_path / "Roadmaps"
+        roadmaps.mkdir()
+        assert lib.is_new_layout(tmp_path) is False
+
+
+# ---------------------------------------------------------------------------
+# TestWriteFrontmatterExtended
+# ---------------------------------------------------------------------------
+
+class TestWriteFrontmatterExtended:
+    def test_write_frontmatter_basic(self, tmp_path):
+        f = tmp_path / "test.md"
+        content = lib.write_frontmatter({"title": "Hello", "status": "Ready"})
+        f.write_text(content)
+        meta, _ = lib.parse_frontmatter(f)
+        assert meta["title"] == "Hello"
+        assert meta["status"] == "Ready"
+
+    def test_write_frontmatter_with_list(self, tmp_path):
+        f = tmp_path / "test.md"
+        meta = {
+            "id": "abc123",
+            "change-history": [
+                {"date": "2026-03-21", "author": "Alice", "summary": "Initial"},
+            ],
+        }
+        content = lib.write_frontmatter(meta)
+        f.write_text(content)
+        parsed, _ = lib.parse_frontmatter(f)
+        assert parsed["id"] == "abc123"
+        assert isinstance(parsed["change-history"], list)
+        assert parsed["change-history"][0]["date"] == "2026-03-21"
+
+    def test_write_frontmatter_preserves_body(self, tmp_path):
+        f = tmp_path / "test.md"
+        body = "# My Heading\n\nSome body content here.\n"
+        content = lib.write_frontmatter({"key": "val"}, body)
+        f.write_text(content)
+        _, parsed_body = lib.parse_frontmatter(f)
+        assert "My Heading" in parsed_body
+        assert "Some body content here." in parsed_body
+
+
+# ---------------------------------------------------------------------------
+# TestCurrentStateEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestCurrentStateEdgeCases:
+    def test_current_state_empty_state_dir(self, tmp_path):
+        rd = tmp_path / "EmptyRoadmap"
+        rd.mkdir()
+        (rd / "State").mkdir()
+        # State dir exists but has no files
+        assert lib.current_state(rd) == "Unknown"
+
+    def test_current_state_multiple_states(self, tmp_path):
+        rd = tmp_path / "2026-03-21-Test"
+        rd.mkdir()
+        (rd / "State").mkdir()
+        (rd / "State" / "2026-03-21-Created.md").write_text("# State: Created\n")
+        (rd / "State" / "2026-03-22-Ready.md").write_text("# State: Ready\n")
+        (rd / "State" / "2026-03-23-Implementing.md").write_text("# State: Implementing\n")
+        # Alphabetically last file should win
+        assert lib.current_state(rd) == "Implementing"
+
+    def test_current_state_no_state_dir(self, tmp_path):
+        rd = tmp_path / "NoStateDir"
+        rd.mkdir()
+        assert lib.current_state(rd) == "Unknown"
+
+
+# ---------------------------------------------------------------------------
+# TestParseFrontmatterEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestParseFrontmatterEdgeCases:
+    def test_no_frontmatter(self, tmp_path):
+        f = tmp_path / "test.md"
+        f.write_text("# Plain heading\n\nNo frontmatter here.\n")
+        meta, body = lib.parse_frontmatter(f)
+        assert meta == {}
+        assert "Plain heading" in body
+
+    def test_empty_frontmatter(self, tmp_path):
+        f = tmp_path / "test.md"
+        # Valid delimiters but nothing between them
+        f.write_text("---\n---\n\nBody after empty frontmatter.\n")
+        meta, body = lib.parse_frontmatter(f)
+        assert meta == {}
+        assert "Body after empty frontmatter." in body
+
+    def test_frontmatter_with_body(self, tmp_path):
+        f = tmp_path / "test.md"
+        f.write_text("---\ntitle: Test\n---\n\n# Body heading\n\nBody paragraph.\n")
+        meta, body = lib.parse_frontmatter(f)
+        assert meta["title"] == "Test"
+        assert "Body heading" in body
+        assert "Body paragraph." in body
+
+
+# ---------------------------------------------------------------------------
+# TestCountStepsEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestCountStepsEdgeCases:
+    def test_zero_steps(self, tmp_path):
+        rm = tmp_path / "Roadmap.md"
+        rm.write_text("# Feature Roadmap: Empty\n\nNo steps here.\n")
+        total, complete = lib.count_steps(rm)
+        assert total == 0
+        assert complete == 0
+
+    def test_mixed_status_case(self, tmp_path):
+        rm = tmp_path / "Roadmap.md"
+        rm.write_text(
+            "### Step 1: First\n\n- **Status**: complete\n\n"
+            "### Step 2: Second\n\n- **Status**: Complete\n\n"
+            "### Step 3: Third\n\n- **Status**: COMPLETE\n"
+        )
+        total, complete = lib.count_steps(rm)
+        assert total == 3
+        # count_steps uses re.IGNORECASE, so all three should match
+        assert complete == 3
+
+    def test_steps_with_extra_whitespace(self, tmp_path):
+        rm = tmp_path / "Roadmap.md"
+        rm.write_text(
+            "### Step 1: First\n\n- **Status**:   Complete  \n\n"
+            "### Step 2: Second\n\n- **Status**: Not Started\n"
+        )
+        total, complete = lib.count_steps(rm)
+        assert total == 2
+        # The regex uses \s* before "Complete" so leading spaces are consumed,
+        # but trailing spaces after "Complete" won't prevent the match
+        assert complete == 1
+
+
+# ---------------------------------------------------------------------------
+# TestGetFeatureNameEdgeCases
+# ---------------------------------------------------------------------------
+
+class TestGetFeatureNameEdgeCases:
+    def test_feature_name_with_date_prefix(self, tmp_path):
+        rd = tmp_path / "2026-03-21-FeatureAlpha"
+        rd.mkdir()
+        assert lib.get_feature_name(rd) == "FeatureAlpha"
+
+    def test_feature_name_no_date_prefix(self, tmp_path):
+        rd = tmp_path / "FeatureAlpha"
+        rd.mkdir()
+        # No date prefix and no Roadmap.md — falls back to dirname
+        assert lib.get_feature_name(rd) == "FeatureAlpha"

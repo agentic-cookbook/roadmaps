@@ -1,14 +1,20 @@
 #!/bin/bash
-# Simulates a complete implement-roadmap-agent run against the progress dashboard.
+# Simulates a complete implement-roadmap run against the progress dashboard.
 # Usage: ./demo.sh
 #
 # Opens the dashboard in a browser and walks through a 3-step feature
 # implementation with realistic delays between state changes.
+#
+# Demonstrates the atomic-batch-pr workflow: all steps commit to a single
+# shared branch, one PR is created at the end covering all steps.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DASH_CLI="$SCRIPT_DIR/dash"
+# Navigate to project root (4 levels up from skills/progress-dashboard/references/)
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+SERVER_SH="$PROJECT_ROOT/services/dashboard/server.sh"
 
 if [[ ! -f "$DASH_CLI" ]]; then
     echo "ERROR: dash CLI not found at $DASH_CLI"
@@ -23,9 +29,34 @@ pause() {
     sleep "$1"
 }
 
+# --- Start the Flask dashboard service ---
+# The dash CLI auto-detects the service and uses it for all commands.
+# This ensures the demo uses the real dashboard UI (services/dashboard/static/).
+STARTED_SERVICE=false
+if [[ -f "$SERVER_SH" ]]; then
+    echo "[service] Starting Flask dashboard service..."
+    cd "$PROJECT_ROOT" && bash "$SERVER_SH" start
+    STARTED_SERVICE=true
+    pause 1
+else
+    echo "WARNING: server.sh not found at $SERVER_SH — falling back to file-based mode"
+fi
+
 # Create a temp roadmap file for load-roadmap
 ROADMAP=$(mktemp /tmp/demo-roadmap-XXXXXX.md)
 cat > "$ROADMAP" <<'ROADMAP_EOF'
+---
+id: demo-widget-system-001
+created: 2026-01-01
+modified: 2026-01-01
+author: Demo Runner <demo@example.com>
+definition-id: demo-widget-def-001
+change-history:
+  - date: 2026-01-01
+    author: Demo Runner <demo@example.com>
+    summary: Demo fixture
+---
+
 # Feature Roadmap: WidgetSystem
 
 **Status**: Not Started
@@ -39,7 +70,6 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: S
-- **PR**: _TBD_
 
 ---
 
@@ -49,7 +79,6 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: M
-- **PR**: _TBD_
 
 ---
 
@@ -59,10 +88,17 @@ cat > "$ROADMAP" <<'ROADMAP_EOF'
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: M
-- **PR**: _TBD_
+
+---
+
+### Step 4: Create & Review Feature PR
+
+- **Type**: Auto
+- **Status**: Not Started
+- **Complexity**: S
 ROADMAP_EOF
 
-echo "=== Progress Dashboard Demo ==="
+echo "=== Progress Dashboard Demo (Atomic Batch PR) ==="
 echo ""
 
 # --- STARTUP ---
@@ -74,6 +110,16 @@ dash load-roadmap "$ROADMAP"
 echo "[startup] Dashboard is open in your browser"
 echo ""
 pause 3
+
+# --- Create shared branch ---
+echo "[branch] Creating feature branch and worktree..."
+dash log "Creating branch: feature/WidgetSystem"
+dash log "Worktree: ../repo-wt/WidgetSystem"
+pause 2
+
+echo "[branch] All steps will commit to this single branch"
+echo ""
+pause 1
 
 # --- Check controls (should be none) ---
 echo "[control] Checking for user controls..."
@@ -87,11 +133,6 @@ echo "[step 1] Starting: Project scaffolding and configuration"
 dash begin-step 1
 pause 3
 
-echo "[step 1] Creating worktree and branch..."
-dash step-detail 1 "Creating worktree: feature/widget-system-step-1"
-dash log "Worktree created: feature/widget-system-step-1"
-pause 2
-
 echo "[step 1] Implementing..."
 dash step-detail 1 "Writing project config and directory structure"
 pause 3
@@ -101,19 +142,13 @@ dash step-detail 1 "Build passed, 12 tests passing"
 dash log "Build clean, all tests pass"
 pause 2
 
-echo "[step 1] Creating PR..."
-dash pr-created 1 101 "https://github.com/example/widget-system/pull/101"
-dash step-detail 1 "PR #101 created — running reviews"
-pause 3
-
-echo "[step 1] Running reviews..."
-dash step-detail 1 "Code review: 0 issues. Security review: 0 issues."
-dash log "Reviews passed: code review + security review"
+echo "[step 1] Committing to shared branch..."
+dash step-detail 1 "Committed: feat: complete step 1"
+dash log "git commit: a3f7b21 Demo Runner  2026-03-24  feat: create project scaffolding"
 pause 2
 
-echo "[step 1] Merging PR and closing issue..."
-dash update-pr 101 merged
-dash update-issue 50 closed
+echo "[step 1] Updating roadmap — step 1 complete"
+
 dash finish-step 1
 echo "[step 1] Done"
 echo ""
@@ -133,7 +168,7 @@ pause 3
 
 echo "[step 2] Planning step (M complexity)..."
 dash step-detail 2 "Planning: widget registry, lifecycle hooks, render pipeline"
-dash log "Step 2 plan: widget registry + lifecycle + render pipeline"
+dash log "Planning: widget registry + lifecycle + render pipeline"
 pause 3
 
 echo "[step 2] Implementing widget registry..."
@@ -153,19 +188,13 @@ dash step-detail 2 "Build passed, 47 tests passing (35 new)"
 dash log "Build clean, 47 tests pass"
 pause 2
 
-echo "[step 2] Creating PR..."
-dash pr-created 2 102 "https://github.com/example/widget-system/pull/102"
-dash step-detail 2 "PR #102 created — running reviews"
-pause 3
-
-echo "[step 2] Running reviews..."
-dash step-detail 2 "Code review: 1 warning (resolved). Security review: 0 issues."
-dash log "Reviews passed: 1 warning addressed"
+echo "[step 2] Committing to shared branch..."
+dash step-detail 2 "Committed: feat: complete step 2"
+dash log "git commit: e8c4d09 Demo Runner  2026-03-24  feat: implement core widget engine"
 pause 2
 
-echo "[step 2] Merging PR and closing issue..."
-dash update-pr 102 merged
-dash update-issue 51 closed
+echo "[step 2] Updating roadmap — step 2 complete"
+
 dash finish-step 2
 echo "[step 2] Done"
 echo ""
@@ -174,27 +203,15 @@ pause 2
 # --- PAUSE/RESUME demo ---
 echo "[control] Simulating pause..."
 dash log "Pause received by agent"
-DASH_DIR_PATH=$(dash dir)
-echo '{"action":"pause","time":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$DASH_DIR_PATH/control.json"
-python3 -c "
-import json, pathlib
-p = pathlib.Path('$DASH_DIR_PATH/progress.json')
-d = json.loads(p.read_text())
-d['control_state'] = 'pause'
-p.write_text(json.dumps(d, indent=2))
-"
+# Set pause via the dashboard API
+curl -s -X POST "http://127.0.0.1:${DASHBOARD_PORT:-8888}/api/v1/roadmaps/demo-widget-system-001/control" \
+  -H "Content-Type: application/json" -d '{"action":"pause"}' > /dev/null
 echo "[control] Paused for 5 seconds..."
 pause 5
 
 echo "[control] Resuming..."
-python3 -c "
-import json, pathlib
-p = pathlib.Path('$DASH_DIR_PATH/progress.json')
-d = json.loads(p.read_text())
-d.pop('control_state', None)
-p.write_text(json.dumps(d, indent=2))
-"
-rm -f "$DASH_DIR_PATH/control.json"
+# Clear the control signal
+curl -s -X DELETE "http://127.0.0.1:${DASHBOARD_PORT:-8888}/api/v1/roadmaps/demo-widget-system-001/control" > /dev/null
 dash log "Resume received by agent"
 echo "[control] Resumed"
 echo ""
@@ -219,21 +236,66 @@ dash step-detail 3 "Build passed, 83 tests passing (36 new integration tests)"
 dash log "Build clean, 83 tests pass"
 pause 2
 
-echo "[step 3] Creating PR..."
-dash pr-created 3 103 "https://github.com/example/widget-system/pull/103"
-dash step-detail 3 "PR #103 created — running reviews"
-pause 3
-
-echo "[step 3] Running reviews..."
-dash step-detail 3 "Code review: 0 issues. Security review: 0 issues. API review: 0 issues."
-dash log "Reviews passed: code + security + API contract"
+echo "[step 3] Committing to shared branch..."
+dash step-detail 3 "Committed: feat: complete step 3"
+dash log "git commit: 1b5f6e3 Demo Runner  2026-03-24  feat: add API endpoints and integration tests"
 pause 2
 
-echo "[step 3] Merging PR and closing issue..."
-dash update-pr 103 merged
-dash update-issue 52 closed
+echo "[step 3] Updating roadmap — step 3 complete"
+
 dash finish-step 3
 echo "[step 3] Done"
+echo ""
+pause 2
+
+# --- STEP 4: CREATE & REVIEW FEATURE PR ---
+echo "[step 4] Starting: Create & Review Feature PR"
+dash begin-step 4
+pause 2
+
+echo "[step 4] Writing state and history files..."
+dash step-detail 4 "Writing Complete state and ImplementationComplete history"
+dash log "State: Complete, History: ImplementationComplete"
+pause 2
+
+echo "[step 4] Pushing branch..."
+dash step-detail 4 "Pushing feature/WidgetSystem to origin"
+dash log "Pushing feature/WidgetSystem to origin"
+pause 2
+
+echo "[step 4] Creating PR: feat: WidgetSystem"
+dash step-detail 4 "PR #200 created — Closes #50, #51, #52"
+dash log "PR #200 created — feat: WidgetSystem (Closes #50, Closes #51, Closes #52)"
+pause 3
+
+echo "[step 4] Review iteration 1: running code review + security review..."
+dash step-detail 4 "Review iteration 1/3: code review + security review"
+dash log "Code review: 1 warning found"
+pause 3
+
+echo "[step 4] Fixing review feedback..."
+dash step-detail 4 "Fixing: addressed code review warning"
+dash log "git commit: 7d2a4c8 Demo Runner  2026-03-24  fix: address review feedback (iteration 1)"
+pause 2
+
+echo "[step 4] Review iteration 2: re-reviewing..."
+dash step-detail 4 "Review iteration 2/3: re-running reviews"
+dash log "Code review: 0 issues. Security review: 0 issues."
+pause 3
+
+echo "[step 4] Reviews passed. Merging PR #200 with --merge..."
+dash step-detail 4 "PR #200 merged (--merge, preserving step commits)"
+dash log "PR #200 merged (--merge, preserving step commits)"
+pause 2
+
+echo "[step 4] Closing issues..."
+dash log "Issues #50, #51, #52 closed via gh issue close"
+pause 2
+
+echo "[step 4] Cleaning up worktree..."
+dash log "Worktree removed: ../repo-wt/WidgetSystem"
+dash finish-step 4
+echo "[step 4] Done"
 echo ""
 pause 2
 
@@ -242,7 +304,7 @@ echo "[complete] All steps done. Marking complete..."
 dash complete
 pause 3
 
-echo "[shutdown] Shutting down dashboard server..."
+echo "[shutdown] Shutting down..."
 dash shutdown
 
 # Cleanup
@@ -250,5 +312,11 @@ rm -f "$ROADMAP"
 
 echo ""
 echo "=== Demo Complete ==="
-echo "The dashboard should show all 3 steps as complete."
-echo "You can close the browser tab now."
+echo "The dashboard showed the atomic-batch-pr workflow:"
+echo "  - 3 steps committed to a single shared branch"
+echo "  - 1 feature PR created after all steps finished"
+echo "  - PR merged with --merge (preserving individual step commits)"
+echo "  - All issues closed after PR merge"
+echo ""
+echo "The dashboard service is still running — view at http://127.0.0.1:${DASHBOARD_PORT:-8888}"
+echo "Stop it with: bash services/dashboard/server.sh stop"
