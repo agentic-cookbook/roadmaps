@@ -13,6 +13,7 @@ that handles the key-value and list structures used in roadmap files.
 """
 
 import re
+from datetime import date as _date
 from pathlib import Path
 
 
@@ -319,6 +320,161 @@ def parse_roadmap_heading(roadmap_file):
     content = Path(roadmap_file).read_text()
     m = re.search(r"^# Feature Roadmap:\s*(.+)", content, re.MULTILINE)
     return m.group(1).strip() if m else None
+
+
+# ---------------------------------------------------------------------------
+# Inline field parsing (old layout — for migration and backward compat)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Planning operations (used by plan-roadmap skill)
+# ---------------------------------------------------------------------------
+
+def create_planning_dir(repo_dir, feature_name, date=None):
+    """Create the full planning directory structure for a new feature.
+
+    Creates Roadmaps/YYYY-MM-DD-<feature_name>/ with State/ and History/
+    subdirectories. The repo_dir parameter is the repo root — Roadmaps/
+    is appended internally (matching find_roadmap_dirs convention).
+
+    Returns Path to the created roadmap directory.
+    """
+    if not feature_name:
+        raise ValueError("feature_name must not be empty")
+    if date is None:
+        date = _date.today().isoformat()
+    roadmap_dir = Path(repo_dir) / "Roadmaps" / f"{date}-{feature_name}"
+    if roadmap_dir.exists():
+        raise FileExistsError(f"Directory already exists: {roadmap_dir}")
+    roadmap_dir.mkdir(parents=True)
+    (roadmap_dir / "State").mkdir()
+    (roadmap_dir / "History").mkdir()
+    return roadmap_dir
+
+
+def create_state_file(roadmap_dir, event, date=None):
+    """Create a state marker file in the State/ subdirectory.
+
+    Filename format: YYYY-MM-DD-<Event>.md (event capitalized).
+    Content is YAML frontmatter with event and date fields.
+
+    current_state() reads state from the filename, not the content.
+    """
+    state_dir = Path(roadmap_dir) / "State"
+    if not state_dir.exists():
+        raise FileNotFoundError(f"State directory not found: {state_dir}")
+    if date is None:
+        date = _date.today().isoformat()
+    filename = f"{date}-{event.capitalize()}.md"
+    path = state_dir / filename
+    path.write_text(f"---\nevent: {event}\ndate: {date}\n---\n")
+    return path
+
+
+def generate_issue_body(feature_name, step_description, acceptance_criteria,
+                        complexity, dependencies, roadmap_dir):
+    """Generate the markdown body for a GitHub issue.
+
+    Returns a markdown string matching the plan-roadmap issue template.
+    """
+    if not feature_name:
+        raise ValueError("feature_name must not be empty")
+    if not step_description:
+        raise ValueError("step_description must not be empty")
+    return (
+        f"## Context\n\n"
+        f"Part of the {feature_name} feature.\n"
+        f"Feature Definition: `{roadmap_dir}/Definition.md`\n"
+        f"Roadmap: `{roadmap_dir}/Roadmap.md`\n\n"
+        f"## Step Details\n\n"
+        f"{step_description}\n\n"
+        f"## Acceptance Criteria\n\n"
+        f"{acceptance_criteria}\n\n"
+        f"## Complexity\n\n"
+        f"{complexity}\n\n"
+        f"## Dependencies\n\n"
+        f"{dependencies}\n"
+    )
+
+
+def replace_issue_placeholders(roadmap_file, step_issue_map):
+    """Replace {{REPO}}#{{ISSUE_NUMBER}} placeholders in a Roadmap.md file.
+
+    Uses section-based matching: for each step N, finds the placeholder
+    within the ### Step N: section and replaces it with #<issue_number>.
+
+    Returns the number of replacements made.
+    """
+    path = Path(roadmap_file)
+    if not path.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+    if not step_issue_map:
+        raise ValueError("step_issue_map must not be empty")
+
+    content = path.read_text()
+    placeholder = "{{REPO}}#{{ISSUE_NUMBER}}"
+    count = 0
+
+    for step_num, issue_num in step_issue_map.items():
+        # Find the ### Step N: section
+        pattern = rf"(### Step {step_num}:.*?)(?=### Step \d+:|\Z)"
+        match = re.search(pattern, content, re.DOTALL)
+        if match and placeholder in match.group(0):
+            section = match.group(0)
+            new_section = section.replace(placeholder, f"#{issue_num}", 1)
+            content = content[:match.start()] + new_section + content[match.end():]
+            count += 1
+
+    path.write_text(content)
+    return count
+
+
+def validate_planning_complete(roadmap_dir):
+    """Validate that all planning artifacts are present and correct.
+
+    Returns (ok, errors) where ok is True if all checks pass,
+    and errors is a list of human-readable error strings.
+    """
+    rd = Path(roadmap_dir)
+    errors = []
+
+    # Check Definition.md
+    defn = rd / "Definition.md"
+    if not defn.exists():
+        errors.append("Missing Definition.md")
+    elif defn.stat().st_size == 0:
+        errors.append("Definition.md is empty")
+
+    # Check Roadmap.md
+    rm = rd / "Roadmap.md"
+    if not rm.exists():
+        errors.append("Missing Roadmap.md")
+    elif rm.stat().st_size == 0:
+        errors.append("Roadmap.md is empty")
+    else:
+        # Check for remaining placeholders
+        content = rm.read_text()
+        if "{{REPO}}#{{ISSUE_NUMBER}}" in content:
+            errors.append("Roadmap.md contains unresolved issue placeholders")
+
+    # Check state files
+    state_dir = rd / "State"
+    if state_dir.exists():
+        state_files = [f.stem for f in sorted(state_dir.glob("*.md"))]
+        state_names = []
+        for stem in state_files:
+            parts = stem.split("-", 3)
+            if len(parts) >= 4:
+                state_names.append(parts[3])
+        for required in ["Created", "Planning", "Ready"]:
+            if required not in state_names:
+                errors.append(f"Missing {required} state file")
+    else:
+        errors.append("Missing Created state file")
+        errors.append("Missing Planning state file")
+        errors.append("Missing Ready state file")
+
+    return (len(errors) == 0, errors)
 
 
 # ---------------------------------------------------------------------------
