@@ -10,9 +10,11 @@ from .. import models
 def list_roadmaps():
     state = request.args.get("state")
     status = request.args.get("status")
-    archived = request.args.get("archived")
-    if archived is not None:
-        archived = archived.lower() in ("1", "true", "yes")
+    archived_param = request.args.get("archived")
+    if archived_param is None:
+        archived = False  # exclude archived by default
+    else:
+        archived = archived_param.lower() in ("1", "true", "yes")
     detail = request.args.get("detail", "").lower() in ("1", "true", "yes")
     roadmaps = models.list_roadmaps(g.db, state=state, status=status, archived=archived)
     if detail:
@@ -88,6 +90,8 @@ def shutdown_roadmap(roadmap_id):
 
 @api.route("/roadmaps/<roadmap_id>/archive", methods=["POST"])
 def archive_roadmap(roadmap_id):
+    if not models.get_roadmap(g.db, roadmap_id):
+        return jsonify({"error": "not found"}), 404
     models.update_roadmap(g.db, roadmap_id, {"archived": 1})
     from .sse import broadcast
     broadcast("roadmap_updated", {"roadmap_id": roadmap_id, "archived": 1})
@@ -96,6 +100,8 @@ def archive_roadmap(roadmap_id):
 
 @api.route("/roadmaps/<roadmap_id>/unarchive", methods=["POST"])
 def unarchive_roadmap(roadmap_id):
+    if not models.get_roadmap(g.db, roadmap_id):
+        return jsonify({"error": "not found"}), 404
     models.update_roadmap(g.db, roadmap_id, {"archived": 0})
     from .sse import broadcast
     broadcast("roadmap_updated", {"roadmap_id": roadmap_id, "archived": 0})
