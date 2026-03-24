@@ -625,3 +625,83 @@ class TestSyncEdgeCases:
         assert r["steps"][0]["description"] == "Overwritten"
         assert r["steps"][0]["status"] == "complete"
         assert r["steps"][1]["description"] == "Added"
+
+
+# ---------------------------------------------------------------------------
+# TestDeterministicClockAndId
+# ---------------------------------------------------------------------------
+
+class TestDeterministicClockAndId:
+    """Tests that verify clock and id_gen injection works."""
+
+    def test_create_roadmap_with_injected_clock_and_id(self, db_conn):
+        fixed_time = "2026-01-15T12:00:00+00:00"
+        fixed_id = "test-fixed-id-123"
+        clock = lambda: fixed_time
+        id_gen = lambda: fixed_id
+
+        rid = models.create_roadmap(db_conn, {"name": "Deterministic"}, clock=clock, id_gen=id_gen)
+        assert rid == fixed_id
+        rm = models.get_roadmap(db_conn, rid)
+        assert rm["created"] == fixed_time
+        assert rm["modified"] == fixed_time
+
+    def test_begin_step_with_injected_clock(self, db_conn):
+        fixed_time = "2026-06-15T08:30:00+00:00"
+        clock = lambda: fixed_time
+
+        rid = models.create_roadmap(db_conn, {"name": "ClockTest"})
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+        ])
+        models.begin_step(db_conn, rid, 1, clock=clock)
+        step = models.get_step(db_conn, rid, 1)
+        assert step["started_at"] == fixed_time
+        assert step["status"] == "in_progress"
+
+    def test_finish_step_with_injected_clock(self, db_conn):
+        fixed_time = "2026-06-15T09:00:00+00:00"
+        clock = lambda: fixed_time
+
+        rid = models.create_roadmap(db_conn, {"name": "FinishTest"})
+        models.bulk_create_steps(db_conn, rid, [
+            {"number": 1, "description": "Step 1"},
+        ])
+        models.begin_step(db_conn, rid, 1)
+        models.finish_step(db_conn, rid, 1, clock=clock)
+        step = models.get_step(db_conn, rid, 1)
+        assert step["completed_at"] == fixed_time
+        assert step["status"] == "complete"
+
+    def test_add_state_transition_with_injected_clock(self, db_conn):
+        fixed_time = "2026-06-15T10:00:00+00:00"
+        clock = lambda: fixed_time
+
+        rid = models.create_roadmap(db_conn, {"name": "StateTest"})
+        models.add_state_transition(db_conn, rid, "Implementing", clock=clock)
+        transitions = models.list_state_transitions(db_conn, rid)
+        assert transitions[0]["created"] == fixed_time
+
+    def test_add_history_event_with_injected_clock_and_id(self, db_conn):
+        fixed_time = "2026-06-15T11:00:00+00:00"
+        fixed_id = "event-fixed-id"
+        clock = lambda: fixed_time
+        id_gen = lambda: fixed_id
+
+        rid = models.create_roadmap(db_conn, {"name": "HistoryTest"})
+        models.add_history_event(db_conn, rid, "TestEvent", clock=clock, id_gen=id_gen)
+        events = models.list_history_events(db_conn, rid)
+        assert events[0]["created"] == fixed_time
+        assert events[0]["id"] == fixed_id
+
+    def test_sync_roadmap_with_injected_clock(self, db_conn):
+        fixed_time = "2026-06-15T12:00:00+00:00"
+        clock = lambda: fixed_time
+
+        rid = models.sync_roadmap(db_conn, "sync-det-id", {
+            "name": "SyncDet",
+            "state": "Ready",
+            "status": "idle",
+        }, clock=clock)
+        rm = models.get_roadmap(db_conn, rid)
+        assert rm["modified"] == fixed_time
