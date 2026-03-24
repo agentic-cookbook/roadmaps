@@ -13,6 +13,8 @@ def list_roadmaps():
     archived_param = request.args.get("archived")
     if archived_param is None:
         archived = False  # exclude archived by default
+    elif archived_param.lower() in ("all", "both"):
+        archived = None  # return all roadmaps
     else:
         archived = archived_param.lower() in ("1", "true", "yes")
     detail = request.args.get("detail", "").lower() in ("1", "true", "yes")

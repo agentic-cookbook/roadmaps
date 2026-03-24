@@ -221,7 +221,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v18</span>
+  <span>Dashboard Service v19</span>
 </div>
 
 <script>
@@ -581,7 +581,7 @@ function renderRoadmaps(roadmaps) {
 
 async function loadRoadmaps() {
   try {
-    var resp = await fetch(API + '/roadmaps?detail=true');
+    var resp = await fetch(API + '/roadmaps?detail=true&archived=all');
     allRoadmaps = await resp.json();
     renderRoadmaps(allRoadmaps);
   } catch (e) {
