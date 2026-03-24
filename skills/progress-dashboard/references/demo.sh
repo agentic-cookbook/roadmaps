@@ -12,6 +12,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 DASH_CLI="$SCRIPT_DIR/dash"
+# Navigate to project root (4 levels up from skills/progress-dashboard/references/)
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+SERVER_SH="$PROJECT_ROOT/services/dashboard/server.sh"
 
 if [[ ! -f "$DASH_CLI" ]]; then
     echo "ERROR: dash CLI not found at $DASH_CLI"
@@ -26,9 +29,34 @@ pause() {
     sleep "$1"
 }
 
+# --- Start the Flask dashboard service ---
+# The dash CLI auto-detects the service and uses it for all commands.
+# This ensures the demo uses the real dashboard UI (services/dashboard/static/).
+STARTED_SERVICE=false
+if [[ -f "$SERVER_SH" ]]; then
+    echo "[service] Starting Flask dashboard service..."
+    cd "$PROJECT_ROOT" && bash "$SERVER_SH" start
+    STARTED_SERVICE=true
+    pause 1
+else
+    echo "WARNING: server.sh not found at $SERVER_SH — falling back to file-based mode"
+fi
+
 # Create a temp roadmap file for load-roadmap
 ROADMAP=$(mktemp /tmp/demo-roadmap-XXXXXX.md)
 cat > "$ROADMAP" <<'ROADMAP_EOF'
+---
+id: demo-widget-system-001
+created: 2026-01-01
+modified: 2026-01-01
+author: Demo Runner <demo@example.com>
+definition-id: demo-widget-def-001
+change-history:
+  - date: 2026-01-01
+    author: Demo Runner <demo@example.com>
+    summary: Demo fixture
+---
+
 # Feature Roadmap: WidgetSystem
 
 **Status**: Not Started
@@ -120,7 +148,7 @@ dash log "Step 1 committed to feature/WidgetSystem"
 pause 2
 
 echo "[step 1] Updating roadmap — step 1 complete"
-dash update-issue 50 open
+
 dash finish-step 1
 echo "[step 1] Done"
 echo ""
@@ -166,7 +194,7 @@ dash log "Step 2 committed to feature/WidgetSystem"
 pause 2
 
 echo "[step 2] Updating roadmap — step 2 complete"
-dash update-issue 51 open
+
 dash finish-step 2
 echo "[step 2] Done"
 echo ""
@@ -175,27 +203,15 @@ pause 2
 # --- PAUSE/RESUME demo ---
 echo "[control] Simulating pause..."
 dash log "Pause received by agent"
-DASH_DIR_PATH=$(dash dir)
-echo '{"action":"pause","time":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$DASH_DIR_PATH/control.json"
-python3 -c "
-import json, pathlib
-p = pathlib.Path('$DASH_DIR_PATH/progress.json')
-d = json.loads(p.read_text())
-d['control_state'] = 'pause'
-p.write_text(json.dumps(d, indent=2))
-"
+# Set pause via the dashboard API
+curl -s -X POST "http://127.0.0.1:${DASHBOARD_PORT:-8888}/api/v1/roadmaps/demo-widget-system-001/control" \
+  -H "Content-Type: application/json" -d '{"action":"pause"}' > /dev/null
 echo "[control] Paused for 5 seconds..."
 pause 5
 
 echo "[control] Resuming..."
-python3 -c "
-import json, pathlib
-p = pathlib.Path('$DASH_DIR_PATH/progress.json')
-d = json.loads(p.read_text())
-d.pop('control_state', None)
-p.write_text(json.dumps(d, indent=2))
-"
-rm -f "$DASH_DIR_PATH/control.json"
+# Clear the control signal
+curl -s -X DELETE "http://127.0.0.1:${DASHBOARD_PORT:-8888}/api/v1/roadmaps/demo-widget-system-001/control" > /dev/null
 dash log "Resume received by agent"
 echo "[control] Resumed"
 echo ""
@@ -226,7 +242,7 @@ dash log "Step 3 committed to feature/WidgetSystem"
 pause 2
 
 echo "[step 3] Updating roadmap — step 3 complete"
-dash update-issue 52 open
+
 dash finish-step 3
 echo "[step 3] Done"
 echo ""
@@ -273,10 +289,7 @@ dash log "PR #200 merged (--merge, preserving step commits)"
 pause 2
 
 echo "[step 4] Closing issues..."
-dash update-issue 50 closed
-dash update-issue 51 closed
-dash update-issue 52 closed
-dash log "Issues #50, #51, #52 closed"
+dash log "Issues #50, #51, #52 closed via gh issue close"
 pause 2
 
 echo "[step 4] Cleaning up worktree..."
@@ -291,7 +304,7 @@ echo "[complete] All steps done. Marking complete..."
 dash complete
 pause 3
 
-echo "[shutdown] Shutting down dashboard server..."
+echo "[shutdown] Shutting down..."
 dash shutdown
 
 # Cleanup
@@ -304,4 +317,6 @@ echo "  - 3 steps committed to a single shared branch"
 echo "  - 1 feature PR created after all steps finished"
 echo "  - PR merged with --merge (preserving individual step commits)"
 echo "  - All issues closed after PR merge"
-echo "You can close the browser tab now."
+echo ""
+echo "The dashboard service is still running — view at http://127.0.0.1:${DASHBOARD_PORT:-8888}"
+echo "Stop it with: bash services/dashboard/server.sh stop"
