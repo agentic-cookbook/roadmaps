@@ -274,15 +274,16 @@ date: YYYY-MM-DD
 
 ### 5g: Verify all files exist and have content
 
-```bash
-wc -l "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md"
-head -5 "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md"
-wc -l "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md"
-head -5 "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md"
-ls "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"
-```
+Use the **Read tool** to read the first few lines of each file. If any file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
 
-If any file does not exist or is empty: **STOP. Tell the user. Re-attempt the write.**
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+
+Use the **Glob tool** to verify state files exist:
+
+Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
+
+Expected: two files (Created.md and Planning.md).
 
 ### 5h: Commit and push all files
 
@@ -397,30 +398,29 @@ git push
 
 Execute all of the following checks. **Every check must pass.**
 
-```bash
-# Check Feature Definition exists and has content
-test -s "Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md" && echo "PASS: Feature Definition exists" || echo "FAIL: Feature Definition missing"
-```
+Use the **Read tool** to verify each file exists and has content:
+
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
+— PASS if file exists and is not empty.
+
+Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+— PASS if file exists and is not empty.
+
+Use the **Glob tool** to verify state files:
+
+Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*-Ready.md`
+— PASS if exactly one match.
+
+Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
+— PASS if at least three files (Created, Planning, Ready).
+
+Verify GitHub issues:
 
 ```bash
-# Check Roadmap exists and has content
-test -s "Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md" && echo "PASS: Roadmap exists" || echo "FAIL: Roadmap missing"
-```
-
-```bash
-# Check State/Ready file exists
-test -f "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"*"-Ready.md" && echo "PASS: Ready state exists" || echo "FAIL: Ready state missing"
-```
-
-```bash
-# Check State/ directory has Created, Planning, and Ready markers
-ls "Roadmaps/YYYY-MM-DD-<FeatureName>/State/"
-```
-
-```bash
-# List all issues for this feature
 gh issue list --search "Feature: [<FeatureName>]" --json number,title,state
 ```
+
+— PASS if issue count matches roadmap step count.
 
 If **any check fails**, **STOP. Tell the user which check failed. Fix the issue before continuing.**
 
