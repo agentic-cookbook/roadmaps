@@ -5,11 +5,9 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PID_FILE="${HOME}/.claude/dashboard.pid"
 PORT="${DASHBOARD_PORT:-8888}"
-LOG_FILE="${HOME}/.claude/dashboard.log"
 
-# Parse --port argument
+# Parse --port argument (before setting PID/LOG paths)
 while [[ $# -gt 0 ]]; do
     case "$1" in
         start|stop|status|restart) CMD="$1"; shift ;;
@@ -19,6 +17,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 CMD="${CMD:-status}"
+PID_FILE="${HOME}/.claude/dashboard-${PORT}.pid"
+LOG_FILE="${HOME}/.claude/dashboard-${PORT}.log"
 
 _is_running() {
     if [ -f "$PID_FILE" ]; then

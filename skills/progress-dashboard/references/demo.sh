@@ -30,13 +30,18 @@ pause() {
     sleep "$1"
 }
 
-# --- Start the Flask dashboard service ---
-# The dash CLI auto-detects the service and uses it for all commands.
-# This ensures the demo uses the real dashboard UI (services/dashboard/static/).
+# --- Start the Flask dashboard service on a DEMO PORT ---
+# Uses port 9888 to avoid conflicting with the production dashboard on 8888.
+DEMO_PORT=9888
+DEMO_DB="/tmp/demo-dashboard-$$.db"
+export DASHBOARD_PORT="$DEMO_PORT"
+export DASHBOARD_DB="$DEMO_DB"
+export DASHBOARD_URL="http://127.0.0.1:$DEMO_PORT"
+
 STARTED_SERVICE=false
 if [[ -f "$SERVER_SH" ]]; then
-    echo "[service] Starting Flask dashboard service..."
-    cd "$PROJECT_ROOT" && bash "$SERVER_SH" start
+    echo "[service] Starting demo dashboard on port $DEMO_PORT..."
+    cd "$PROJECT_ROOT" && bash "$SERVER_SH" start --port "$DEMO_PORT"
     STARTED_SERVICE=true
     pause 1
 else
@@ -340,6 +345,12 @@ dash shutdown
 
 # Cleanup
 rm -f "$ROADMAP"
+rm -f "$DEMO_DB"
+
+# Stop the demo dashboard service
+if [[ "$STARTED_SERVICE" == "true" ]]; then
+    cd "$PROJECT_ROOT" && DASHBOARD_PORT="$DEMO_PORT" bash "$SERVER_SH" stop 2>/dev/null
+fi
 
 echo ""
 echo "=== Demo Complete ==="
@@ -349,6 +360,3 @@ echo "  - Steps 2-4 committed to a single shared branch"
 echo "  - Step 5 created 1 feature PR covering all steps"
 echo "  - PR merged with --merge (preserving individual step commits)"
 echo "  - All issues closed after PR merge"
-echo ""
-echo "The dashboard service is still running — view at http://127.0.0.1:${DASHBOARD_PORT:-8888}"
-echo "Stop it with: bash services/dashboard/server.sh stop"
