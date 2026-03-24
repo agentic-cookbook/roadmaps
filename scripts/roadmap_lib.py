@@ -13,6 +13,7 @@ that handles the key-value and list structures used in roadmap files.
 """
 
 import re
+import shutil
 from datetime import date as _date
 from pathlib import Path
 
@@ -472,11 +473,42 @@ def replace_issue_placeholders(roadmap_file, step_issue_map):
     return count
 
 
-def validate_planning_complete(roadmap_dir):
+def draft_dir_for(project_name, base=None):
+    """Return the Path to the draft directory for a project.
+
+    Returns <base>/drafts/<project_name>. Default base is ~/.roadmaps.
+    Does not create the directory.
+    """
+    if base is None:
+        base = Path.home() / ".roadmaps"
+    return Path(base) / "drafts" / project_name
+
+
+def move_draft_to_repo(draft_dir, repo_dir):
+    """Move a draft roadmap directory into <repo_dir>/Roadmaps/.
+
+    Creates Roadmaps/ under repo_dir if it does not exist.
+    Raises FileExistsError if the target directory already exists.
+    Returns the new Path.
+    """
+    src = Path(draft_dir)
+    roadmaps_dir = Path(repo_dir) / "Roadmaps"
+    roadmaps_dir.mkdir(parents=True, exist_ok=True)
+    dest = roadmaps_dir / src.name
+    if dest.exists():
+        raise FileExistsError(f"Target already exists: {dest}")
+    shutil.move(str(src), str(dest))
+    return dest
+
+
+def validate_planning_complete(roadmap_dir, allow_placeholders=False):
     """Validate that all planning artifacts are present and correct.
 
     Returns (ok, errors) where ok is True if all checks pass,
     and errors is a list of human-readable error strings.
+
+    If allow_placeholders is True, the check for unresolved issue
+    placeholders in Roadmap.md is skipped.
     """
     rd = Path(roadmap_dir)
     errors = []
@@ -496,9 +528,10 @@ def validate_planning_complete(roadmap_dir):
         errors.append("Roadmap.md is empty")
     else:
         # Check for remaining placeholders
-        content = rm.read_text()
-        if "{{REPO}}#{{ISSUE_NUMBER}}" in content:
-            errors.append("Roadmap.md contains unresolved issue placeholders")
+        if not allow_placeholders:
+            content = rm.read_text()
+            if "{{REPO}}#{{ISSUE_NUMBER}}" in content:
+                errors.append("Roadmap.md contains unresolved issue placeholders")
 
     # Check state files
     state_dir = rd / "State"
