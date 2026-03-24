@@ -820,10 +820,19 @@ function buildStepEl(step, index, isPaused, allStepEvents) {
     bodyChildren.push(el('div', { className: 'step-status-debug', textContent: 'status: ' + step.status + (step.started_at ? '  started: ' + formatTime(step.started_at) : '') + (step.completed_at ? '  completed: ' + formatTime(step.completed_at) : '') }));
   }
 
-  // Per-step event log — includes events + current detail as latest entry
+  // Per-step event log — filter by time range (between started_at and completed_at)
+  var stepStart = step.started_at ? new Date(step.started_at).getTime() : null;
+  var stepEnd = step.completed_at ? new Date(step.completed_at).getTime() : null;
   var stepEvents = (allStepEvents || []).filter(function(e) {
+    // Explicit step_number match
     if (e.step_number === stepNum) return true;
+    // "Step N" in message (begin/finish/started/complete events)
     if (e.message && e.message.indexOf('Step ' + stepNum) >= 0) return true;
+    // Time-range match: event occurred while this step was in progress
+    if (stepStart && e.time) {
+      var evtTime = new Date(e.time).getTime();
+      if (evtTime >= stepStart && (stepEnd ? evtTime <= stepEnd : true)) return true;
+    }
     return false;
   });
 

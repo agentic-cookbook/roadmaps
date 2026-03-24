@@ -139,12 +139,12 @@ pause 3
 
 echo "[step 1] Building and testing..."
 dash step-detail 1 "Build passed, 12 tests passing"
-dash log "Step 1: build clean, all tests pass"
+dash log "Build clean, all tests pass"
 pause 2
 
 echo "[step 1] Committing to shared branch..."
 dash step-detail 1 "Committed: feat: complete step 1"
-dash log "Step 1: a3f7b21 Demo Runner  2026-03-24  feat: create project scaffolding"
+dash log "git commit: a3f7b21 Demo Runner  2026-03-24  feat: create project scaffolding"
 pause 2
 
 echo "[step 1] Updating roadmap — step 1 complete"
@@ -168,7 +168,7 @@ pause 3
 
 echo "[step 2] Planning step (M complexity)..."
 dash step-detail 2 "Planning: widget registry, lifecycle hooks, render pipeline"
-dash log "Step 2 plan: widget registry + lifecycle + render pipeline"
+dash log "Planning: widget registry + lifecycle + render pipeline"
 pause 3
 
 echo "[step 2] Implementing widget registry..."
@@ -185,12 +185,12 @@ pause 3
 
 echo "[step 2] Building and testing..."
 dash step-detail 2 "Build passed, 47 tests passing (35 new)"
-dash log "Step 2: build clean, 47 tests pass"
+dash log "Build clean, 47 tests pass"
 pause 2
 
 echo "[step 2] Committing to shared branch..."
 dash step-detail 2 "Committed: feat: complete step 2"
-dash log "Step 2: e8c4d09 Demo Runner  2026-03-24  feat: implement core widget engine"
+dash log "git commit: e8c4d09 Demo Runner  2026-03-24  feat: implement core widget engine"
 pause 2
 
 echo "[step 2] Updating roadmap — step 2 complete"
@@ -233,12 +233,12 @@ pause 3
 
 echo "[step 3] Building and testing..."
 dash step-detail 3 "Build passed, 83 tests passing (36 new integration tests)"
-dash log "Step 3: build clean, 83 tests pass"
+dash log "Build clean, 83 tests pass"
 pause 2
 
 echo "[step 3] Committing to shared branch..."
 dash step-detail 3 "Committed: feat: complete step 3"
-dash log "Step 3: 1b5f6e3 Demo Runner  2026-03-24  feat: add API endpoints and integration tests"
+dash log "git commit: 1b5f6e3 Demo Runner  2026-03-24  feat: add API endpoints and integration tests"
 pause 2
 
 echo "[step 3] Updating roadmap — step 3 complete"
@@ -275,7 +275,7 @@ pause 3
 
 echo "[step 4] Fixing review feedback..."
 dash step-detail 4 "Fixing: addressed code review warning"
-dash log "Step 4: 7d2a4c8 Demo Runner  2026-03-24  fix: address review feedback (iteration 1)"
+dash log "git commit: 7d2a4c8 Demo Runner  2026-03-24  fix: address review feedback (iteration 1)"
 pause 2
 
 echo "[step 4] Review iteration 2: re-reviewing..."

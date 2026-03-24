@@ -364,10 +364,10 @@ Do not implement any other step.
 
 If the step IS marked Complete:
 
-Log the commit to the dashboard with SHA, author, date, and message:
+Log the commit to the dashboard:
 ```bash
 COMMIT_INFO=$(git -C "$WORKTREE_PATH" log -1 --format="%h %an  %ad  %s" --date=short)
-python3 "$DASH_CLI" log "Step <N>: $COMMIT_INFO"
+python3 "$DASH_CLI" log "git commit: $COMMIT_INFO"
 ```
 
 Update dashboard:
