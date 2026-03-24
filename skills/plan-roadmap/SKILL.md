@@ -302,12 +302,13 @@ The user already approved the Roadmap content. Issues are a mechanical translati
 
 ### 6a: Create issues one at a time
 
-For each step in the Roadmap, create a GitHub issue:
+For each step in the Roadmap, create a GitHub issue.
 
-Write the issue body to a temp file, then create the issue using `--body-file` to avoid quoted-newline permission warnings:
+Use the **Write tool** to write the issue body to a temp file inside the roadmap directory, then create the issue using `--body-file` to avoid quoted-newline permission warnings:
 
-```bash
-cat > /tmp/gh-issue-body.md <<'EOF'
+Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md`:
+
+```
 ## Context
 
 Part of the <FeatureName> feature.
@@ -329,17 +330,16 @@ Roadmap: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 ## Dependencies
 
 <Dependencies from the roadmap>
-EOF
 ```
 
 For **Auto** steps:
 ```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file /tmp/gh-issue-body.md
+gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md"
 ```
 
 For **Manual** steps, assign to the current user:
 ```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription> [Manual]" --body-file /tmp/gh-issue-body.md --assignee @me
+gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription> [Manual]" --body-file "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md" --assignee @me
 ```
 
 ### 6b: Verify each issue was created
@@ -361,6 +361,12 @@ For each step in the Roadmap file, replace the `{{REPO}}#{{ISSUE_NUMBER}}` place
 ### 6d: Verify the Roadmap update
 
 Read the Roadmap file back. Confirm that every step has a real issue number (not a placeholder). If any placeholder remains, fix it.
+
+Clean up the temp file:
+
+```bash
+rm "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md"
+```
 
 ### 6e: Create Ready state file
 
