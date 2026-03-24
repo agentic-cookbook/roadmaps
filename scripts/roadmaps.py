@@ -16,7 +16,6 @@ Usage:
     roadmaps --open-dashboards              Open all dashboard URLs in browser
     roadmaps --monitor [SECONDS]            Live monitor roadmaps + dashboards (default: 30s)
     roadmaps --archive-completed             Archive all completed roadmaps
-    roadmaps --cleanup                      Remove dead dashboard dirs and kill orphaned servers
     roadmaps --projects-dir <path>          Override projects directory (default: ~/projects)
 
 Environment:
@@ -27,7 +26,6 @@ import argparse
 import json
 import os
 import re
-import signal
 import shutil
 import subprocess
 import sys
@@ -342,93 +340,6 @@ def cmd_open_dashboards(project=None):
         print("No running dashboards to open.")
 
 
-def cmd_cleanup():
-    """Remove dead dashboard dirs and kill orphaned server processes."""
-    tmpdir = Path(os.environ.get("TMPDIR", "/tmp")).resolve()
-
-    # 1. Find dashboard dirs where the server is dead
-    dead_dirs = []
-    for d in sorted(tmpdir.glob("progress-dashboard-*")):
-        if d.name == "progress-dashboard-active":
-            continue
-        if not d.is_dir():
-            continue
-
-        port_file = d / "port"
-        if not port_file.exists():
-            dead_dirs.append(d)
-            continue
-
-        try:
-            port = int(port_file.read_text().strip())
-        except (ValueError, OSError):
-            dead_dirs.append(d)
-            continue
-
-        url = f"http://127.0.0.1:{port}"
-        try:
-            import urllib.request
-            urllib.request.urlopen(url, timeout=1)
-        except Exception:
-            dead_dirs.append(d)
-
-    # 2. Find orphaned Python processes whose cwd is a deleted dashboard dir
-    orphaned_pids = []
-    try:
-        result = subprocess.run(
-            ["lsof", "-c", "Python", "-a", "-d", "cwd", "-Fn"],
-            capture_output=True, text=True, timeout=5,
-        )
-        lines = result.stdout.strip().split("\n")
-        pid = None
-        for line in lines:
-            if line.startswith("p"):
-                pid = int(line[1:])
-            elif line.startswith("n") and pid:
-                cwd_path = Path(line[1:])
-                if "progress-dashboard-" in str(cwd_path) and not cwd_path.exists():
-                    orphaned_pids.append((pid, str(cwd_path)))
-                pid = None
-    except Exception:
-        pass
-
-    if not dead_dirs and not orphaned_pids:
-        print("Nothing to clean up.")
-        return
-
-    # 3. Report and clean
-    if dead_dirs:
-        print(f"\033[1mRemoving {len(dead_dirs)} dead dashboard dir(s):\033[0m")
-        for d in dead_dirs:
-            title = d.name.replace("progress-dashboard-", "")
-            print(f"  {title:<30} {d}")
-            shutil.rmtree(d)
-        print()
-
-    if orphaned_pids:
-        print(f"\033[1mKilling {len(orphaned_pids)} orphaned server process(es):\033[0m")
-        for pid, cwd_path in orphaned_pids:
-            dirname = Path(cwd_path).name.replace("progress-dashboard-", "")
-            print(f"  PID {pid:<8} {dirname:<30} (dir deleted)")
-            try:
-                os.kill(pid, signal.SIGTERM)
-            except OSError as e:
-                print(f"    \033[31mfailed: {e}\033[0m")
-        print()
-
-    # 4. Clean up the active symlink/file if it points to a dead dir
-    active = tmpdir / "progress-dashboard-active"
-    if active.exists():
-        try:
-            content = active.read_text().strip()
-            if content and not Path(content).exists():
-                active.unlink()
-                print(f"Removed stale active pointer: {content}")
-        except OSError:
-            pass
-
-    print("Cleanup complete.")
-
 
 def cmd_archive_completed(projects_dir, project=None):
     """Archive all completed roadmaps by transitioning them to Archived state."""
@@ -539,7 +450,6 @@ def main():
     parser.add_argument("--open-dashboards", action="store_true", help="Open all dashboard URLs in browser")
     parser.add_argument("--monitor", nargs="?", const=30, type=int, metavar="SECONDS", help="Live monitor (default: 30s interval)")
     parser.add_argument("--archive-completed", action="store_true", help="Archive all completed roadmaps")
-    parser.add_argument("--cleanup", action="store_true", help="Remove dead dashboard dirs and kill orphaned servers")
     parser.add_argument("--projects-dir", default=None, help="Projects directory (default: ~/projects)")
     args = parser.parse_args()
 
@@ -550,7 +460,7 @@ def main():
         cmd_archive_completed(projects_dir, project=project)
         return
 
-    if args.list or not (args.list_dashboards or args.open_dashboards or args.monitor is not None or args.cleanup):
+    if args.list or not (args.list_dashboards or args.open_dashboards or args.monitor is not None):
         # Determine which filters are active
         if args.all:
             show_r, show_a, show_c, show_ar = True, True, True, True
@@ -573,8 +483,6 @@ def main():
         cmd_open_dashboards(project=project)
     elif args.monitor is not None:
         cmd_monitor(projects_dir, args.monitor, project=project)
-    elif args.cleanup:
-        cmd_cleanup()
 
 
 if __name__ == "__main__":
