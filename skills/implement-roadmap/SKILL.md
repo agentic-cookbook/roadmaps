@@ -51,21 +51,10 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DASH_URL/" 2>/dev/null ||
 
 ## Step 1: Resolve Roadmap
 
-Roadmaps may be in `~/.roadmaps/<project>/` (created by plan-roadmap) or in `Roadmaps/` in the repo (legacy). Check both locations.
+The coordinator scans both `~/.roadmaps/<project>/` (created by plan-roadmap) and the repo's `Roadmaps/` directory. It filters by the `project` frontmatter field to only show roadmaps belonging to the current repo.
 
-First determine the project name:
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
-ROADMAPS_WORK_DIR="$HOME/.roadmaps/$PROJECT"
-```
-
-If `$ROADMAPS_WORK_DIR` exists, run the coordinator from there first. If it finds a roadmap, use it. Otherwise fall back to the repo's `Roadmaps/`.
-
-Note whether the resolved roadmap is under `~/.roadmaps/` or `Roadmaps/`. Store as `ROADMAP_SOURCE=workdir` or `ROADMAP_SOURCE=repo`. The PR step needs this.
-
-Run the coordinator to find the roadmap:
-
-```bash
 python3 "${CLAUDE_SKILL_DIR}/references/coordinator" resolve $ARGUMENTS
 ```
 
@@ -74,7 +63,7 @@ This outputs JSON. Parse it:
 - If it has `"choose"` — present the list to the user and ask them to pick. Then use the chosen path.
 - If it has `"error"` — print the error and **STOP**.
 
-**Verify project field**: After resolving, read the Roadmap.md frontmatter and check the `project` field. If it exists and does not match `$PROJECT`, **STOP** and tell the user: "This roadmap belongs to project `<project field>` but you are in `<$PROJECT>`. Run this from the correct repo." If the field is missing, continue (older roadmaps may not have it).
+Note whether the resolved roadmap path is under `~/.roadmaps/` or `Roadmaps/`. Store as `ROADMAP_SOURCE=workdir` or `ROADMAP_SOURCE=repo`. The PR step needs this.
 
 ## Step 1b: Mark Roadmap as Implementing
 

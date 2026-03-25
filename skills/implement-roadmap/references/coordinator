@@ -122,16 +122,51 @@ def cmd_resolve(args):
     """Find and select a roadmap file."""
     feature_name = args[0] if args else None
 
-    # Scan for roadmap directories
-    roadmap_dirs = lib.find_roadmap_dirs(".")
+    # Determine current project name
+    try:
+        import subprocess
+        project = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        project = Path(project).name
+    except Exception:
+        project = None
+
+    # Scan both locations: ~/.roadmaps/<project>/ and repo's Roadmaps/
+    roadmap_dirs = []
+
+    # 1. Working directory (~/.roadmaps/<project>/)
+    if project:
+        work_dir = Path.home() / ".roadmaps" / project
+        if work_dir.exists():
+            for d in sorted(work_dir.iterdir()):
+                if d.is_dir() and (d / "Roadmap.md").exists():
+                    roadmap_dirs.append(d)
+
+    # 2. Repo's Roadmaps/ directory
+    roadmap_dirs.extend(lib.find_roadmap_dirs("."))
+
     if not roadmap_dirs:
         # Fallback to old layout
         old = lib.find_roadmaps_old_layout(".")
         if old:
-            roadmap_dirs = []
             for entry in old:
                 if entry.get("roadmap_path") and entry["location"] == "active":
                     roadmap_dirs.append(entry["roadmap_path"].parent)
+
+    # Filter out roadmaps whose project field doesn't match
+    def matches_project(rd):
+        rm_file = lib.roadmap_path(rd)
+        if not rm_file.exists():
+            return True  # can't check, allow
+        meta, _ = lib.parse_frontmatter(rm_file)
+        rm_project = meta.get("project")
+        if rm_project and project and rm_project != project:
+            return False
+        return True
+
+    roadmap_dirs = [rd for rd in roadmap_dirs if matches_project(rd)]
 
     if feature_name:
         # Filter by name match
