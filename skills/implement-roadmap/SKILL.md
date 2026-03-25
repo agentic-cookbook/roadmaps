@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "19"
+version: "20"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v19
+   > implement-roadmap v20
 
 2. Print the worker agent version by running:
    ```bash
@@ -47,6 +47,18 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DASH_URL/" 2>/dev/null ||
   Do NOT continue with the rest of the skill.
 
 ## Step 1: Resolve Roadmap
+
+Roadmaps may be in `~/.roadmaps/<project>/` (created by plan-roadmap) or in `Roadmaps/` in the repo (legacy). Check both locations.
+
+First determine the project name:
+```bash
+PROJECT=$(basename $(git rev-parse --show-toplevel))
+ROADMAPS_WORK_DIR="$HOME/.roadmaps/$PROJECT"
+```
+
+If `$ROADMAPS_WORK_DIR` exists, run the coordinator from there first. If it finds a roadmap, use it. Otherwise fall back to the repo's `Roadmaps/`.
+
+Note whether the resolved roadmap is under `~/.roadmaps/` or `Roadmaps/`. Store as `ROADMAP_SOURCE=workdir` or `ROADMAP_SOURCE=repo`. The PR step needs this.
 
 Run the coordinator to find the roadmap:
 
@@ -94,36 +106,6 @@ Print: `Working on branch: $FEATURE_BRANCH`
 
 All steps will commit to this single branch. One PR will be created at the end.
 
-## Step 2c: Add PR Step to Dashboard
-
-Get the total step count from the coordinator's resolve output, then add the PR step as step N+1:
-
-```bash
-PR_STEP=$((total + 1))
-python3 "$DASH_CLI" log "Adding PR step as step $PR_STEP"
-```
-
-Use the dashboard client to add the PR step. Get the current steps from the API, append the PR step, and set them all:
-
-```python
-python3 -c "
-import os, sys, json, urllib.request
-base = os.environ.get('DASHBOARD_URL', 'http://localhost:8888')
-rid = '<roadmap_id>'
-# Get current steps
-resp = urllib.request.urlopen(f'{base}/api/v1/roadmaps/{rid}/steps')
-steps = json.loads(resp.read())
-# Add PR step
-steps.append({'number': $PR_STEP, 'description': 'Create & Review Feature PR', 'status': 'not_started', 'step_type': 'Auto', 'complexity': 'S'})
-# Set all steps
-data = json.dumps(steps).encode()
-req = urllib.request.Request(f'{base}/api/v1/roadmaps/{rid}/steps', data=data, headers={'Content-Type': 'application/json'}, method='POST')
-urllib.request.urlopen(req)
-"
-```
-
-If the above is too complex, simply add the step via the `dash` CLI's `set-steps` command — but note this replaces ALL steps, so only use it if you can reconstruct the full list.
-
 ## Step 3: Implementation Loop
 
 **IMPORTANT**: All roadmap paths from this point forward must reference the **worktree copy**. Derive the worktree roadmap path:
@@ -148,190 +130,61 @@ This outputs JSON. Parse it:
 
 - If `"action": "implement"` — continue with 3b.
 - If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
-- If `"action": "done"` — all implementation steps are complete. **Exit the loop and proceed to Step 4.**
+- If `"action": "done"` — all implementation steps are complete. Exit the loop and do the following:
 
-## Step 4: Create & Review Feature PR
+  1. **Write State and History files:**
 
-This is an explicit final step visible in the dashboard. The `done` response includes `"total"` — use `total + 1` as the PR step number.
+     ```bash
+     ROADMAP_DIR="$(dirname "$WT_ROADMAP_PATH")"
+     TODAY="$(date +%Y-%m-%d)"
+     NOW="$(date +%Y-%m-%d-%H%M%S)"
+     AUTHOR="$(git config user.name) <$(git config user.email)>"
 
-```bash
-PR_STEP=$((total + 1))
-```
+     # Write Complete state file
+     cat > "$ROADMAP_DIR/State/$TODAY-Complete.md" << STATEEOF
+     ---
+     id: $(python3 -c "import uuid; print(uuid.uuid4())")
+     created: $TODAY
+     author: $AUTHOR
+     definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
+     previous-state: Implementing
+     ---
 
-**Register and start the PR step in the dashboard:**
-```bash
-python3 -c "
-import os, sys
-sys.path.insert(0, '$(echo $PROJECT_ROOT)/scripts')
-from dashboard_client import DashboardClient
-c = DashboardClient(base_url=os.environ.get('DASHBOARD_URL', 'http://localhost:8888'))
-rid = open(os.path.expanduser('~/.claude/dashboard/.active_roadmap')).read().strip() if not os.environ.get('DASH_FEATURE') else None
-# Use the service's set_steps to append — get existing steps, add PR step
-import urllib.request, json
-url = c.base_url + '/api/v1/roadmaps/' + (os.environ.get('DASH_ROADMAP_ID') or rid) + '/steps'
-"
-python3 "$DASH_CLI" begin-step "$PR_STEP"
-```
+     # State: Complete
 
-If the above is too complex, simply call:
-```bash
-python3 "$DASH_CLI" log "Starting: Create & Review Feature PR"
-python3 "$DASH_CLI" begin-step "$PR_STEP"
-```
+     All auto steps finished.
+     STATEEOF
 
-If `begin-step` fails because the step doesn't exist, that's OK — the event log still shows progress. Continue regardless.
+     # Write History entry
+     cat > "$ROADMAP_DIR/History/$NOW-ImplementationComplete.md" << HISTEOF
+     ---
+     id: $(python3 -c "import uuid; print(uuid.uuid4())")
+     created: $TODAY
+     author: $AUTHOR
+     definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
+     ---
 
-### 4a: Write State and History files
+     # Event: ImplementationComplete
 
-Derive the roadmap directory from the worktree roadmap path:
+     All auto steps finished for <feature_name>.
+     HISTEOF
+     ```
 
-```bash
-ROADMAP_DIR="$(dirname "$WT_ROADMAP_PATH")"
-TODAY="$(date +%Y-%m-%d)"
-NOW="$(date +%Y-%m-%d-%H%M%S)"
-AUTHOR="$(git config user.name) <$(git config user.email)>"
+  2. **Commit to feature branch (do NOT push — the PR step in the roadmap handles that):**
 
-# Write Complete state file
-cat > "$ROADMAP_DIR/State/$TODAY-Complete.md" << STATEEOF
----
-id: $(python3 -c "import uuid; print(uuid.uuid4())")
-created: $TODAY
-author: $AUTHOR
-definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
-previous-state: Implementing
----
+     ```bash
+     git -C "$WORKTREE_PATH" add -A Roadmaps/
+     git -C "$WORKTREE_PATH" commit -m "docs: complete feature <feature_name> — all steps done"
+     ```
 
-# State: Complete
+  3. **Dashboard: complete and shutdown:**
 
-All auto steps finished.
-STATEEOF
+     ```bash
+     python3 "$DASH_CLI" complete
+     python3 "$DASH_CLI" shutdown
+     ```
 
-# Write History entry
-cat > "$ROADMAP_DIR/History/$NOW-ImplementationComplete.md" << HISTEOF
----
-id: $(python3 -c "import uuid; print(uuid.uuid4())")
-created: $TODAY
-author: $AUTHOR
-definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
----
-
-# Event: ImplementationComplete
-
-All auto steps finished for <feature_name>.
-HISTEOF
-```
-
-### 4b: Commit and push
-
-```bash
-git -C "$WORKTREE_PATH" add -A Roadmaps/
-git -C "$WORKTREE_PATH" commit -m "docs: complete feature <feature_name> — all steps done"
-git -C "$WORKTREE_PATH" push -u origin "$FEATURE_BRANCH"
-```
-
-### 4c: Create the PR
-
-Build the PR body file. **You must substitute all `<...>` placeholders with actual values before writing the file** — do not pass placeholder text through literally. The `Closes #N` lines are critical for auto-closing issues on merge.
-
-```bash
-cat > /tmp/gh-pr-body.md <<'PRBODYEOF'
-## Summary
-
-Implements the <feature_name> feature.
-
-## Steps
-
-- [x] Step 1: <actual step 1 description>
-- [x] Step 2: <actual step 2 description>
-...etc for each completed step...
-
-## Linked Issues
-
-Closes #<actual_issue_number_for_step_1>
-Closes #<actual_issue_number_for_step_2>
-...etc for each step with a GitHub issue...
-
-## Testing
-
-All steps verified against the feature definition's verification strategy.
-
-## Checklist
-
-- [ ] Build passes
-- [ ] Tests pass
-- [ ] Follows project conventions
-PRBODYEOF
-```
-
-```bash
-gh pr create --head "$FEATURE_BRANCH" --title "feat: <feature_name>" --body-file /tmp/gh-pr-body.md
-```
-
-### 4d: Review loop (max 3 iterations)
-
-Run reviews on the PR. **Maximum 3 iterations** — if issues persist after 3 rounds, stop and report.
-
-For each iteration:
-
-1. **Run reviews:**
-   - Always: Code Review (use `/review-pr`) + Security Review
-   - Conditionally: UI Review (if HTML/CSS/JS changed), API Review (if endpoints changed)
-
-2. **If reviews pass with no issues** — break out of the loop, proceed to 4e.
-
-3. **If reviews find issues** — fix them, commit to the feature branch, push:
-   ```bash
-   git -C "$WORKTREE_PATH" add -A
-   git -C "$WORKTREE_PATH" commit -m "fix: address review feedback (iteration N)"
-   git -C "$WORKTREE_PATH" push
-   ```
-   Then re-run reviews (next iteration).
-
-4. **If 3 iterations exhausted and issues remain:**
-   ```bash
-   python3 "$DASH_CLI" step-error "$PR_STEP" "Review issues unresolved after 3 iterations"
-   python3 "$DASH_CLI" log "PR review failed after 3 iterations — manual intervention needed"
-   python3 "$DASH_CLI" shutdown
-   ```
-   Print:
-   ```
-   PR review failed after 3 iterations.
-   PR is open at: <pr_url>
-   Worktree preserved at: $WORKTREE_PATH
-   Branch: $FEATURE_BRANCH
-   ```
-   Then **STOP**.
-
-### 4e: Merge the PR
-
-```bash
-gh pr merge --merge
-```
-
-Use `--merge` (NOT `--squash`) to preserve individual step commits.
-
-### 4f: Close issues and clean up
-
-Close any issues not auto-closed by the `Closes #N` lines:
-```bash
-gh issue close <number> --comment "Completed in PR #<pr_number>"
-```
-
-Clean up the worktree:
-```bash
-git worktree remove "$WORKTREE_PATH"
-```
-
-### 4g: Dashboard complete
-
-```bash
-python3 "$DASH_CLI" finish-step "$PR_STEP"
-python3 "$DASH_CLI" complete
-python3 "$DASH_CLI" shutdown
-```
-
-Print: `All steps complete for <feature_name>.`
-Then **STOP**.
+  4. Print: `All steps complete for <feature_name>.` Then **STOP**.
 
 ### 3b: Print Step Info
 

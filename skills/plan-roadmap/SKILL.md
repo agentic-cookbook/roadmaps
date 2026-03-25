@@ -1,7 +1,7 @@
 ---
 name: plan-roadmap
-version: "5"
-description: "Plan a new feature — discuss, then create Feature Definition, Roadmap, and GitHub issues. Use when starting a new feature or component."
+version: "6"
+description: "Plan a new feature — discuss, then create Feature Definition and Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v5
+> plan-roadmap v6
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -22,11 +22,12 @@ Two-phase collaborative planning workflow for new features.
 **Phase 1 — Discussion**: Conversational exploration of the feature idea.
 **Phase 2 — Planning**: Structured creation of planning artifacts.
 
-Produces exactly **three deliverables** (all in Phase 2):
+Produces exactly **two deliverables** (all in Phase 2):
 
-1. A **Feature Definition** file (written to disk, committed)
-2. A **Feature Roadmap** file (written to disk, committed)
-3. **GitHub issues** (one per roadmap step, confirmed via `gh issue view`)
+1. A **Feature Definition** file (drafted in `~/.roadmaps/`, then moved to repo)
+2. A **Feature Roadmap** file (drafted in `~/.roadmaps/`, then moved to repo)
+
+GitHub issues are **not** created during planning — the Roadmap uses `{{REPO}}#{{ISSUE_NUMBER}}` placeholders. Issues are created by `/implement-roadmap`.
 
 When planning is complete, tell the user to run `/implement-roadmap` to begin implementation.
 
@@ -34,9 +35,9 @@ When planning is complete, tell the user to run `/implement-roadmap` to begin im
 
 ## ABSOLUTE RULE: NO IMPLEMENTATION CODE
 
-**This skill produces planning documents and GitHub issues. Nothing else.**
+**This skill produces planning documents. Nothing else.**
 
-Your only permitted outputs are: Markdown files inside `Roadmaps/`, GitHub issues via `gh issue create`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside `Roadmaps/`, STOP. You are off course.
+Your only permitted outputs are: Markdown files inside `~/.roadmaps/<project>/` and `Roadmaps/`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside these directories, STOP. You are off course.
 
 Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for the complete list of hard-stop guardrails.
 
@@ -70,19 +71,23 @@ If this fails, **STOP**. Tell the user to run `gh auth login` first.
 
 ### 0c: Create directory structure
 
-The per-directory roadmap layout uses `Roadmaps/YYYY-MM-DD-<FeatureName>/` with subdirectories for state and history. The directory cannot be created until the feature name is known (Step 3), so this step only ensures the top-level `Roadmaps/` directory exists.
+Drafts are written to `~/.roadmaps/<project>/` before being moved to the repo. The feature subdirectory is created in Step 5e once the feature name is known. This step ensures the top-level drafts directory and the repo's `Roadmaps/` directory exist.
 
 ```bash
+PROJECT=$(basename $(git rev-parse --show-toplevel))
+mkdir -p "$HOME/.roadmaps/$PROJECT"
 mkdir -p Roadmaps
 ```
 
-### 0d: Verify directory is writable
+### 0d: Verify directories are writable
 
 ```bash
+PROJECT=$(basename $(git rev-parse --show-toplevel))
+touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify"
 touch Roadmaps/.verify && rm Roadmaps/.verify
 ```
 
-If this fails, **STOP**. Tell the user the directory is not writable.
+If either fails, **STOP**. Tell the user the directory is not writable.
 
 ### 0e: Ensure `Roadmaps/` is tracked by git
 
@@ -151,11 +156,11 @@ Here's what I heard:
 Proposed feature name: <FeatureName>
 
 If this looks right, I'll move to Planning and create:
-  - Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md
-  - Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
-  - GitHub issues (one per implementation step)
+  - Definition.md (feature definition)
+  - Roadmap.md (implementation steps with issue placeholders)
 
-No implementation code will be written. Only planning documents.
+No implementation code will be written. No GitHub issues will be created.
+Issues are created later by /implement-roadmap.
 
 [x] yes — move to Planning
 [ ] revise name
@@ -174,7 +179,7 @@ No implementation code will be written. Only planning documents.
 
 # PHASE 2: PLANNING
 
-> **Goal**: Transform the discussion into structured planning artifacts. Only Markdown files in `Roadmaps/` and GitHub issues are created.
+> **Goal**: Transform the discussion into structured planning artifacts. Files are drafted in `~/.roadmaps/<project>/` then moved to `Roadmaps/` and committed.
 
 ---
 
@@ -212,6 +217,46 @@ For each step, fill in: Description, Type (Auto or Manual), Complexity estimate 
 - **Auto** — Claude can implement this step autonomously (code changes, tests, PRs).
 - **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, UI/UX decisions that need human judgment, app store submissions). The GitHub issue for manual steps will be assigned to the user.
 
+**Required first and last steps:**
+
+Every Roadmap must include these two bookend steps. Implementation steps go between them (numbered 2 through N-1).
+
+**Step 1 (always first):**
+
+```markdown
+### Step 1: Create GitHub Issues
+
+- **GitHub Issue**: (none — this step creates the issues)
+- **Type**: Auto
+- **Status**: Not Started
+- **Complexity**: S
+- **Dependencies**: None
+- **Acceptance Criteria**:
+  - [ ] GitHub issues created for all implementation steps
+  - [ ] Issue numbers populated in this roadmap
+```
+
+**Step N (always last):**
+
+```markdown
+### Step N: Create & Review Feature PR
+
+- **GitHub Issue**: (none — this step creates the PR)
+- **Type**: Auto
+- **Status**: Not Started
+- **Complexity**: M
+- **Dependencies**: Step N-1
+- **Acceptance Criteria**:
+  - [ ] Feature branch pushed
+  - [ ] PR created with Closes lines for all issues
+  - [ ] Code review passed
+  - [ ] PR merged with --merge
+  - [ ] All issues closed
+  - [ ] Worktree cleaned up
+```
+
+**Implementation steps** (Steps 2 through N-1) use `{{REPO}}#{{ISSUE_NUMBER}}` as the GitHub Issue placeholder. No real issues are created during planning.
+
 **Do NOT include `Implementing`, `Phase`, or `Status` fields in the Roadmap.** Lifecycle state is tracked solely via files in the `State/` directory.
 
 ### 5c: Present both drafts and request approval
@@ -236,29 +281,31 @@ Sections marked _NEEDS INPUT_ need your input.
 - If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until approved.
 - If the user selects **approved**: proceed to write both files.
 
-### 5e: Create the roadmap directory and write both files
+### 5e: Create the draft directory and write both files
 
-Use today's date (YYYY-MM-DD) for the directory prefix:
+Use today's date (YYYY-MM-DD) for the directory prefix. Write to the **draft directory**, not the repo:
 
 ```bash
-mkdir -p "Roadmaps/YYYY-MM-DD-<FeatureName>/State" "Roadmaps/YYYY-MM-DD-<FeatureName>/History"
+PROJECT=$(basename $(git rev-parse --show-toplevel))
+DRAFT_DIR="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>"
+mkdir -p "$DRAFT_DIR/State" "$DRAFT_DIR/History"
 ```
 
 Write the Feature Definition to:
 ```
-Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md
+~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md
 ```
 
 Write the Feature Roadmap to:
 ```
-Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
+~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
 ```
 
 ### 5f: Create initial state files
 
 After writing both documents, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
 
-Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
+Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
 
 ```
 ---
@@ -267,7 +314,7 @@ date: YYYY-MM-DD
 ---
 ```
 
-Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md`:
+Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Planning.md`:
 
 ```
 ---
@@ -280,104 +327,20 @@ date: YYYY-MM-DD
 
 Use the **Read tool** to read the first few lines of each file. If any file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
 
-Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
-Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 
 Use the **Glob tool** to verify state files exist:
 
-Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
+Glob: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/*.md`
 
 Expected: two files (Created.md and Planning.md).
 
-### 5h: Commit and push all files
+### 5h: Create Ready state file and validate draft
 
-```bash
-git add "Roadmaps/YYYY-MM-DD-<FeatureName>/"
-git commit -m "docs: add Feature Definition and Roadmap for <FeatureName>"
-git push
-```
+Create the Ready state file in the draft directory. Use the **Write tool**:
 
-Verify the commit and push succeeded. If either failed, tell the user.
-
----
-
-## Step 6: Create GitHub Issues
-
-The user already approved the Roadmap content. Issues are a mechanical translation — create them without prompting.
-
-### 6a: Create issues one at a time
-
-For each step in the Roadmap, create a GitHub issue.
-
-Use the **Write tool** to write the issue body to a temp file inside the roadmap directory, then create the issue using `--body-file` to avoid quoted-newline permission warnings:
-
-Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md`:
-
-```
-## Context
-
-Part of the <FeatureName> feature.
-Feature Definition: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
-Roadmap: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
-
-## Step Details
-
-<Step description from the roadmap>
-
-## Acceptance Criteria
-
-<Acceptance criteria from the roadmap for this step>
-
-## Complexity
-
-<S/M/L>
-
-## Dependencies
-
-<Dependencies from the roadmap>
-```
-
-For **Auto** steps:
-```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription>" --body-file "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md"
-```
-
-For **Manual** steps, assign to the current user:
-```bash
-gh issue create --title "Feature: [<FeatureName>] Step <N>: <StepDescription> [Manual]" --body-file "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md" --assignee @me
-```
-
-### 6b: Verify each issue was created
-
-After each `gh issue create`, capture the issue number from stdout. Then verify:
-
-```bash
-gh issue view <number> --json number,title,state
-```
-
-If verification fails for any issue, **STOP. Tell the user which issue failed and retry.**
-
-Collect all issue numbers in a list.
-
-### 6c: Update the Roadmap with issue numbers
-
-For each step in the Roadmap file, replace the `{{REPO}}#{{ISSUE_NUMBER}}` placeholder with the actual issue reference (e.g., `#42`).
-
-### 6d: Verify the Roadmap update
-
-Read the Roadmap file back. Confirm that every step has a real issue number (not a placeholder). If any placeholder remains, fix it.
-
-Clean up the temp file:
-
-```bash
-rm "Roadmaps/YYYY-MM-DD-<FeatureName>/.gh-issue-body.md"
-```
-
-### 6e: Create Ready state file
-
-All planning artifacts are now complete. Use the **Write tool** to create a `Ready` state file signaling this feature is available for `/implement-roadmap`:
-
-Write to `Roadmaps/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md`:
+Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Ready.md`:
 
 ```
 ---
@@ -386,19 +349,47 @@ date: YYYY-MM-DD
 ---
 ```
 
-### 6f: Commit and push the updated Roadmap and state
+Validate the draft: verify all four files exist (Definition.md, Roadmap.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
+
+Print: **"Draft complete. Moving to repo..."**
+
+### 5i: Move draft to repo, commit, and push
 
 ```bash
+PROJECT=$(basename $(git rev-parse --show-toplevel))
+REPO_ROOT=$(git rev-parse --show-toplevel)
+DRAFT_DIR="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>"
+
+# Save current state
+CURRENT_BRANCH=$(git branch --show-current)
+git stash --include-untracked -q 2>/dev/null || true
+
+# Checkout main and pull
+git checkout main
+git pull --ff-only
+
+# Move draft to repo
+mv "$DRAFT_DIR" "$REPO_ROOT/Roadmaps/"
+
+# Commit and push
 git add "Roadmaps/YYYY-MM-DD-<FeatureName>/"
-git commit -m "docs: add GitHub issue numbers to <FeatureName> Roadmap, mark Ready"
+git commit -m "docs: add roadmap for <FeatureName>"
 git push
+
+# Restore previous state
+git checkout "$CURRENT_BRANCH" 2>/dev/null || true
+git stash pop -q 2>/dev/null || true
 ```
+
+Verify the commit and push succeeded. If either failed, tell the user.
+
+Print: **"Roadmap committed to main and pushed."**
 
 ---
 
-## Step 7: Final Verification and Summary
+## Step 6: Final Verification and Summary
 
-### 7a: Run final verification
+### 6a: Run final verification
 
 Execute all of the following checks. **Every check must pass.**
 
@@ -418,21 +409,13 @@ Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*-Ready.md`
 Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
 — PASS if at least three files (Created, Planning, Ready).
 
-Verify GitHub issues:
-
-```bash
-gh issue list --search "Feature: [<FeatureName>]" --json number,title,state
-```
-
-— PASS if issue count matches roadmap step count.
-
 If **any check fails**, **STOP. Tell the user which check failed. Fix the issue before continuing.**
 
-### 7b: Exit plan mode
+### 6b: Exit plan mode
 
 Exit plan mode.
 
-### 7c: Present final summary and offer implementation
+### 6c: Present final summary and offer implementation
 
 Print the complete summary, then ask:
 
@@ -445,17 +428,16 @@ Feature Definition:
 
 Roadmap:
   File: Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
-  Steps: <N> total
+  Steps: <N> total (<N-2> implementation + issue creation + PR)
   State: Ready
   Estimated scope: <S/M/L breakdown>
   Dependencies: <summary>
 
-GitHub Issues:
-  - #<N1>: Step 1 — <Description>
-  - #<N2>: Step 2 — <Description>
-  - ... (all issues)
+Note: GitHub issues have NOT been created yet.
+      Issue placeholders ({{REPO}}#{{ISSUE_NUMBER}}) will be resolved
+      by /implement-roadmap Step 1.
 
-All artifacts verified. All commits saved.
+All artifacts verified. Roadmap committed to main.
 
 [x] yes — run /implement-roadmap
 [ ] no — I'll run it later
@@ -463,7 +445,7 @@ All artifacts verified. All commits saved.
 
 **STOP. Wait for the user's response.**
 
-### 7d: Launch implementation (if requested)
+### 6d: Launch implementation (if requested)
 
 If the user says **yes**, invoke the `/implement-roadmap` skill using the Skill tool.
 

@@ -2,11 +2,12 @@
 # Simulates a complete implement-roadmap run against the progress dashboard.
 # Usage: ./demo.sh
 #
-# Opens the dashboard in a browser and walks through a 3-step feature
+# Opens the dashboard in a browser and walks through a 5-step feature
 # implementation with realistic delays between state changes.
 #
-# Demonstrates the atomic-batch-pr workflow: all steps commit to a single
-# shared branch, one PR is created at the end covering all steps.
+# Demonstrates the atomic-batch-pr workflow: step 1 creates GitHub issues,
+# steps 2-4 implement features on a shared branch, step 5 creates and
+# merges the feature PR.
 
 set -e
 
@@ -29,13 +30,18 @@ pause() {
     sleep "$1"
 }
 
-# --- Start the Flask dashboard service ---
-# The dash CLI auto-detects the service and uses it for all commands.
-# This ensures the demo uses the real dashboard UI (services/dashboard/static/).
+# --- Start the Flask dashboard service on a DEMO PORT ---
+# Uses port 9888 to avoid conflicting with the production dashboard on 8888.
+DEMO_PORT=9888
+DEMO_DB="/tmp/demo-dashboard-$$.db"
+export DASHBOARD_PORT="$DEMO_PORT"
+export DASHBOARD_DB="$DEMO_DB"
+export DASHBOARD_URL="http://127.0.0.1:$DEMO_PORT"
+
 STARTED_SERVICE=false
 if [[ -f "$SERVER_SH" ]]; then
-    echo "[service] Starting Flask dashboard service..."
-    cd "$PROJECT_ROOT" && bash "$SERVER_SH" start
+    echo "[service] Starting demo dashboard on port $DEMO_PORT..."
+    cd "$PROJECT_ROOT" && bash "$SERVER_SH" start --port "$DEMO_PORT"
     STARTED_SERVICE=true
     pause 1
 else
@@ -64,7 +70,15 @@ change-history:
 
 ## Implementation Steps
 
-### Step 1: Project scaffolding and configuration
+### Step 1: Create GitHub Issues
+
+- **Type**: Auto
+- **Status**: Not Started
+- **Complexity**: S
+
+---
+
+### Step 2: Project scaffolding and configuration
 
 - **GitHub Issue**: #50
 - **Type**: Auto
@@ -73,7 +87,7 @@ change-history:
 
 ---
 
-### Step 2: Core widget engine implementation
+### Step 3: Core widget engine implementation
 
 - **GitHub Issue**: #51
 - **Type**: Auto
@@ -82,7 +96,7 @@ change-history:
 
 ---
 
-### Step 3: API endpoints and integration tests
+### Step 4: API endpoints and integration tests
 
 - **GitHub Issue**: #52
 - **Type**: Auto
@@ -91,11 +105,12 @@ change-history:
 
 ---
 
-### Step 4: Create & Review Feature PR
+### Step 5: Create & Review Feature PR
 
 - **Type**: Auto
 - **Status**: Not Started
-- **Complexity**: S
+- **Complexity**: M
+- **Dependencies**: Step 4
 ROADMAP_EOF
 
 echo "=== Progress Dashboard Demo (Atomic Batch PR) ==="
@@ -128,27 +143,28 @@ echo "[control] Result: $CONTROL"
 echo ""
 pause 1
 
-# --- STEP 1 ---
-echo "[step 1] Starting: Project scaffolding and configuration"
+# --- STEP 1: CREATE GITHUB ISSUES ---
+echo "[step 1] Starting: Create GitHub Issues"
 dash begin-step 1
-pause 3
-
-echo "[step 1] Implementing..."
-dash step-detail 1 "Writing project config and directory structure"
-pause 3
-
-echo "[step 1] Building and testing..."
-dash step-detail 1 "Build passed, 12 tests passing"
-dash log "Build clean, all tests pass"
 pause 2
 
-echo "[step 1] Committing to shared branch..."
-dash step-detail 1 "Committed: feat: complete step 1"
-dash log "git commit: a3f7b21 Demo Runner  2026-03-24  feat: create project scaffolding"
+echo "[step 1] Creating issues for each step..."
+dash step-detail 1 "Creating GitHub issue for step 2: Project scaffolding and configuration"
+dash log "Created issue #50: Project scaffolding and configuration"
 pause 2
+
+dash step-detail 1 "Creating GitHub issue for step 3: Core widget engine implementation"
+dash log "Created issue #51: Core widget engine implementation"
+pause 2
+
+dash step-detail 1 "Creating GitHub issue for step 4: API endpoints and integration tests"
+dash log "Created issue #52: API endpoints and integration tests"
+pause 2
+
+dash step-detail 1 "Issue placeholders filled in: #50, #51, #52"
+pause 1
 
 echo "[step 1] Updating roadmap — step 1 complete"
-
 dash finish-step 1
 echo "[step 1] Done"
 echo ""
@@ -161,141 +177,161 @@ echo "[control] Result: $CONTROL"
 echo ""
 pause 1
 
-# --- STEP 2 ---
-echo "[step 2] Starting: Core widget engine implementation"
+# --- STEP 2: PROJECT SCAFFOLDING ---
+echo "[step 2] Starting: Project scaffolding and configuration"
 dash begin-step 2
 pause 3
 
-echo "[step 2] Planning step (M complexity)..."
-dash step-detail 2 "Planning: widget registry, lifecycle hooks, render pipeline"
-dash log "Planning: widget registry + lifecycle + render pipeline"
-pause 3
-
-echo "[step 2] Implementing widget registry..."
-dash step-detail 2 "Implementing widget registry and type system"
-pause 4
-
-echo "[step 2] Implementing lifecycle hooks..."
-dash step-detail 2 "Implementing lifecycle hooks: onMount, onUpdate, onDestroy"
-pause 3
-
-echo "[step 2] Implementing render pipeline..."
-dash step-detail 2 "Implementing render pipeline with diffing"
+echo "[step 2] Implementing..."
+dash step-detail 2 "Writing project config and directory structure"
 pause 3
 
 echo "[step 2] Building and testing..."
-dash step-detail 2 "Build passed, 47 tests passing (35 new)"
-dash log "Build clean, 47 tests pass"
+dash step-detail 2 "Build passed, 12 tests passing"
+dash log "Build clean, all tests pass"
 pause 2
 
 echo "[step 2] Committing to shared branch..."
-dash step-detail 2 "Committed: feat: complete step 2"
-dash log "git commit: e8c4d09 Demo Runner  2026-03-24  feat: implement core widget engine"
+dash step-detail 2 "Committed: feat: create project scaffolding"
+dash log "git commit: a3f7b21 Demo Runner  2026-03-24  feat: create project scaffolding"
 pause 2
 
 echo "[step 2] Updating roadmap — step 2 complete"
-
 dash finish-step 2
 echo "[step 2] Done"
 echo ""
-pause 2
+pause 3
 
-# --- PAUSE/RESUME demo ---
-echo "[control] Simulating pause..."
-dash log "Pause received by agent"
-# Set pause via the dashboard API
-curl -s -X POST "http://127.0.0.1:${DASHBOARD_PORT:-8888}/api/v1/roadmaps/demo-widget-system-001/control" \
-  -H "Content-Type: application/json" -d '{"action":"pause"}' > /dev/null
-echo "[control] Paused for 5 seconds..."
-pause 5
-
-echo "[control] Resuming..."
-# Clear the control signal
-curl -s -X DELETE "http://127.0.0.1:${DASHBOARD_PORT:-8888}/api/v1/roadmaps/demo-widget-system-001/control" > /dev/null
-dash log "Resume received by agent"
-echo "[control] Resumed"
+# --- Check controls between steps ---
+echo "[control] Checking for user controls..."
+CONTROL=$(dash check-control)
+echo "[control] Result: $CONTROL"
 echo ""
-pause 2
+pause 1
 
-# --- STEP 3 ---
-echo "[step 3] Starting: API endpoints and integration tests"
+# --- STEP 3: CORE WIDGET ENGINE ---
+echo "[step 3] Starting: Core widget engine implementation"
 dash begin-step 3
 pause 3
 
-echo "[step 3] Implementing REST endpoints..."
-dash step-detail 3 "Implementing /api/widgets CRUD endpoints"
-dash log "REST endpoints: GET, POST, PUT, DELETE /api/widgets"
+echo "[step 3] Planning step (M complexity)..."
+dash step-detail 3 "Planning: widget registry, lifecycle hooks, render pipeline"
+dash log "Planning: widget registry + lifecycle + render pipeline"
+pause 3
+
+echo "[step 3] Implementing widget registry..."
+dash step-detail 3 "Implementing widget registry and type system"
 pause 4
 
-echo "[step 3] Writing integration tests..."
-dash step-detail 3 "Writing integration tests against live database"
+echo "[step 3] Implementing lifecycle hooks..."
+dash step-detail 3 "Implementing lifecycle hooks: onMount, onUpdate, onDestroy"
+pause 3
+
+echo "[step 3] Implementing render pipeline..."
+dash step-detail 3 "Implementing render pipeline with diffing"
 pause 3
 
 echo "[step 3] Building and testing..."
-dash step-detail 3 "Build passed, 83 tests passing (36 new integration tests)"
-dash log "Build clean, 83 tests pass"
+dash step-detail 3 "Build passed, 47 tests passing (35 new)"
+dash log "Build clean, 47 tests pass"
 pause 2
 
 echo "[step 3] Committing to shared branch..."
-dash step-detail 3 "Committed: feat: complete step 3"
-dash log "git commit: 1b5f6e3 Demo Runner  2026-03-24  feat: add API endpoints and integration tests"
+dash step-detail 3 "Committed: feat: implement core widget engine"
+dash log "git commit: e8c4d09 Demo Runner  2026-03-24  feat: implement core widget engine"
 pause 2
 
 echo "[step 3] Updating roadmap — step 3 complete"
-
 dash finish-step 3
 echo "[step 3] Done"
 echo ""
-pause 2
+pause 3
 
-# --- STEP 4: CREATE & REVIEW FEATURE PR ---
-echo "[step 4] Starting: Create & Review Feature PR"
+# --- Check controls between steps ---
+echo "[control] Checking for user controls..."
+CONTROL=$(dash check-control)
+echo "[control] Result: $CONTROL"
+echo ""
+pause 1
+
+# --- STEP 4: API ENDPOINTS ---
+echo "[step 4] Starting: API endpoints and integration tests"
 dash begin-step 4
+pause 3
+
+echo "[step 4] Implementing REST endpoints..."
+dash step-detail 4 "Implementing /api/widgets CRUD endpoints"
+dash log "REST endpoints: GET, POST, PUT, DELETE /api/widgets"
+pause 4
+
+echo "[step 4] Writing integration tests..."
+dash step-detail 4 "Writing integration tests against live database"
+pause 3
+
+echo "[step 4] Building and testing..."
+dash step-detail 4 "Build passed, 83 tests passing (36 new integration tests)"
+dash log "Build clean, 83 tests pass"
 pause 2
 
-echo "[step 4] Writing state and history files..."
-dash step-detail 4 "Writing Complete state and ImplementationComplete history"
+echo "[step 4] Committing to shared branch..."
+dash step-detail 4 "Committed: feat: add API endpoints and integration tests"
+dash log "git commit: 1b5f6e3 Demo Runner  2026-03-24  feat: add API endpoints and integration tests"
+pause 2
+
+echo "[step 4] Updating roadmap — step 4 complete"
+dash finish-step 4
+echo "[step 4] Done"
+echo ""
+pause 2
+
+# --- STEP 5: CREATE & REVIEW FEATURE PR ---
+echo "[step 5] Starting: Create & Review Feature PR"
+dash begin-step 5
+pause 2
+
+echo "[step 5] Writing state and history files..."
+dash step-detail 5 "Writing Complete state and ImplementationComplete history"
 dash log "State: Complete, History: ImplementationComplete"
 pause 2
 
-echo "[step 4] Pushing branch..."
-dash step-detail 4 "Pushing feature/WidgetSystem to origin"
+echo "[step 5] Pushing branch..."
+dash step-detail 5 "Pushing feature/WidgetSystem to origin"
 dash log "Pushing feature/WidgetSystem to origin"
 pause 2
 
-echo "[step 4] Creating PR: feat: WidgetSystem"
-dash step-detail 4 "PR #200 created — Closes #50, #51, #52"
+echo "[step 5] Creating PR: feat: WidgetSystem"
+dash step-detail 5 "PR #200 created — Closes #50, #51, #52"
 dash log "PR #200 created — feat: WidgetSystem (Closes #50, Closes #51, Closes #52)"
 pause 3
 
-echo "[step 4] Review iteration 1: running code review + security review..."
-dash step-detail 4 "Review iteration 1/3: code review + security review"
+echo "[step 5] Review iteration 1: running code review + security review..."
+dash step-detail 5 "Review iteration 1/3: code review + security review"
 dash log "Code review: 1 warning found"
 pause 3
 
-echo "[step 4] Fixing review feedback..."
-dash step-detail 4 "Fixing: addressed code review warning"
+echo "[step 5] Fixing review feedback..."
+dash step-detail 5 "Fixing: addressed code review warning"
 dash log "git commit: 7d2a4c8 Demo Runner  2026-03-24  fix: address review feedback (iteration 1)"
 pause 2
 
-echo "[step 4] Review iteration 2: re-reviewing..."
-dash step-detail 4 "Review iteration 2/3: re-running reviews"
+echo "[step 5] Review iteration 2: re-reviewing..."
+dash step-detail 5 "Review iteration 2/3: re-running reviews"
 dash log "Code review: 0 issues. Security review: 0 issues."
 pause 3
 
-echo "[step 4] Reviews passed. Merging PR #200 with --merge..."
-dash step-detail 4 "PR #200 merged (--merge, preserving step commits)"
+echo "[step 5] Reviews passed. Merging PR #200 with --merge..."
+dash step-detail 5 "PR #200 merged (--merge, preserving step commits)"
 dash log "PR #200 merged (--merge, preserving step commits)"
 pause 2
 
-echo "[step 4] Closing issues..."
+echo "[step 5] Closing issues..."
 dash log "Issues #50, #51, #52 closed via gh issue close"
 pause 2
 
-echo "[step 4] Cleaning up worktree..."
+echo "[step 5] Cleaning up worktree..."
 dash log "Worktree removed: ../repo-wt/WidgetSystem"
-dash finish-step 4
-echo "[step 4] Done"
+dash finish-step 5
+echo "[step 5] Done"
 echo ""
 pause 2
 
@@ -309,14 +345,18 @@ dash shutdown
 
 # Cleanup
 rm -f "$ROADMAP"
+rm -f "$DEMO_DB"
+
+# Stop the demo dashboard service
+if [[ "$STARTED_SERVICE" == "true" ]]; then
+    cd "$PROJECT_ROOT" && DASHBOARD_PORT="$DEMO_PORT" bash "$SERVER_SH" stop 2>/dev/null
+fi
 
 echo ""
 echo "=== Demo Complete ==="
 echo "The dashboard showed the atomic-batch-pr workflow:"
-echo "  - 3 steps committed to a single shared branch"
-echo "  - 1 feature PR created after all steps finished"
+echo "  - Step 1 created GitHub issues for all implementation steps"
+echo "  - Steps 2-4 committed to a single shared branch"
+echo "  - Step 5 created 1 feature PR covering all steps"
 echo "  - PR merged with --merge (preserving individual step commits)"
 echo "  - All issues closed after PR merge"
-echo ""
-echo "The dashboard service is still running — view at http://127.0.0.1:${DASHBOARD_PORT:-8888}"
-echo "Stop it with: bash services/dashboard/server.sh stop"

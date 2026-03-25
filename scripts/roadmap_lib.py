@@ -13,6 +13,7 @@ that handles the key-value and list structures used in roadmap files.
 """
 
 import re
+import shutil
 from datetime import date as _date
 from pathlib import Path
 
@@ -472,11 +473,54 @@ def replace_issue_placeholders(roadmap_file, step_issue_map):
     return count
 
 
-def validate_planning_complete(roadmap_dir):
+def roadmap_work_dir(project_name, base=None):
+    """Return the working directory for a project's roadmaps.
+
+    Returns <base>/<project_name>. Default base is ~/.roadmaps.
+    Roadmaps live here throughout their lifecycle (planning + implementation).
+    Does not create the directory.
+    """
+    if base is None:
+        base = Path.home() / ".roadmaps"
+    return Path(base) / project_name
+
+
+def copy_roadmap_to_branch(roadmap_dir, target_dir):
+    """Copy a finished roadmap directory into a target (e.g., worktree/Roadmaps/).
+
+    Creates parent directories if needed.
+    Raises FileExistsError if the target already exists.
+    Returns the new Path.
+    """
+    src = Path(roadmap_dir)
+    dest = Path(target_dir) / src.name
+    if dest.exists():
+        raise FileExistsError(f"Target already exists: {dest}")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(str(src), str(dest))
+    return dest
+
+
+def cleanup_roadmap(roadmap_dir):
+    """Remove a finished roadmap from the working directory after merge.
+
+    Returns True if removed, False if it didn't exist.
+    """
+    rd = Path(roadmap_dir)
+    if rd.exists():
+        shutil.rmtree(str(rd))
+        return True
+    return False
+
+
+def validate_planning_complete(roadmap_dir, allow_placeholders=False):
     """Validate that all planning artifacts are present and correct.
 
     Returns (ok, errors) where ok is True if all checks pass,
     and errors is a list of human-readable error strings.
+
+    If allow_placeholders is True, the check for unresolved issue
+    placeholders in Roadmap.md is skipped.
     """
     rd = Path(roadmap_dir)
     errors = []
@@ -496,9 +540,10 @@ def validate_planning_complete(roadmap_dir):
         errors.append("Roadmap.md is empty")
     else:
         # Check for remaining placeholders
-        content = rm.read_text()
-        if "{{REPO}}#{{ISSUE_NUMBER}}" in content:
-            errors.append("Roadmap.md contains unresolved issue placeholders")
+        if not allow_placeholders:
+            content = rm.read_text()
+            if "{{REPO}}#{{ISSUE_NUMBER}}" in content:
+                errors.append("Roadmap.md contains unresolved issue placeholders")
 
     # Check state files
     state_dir = rd / "State"
