@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "6"
+version: "7"
 description: "Plan a new feature — discuss, then create Feature Definition and Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v6
+> plan-roadmap v7
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -24,8 +24,8 @@ Two-phase collaborative planning workflow for new features.
 
 Produces exactly **two deliverables** (all in Phase 2):
 
-1. A **Feature Definition** file (drafted in `~/.roadmaps/`, then moved to repo)
-2. A **Feature Roadmap** file (drafted in `~/.roadmaps/`, then moved to repo)
+1. A **Feature Definition** file (written to `~/.roadmaps/`)
+2. A **Feature Roadmap** file (written to `~/.roadmaps/`)
 
 GitHub issues are **not** created during planning — the Roadmap uses `{{REPO}}#{{ISSUE_NUMBER}}` placeholders. Issues are created by `/implement-roadmap`.
 
@@ -37,7 +37,7 @@ When planning is complete, tell the user to run `/implement-roadmap` to begin im
 
 **This skill produces planning documents. Nothing else.**
 
-Your only permitted outputs are: Markdown files inside `~/.roadmaps/<project>/` and `Roadmaps/`, `.gitignore` edits, and `git add`/`git commit` for those files. If you are about to write any file outside these directories, STOP. You are off course.
+Your only permitted outputs are: Markdown files inside `~/.roadmaps/<project>/`. If you are about to write any file outside this directory, STOP. You are off course.
 
 Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for the complete list of hard-stop guardrails.
 
@@ -61,57 +61,23 @@ git rev-parse --is-inside-work-tree
 
 If this fails, **STOP**. Tell the user this skill must run inside a git repository.
 
-### 0b: Verify GitHub CLI
+### 0b: Create drafts directory
 
-```bash
-gh auth status
-```
-
-If this fails, **STOP**. Tell the user to run `gh auth login` first.
-
-### 0c: Create directory structure
-
-Drafts are written to `~/.roadmaps/<project>/` before being moved to the repo. The feature subdirectory is created in Step 5e once the feature name is known. This step ensures the top-level drafts directory and the repo's `Roadmaps/` directory exist.
+Drafts are written to `~/.roadmaps/<project>/`. The feature subdirectory is created in Step 5e once the feature name is known.
 
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
 mkdir -p "$HOME/.roadmaps/$PROJECT"
-mkdir -p Roadmaps
 ```
 
-### 0d: Verify directories are writable
+### 0c: Verify directory is writable
 
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
 touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify"
-touch Roadmaps/.verify && rm Roadmaps/.verify
 ```
 
-If either fails, **STOP**. Tell the user the directory is not writable.
-
-### 0e: Ensure `Roadmaps/` is tracked by git
-
-Run the following to check if git would ignore the Roadmaps directory:
-
-```bash
-git check-ignore -q Roadmaps/test 2>/dev/null && echo "IGNORED" || echo "TRACKED"
-```
-
-If the output is `IGNORED`, the `.gitignore` (or a parent `.gitignore`) is excluding `Roadmaps/`. Fix this by appending negation rules to the repo-root `.gitignore`:
-
-Append the negation rules to `.gitignore` (use `printf` to avoid heredoc permission warnings):
-
-```bash
-printf '\n!Roadmaps/\n!Roadmaps/**\n' >> .gitignore
-```
-
-```bash
-git add .gitignore && git commit -m "chore: allow Roadmaps/ in git" && git push
-```
-
-After adding the rules, re-run the `git check-ignore` check to confirm the path is now tracked. If it still reports `IGNORED`, **STOP** and tell the user — a higher-level `.gitignore` rule may need manual attention.
-
-If the output is `TRACKED`, no changes are needed.
+If this fails, **STOP**. Tell the user the directory is not writable.
 
 ---
 
@@ -179,7 +145,7 @@ Issues are created later by /implement-roadmap.
 
 # PHASE 2: PLANNING
 
-> **Goal**: Transform the discussion into structured planning artifacts. Files are drafted in `~/.roadmaps/<project>/` then moved to `Roadmaps/` and committed.
+> **Goal**: Transform the discussion into structured planning artifacts. Files are written to `~/.roadmaps/<project>/`.
 
 ---
 
@@ -200,6 +166,8 @@ Read:
 - `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft both documents
+
+Set the `plan-version` field in both documents' frontmatter to the current version of this skill (`7`).
 
 **Feature Definition**: Using everything from the Discussion phase, fill in as many sections of the template as you can. The discussion content should be captured in the Extended Description and Goal sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
 
@@ -270,7 +238,7 @@ Above are the draft Feature Definition and Feature Roadmap (<N> implementation s
 
 Sections marked _NEEDS INPUT_ need your input.
 
-[x] approved — write to disk and commit
+[x] approved — write to disk
 [ ] <describe changes needed>
 ```
 
@@ -349,41 +317,9 @@ date: YYYY-MM-DD
 ---
 ```
 
-Validate the draft: verify all four files exist (Definition.md, Roadmap.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
+Validate the draft: verify all five files exist (Definition.md, Roadmap.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
 
-Print: **"Draft complete. Moving to repo..."**
-
-### 5i: Move draft to repo, commit, and push
-
-```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-REPO_ROOT=$(git rev-parse --show-toplevel)
-DRAFT_DIR="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>"
-
-# Save current state
-CURRENT_BRANCH=$(git branch --show-current)
-git stash --include-untracked -q 2>/dev/null || true
-
-# Checkout main and pull
-git checkout main
-git pull --ff-only
-
-# Move draft to repo
-mv "$DRAFT_DIR" "$REPO_ROOT/Roadmaps/"
-
-# Commit and push
-git add "Roadmaps/YYYY-MM-DD-<FeatureName>/"
-git commit -m "docs: add roadmap for <FeatureName>"
-git push
-
-# Restore previous state
-git checkout "$CURRENT_BRANCH" 2>/dev/null || true
-git stash pop -q 2>/dev/null || true
-```
-
-Verify the commit and push succeeded. If either failed, tell the user.
-
-Print: **"Roadmap committed to main and pushed."**
+Print: **"Draft complete."**
 
 ---
 
@@ -395,18 +331,18 @@ Execute all of the following checks. **Every check must pass.**
 
 Use the **Read tool** to verify each file exists and has content:
 
-Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md`
 — PASS if file exists and is not empty.
 
-Read: `Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 — PASS if file exists and is not empty.
 
 Use the **Glob tool** to verify state files:
 
-Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*-Ready.md`
+Glob: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/*-Ready.md`
 — PASS if exactly one match.
 
-Glob: `Roadmaps/YYYY-MM-DD-<FeatureName>/State/*.md`
+Glob: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/*.md`
 — PASS if at least three files (Created, Planning, Ready).
 
 If **any check fails**, **STOP. Tell the user which check failed. Fix the issue before continuing.**
@@ -423,11 +359,11 @@ Print the complete summary, then ask:
 === PLANNING COMPLETE: <FeatureName> ===
 
 Feature Definition:
-  File: Roadmaps/YYYY-MM-DD-<FeatureName>/Definition.md
+  File: ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md
   Sections: <list key sections>
 
 Roadmap:
-  File: Roadmaps/YYYY-MM-DD-<FeatureName>/Roadmap.md
+  File: ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
   Steps: <N> total (<N-2> implementation + issue creation + PR)
   State: Ready
   Estimated scope: <S/M/L breakdown>
@@ -437,7 +373,10 @@ Note: GitHub issues have NOT been created yet.
       Issue placeholders ({{REPO}}#{{ISSUE_NUMBER}}) will be resolved
       by /implement-roadmap Step 1.
 
-All artifacts verified. Roadmap committed to main.
+      Roadmap files are in ~/.roadmaps/ and will be moved to the
+      repo by /implement-roadmap when implementation is complete.
+
+All artifacts verified.
 
 [x] yes — run /implement-roadmap
 [ ] no — I'll run it later
