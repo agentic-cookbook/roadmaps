@@ -73,6 +73,7 @@ Done → run /implement-roadmap to build it
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v11 | 2026-03-25 | CLI readiness checks for Manual steps (install/auth verification); planning log records all decisions and actions; `github-user` field in frontmatter; draft PR flow (no bulk GitHub issues) |
 | v9 | 2026-03-25 | Completion Checklist replaced with Change History section (commits, issues, PR link); finished roadmaps copied as flat `<Name>-Roadmap.md` files to `Roadmaps/` |
 | v8 | 2026-03-25 | Merged Definition.md into Roadmap.md — single file per roadmap; definition sections (goal, acceptance criteria, verification strategy) are now at the top of Roadmap.md |
 | v7 | 2026-03-25 | Drafts stay in `~/.roadmaps/` (no repo writes, no git, no gh auth); `plan-version` field added to Roadmap frontmatter; removed `.gitignore` manipulation and GitHub issue creation |
@@ -112,6 +113,27 @@ Pass issue numbers, or `all` to include every open issue.
 |---------|------|---------|
 | v3 | 2026-03-23 | Per-directory File Record layout; YAML frontmatter; State/ directory for lifecycle |
 | v1 | 2026-03-21 | Initial release — fetches issues from GitHub, groups by component, single-approval flow |
+
+---
+
+### /repair-roadmap
+
+Repair an existing incomplete roadmap. Re-plans steps using the same logic as `/plan-roadmap`, preserving the roadmap ID and archiving the original for comparison.
+
+**What it does:** Reads an existing roadmap, lets you specify what needs fixing (replan remaining steps, fix specific steps, or full replan), then produces a revised roadmap with CLI readiness checks for any Manual step candidates.
+
+**Usage:**
+
+```
+/repair-roadmap
+/repair-roadmap FeatureName
+```
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-25 | Initial release — resolve, analyze, revise, archive original, reset to Ready |
 
 ---
 

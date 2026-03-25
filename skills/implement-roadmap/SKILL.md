@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "23"
+version: "24"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v23
+   > implement-roadmap v24
 
 2. Print the worker agent version by running:
    ```bash
@@ -64,6 +64,36 @@ This outputs JSON. Parse it:
 - If it has `"error"` — print the error and **STOP**.
 
 Note whether the resolved roadmap path is under `~/.roadmaps/` or `Roadmaps/`. Store as `ROADMAP_SOURCE=workdir` or `ROADMAP_SOURCE=repo`. The PR step needs this.
+
+## Step 1a: Initialize Implementation Log
+
+Create the implementation log in the roadmap's working directory:
+
+```bash
+ROADMAP_DIR="$(dirname "<roadmap_path>")"
+IMPL_LOG="$ROADMAP_DIR/implementation.log"
+```
+
+Write the initial entry:
+```
+[YYYY-MM-DD HH:MM:SS] IMPLEMENTATION_START: <feature_name>
+[YYYY-MM-DD HH:MM:SS] PROJECT: $PROJECT
+[YYYY-MM-DD HH:MM:SS] ROADMAP: <roadmap_path>
+[YYYY-MM-DD HH:MM:SS] SOURCE: $ROADMAP_SOURCE
+```
+
+**Throughout this skill, append to `$IMPL_LOG` before every significant action** using the format:
+- `[timestamp] DASHBOARD: server at <url>`
+- `[timestamp] WORKTREE: created at <path>`
+- `[timestamp] ROADMAP_COPIED: from <source> to <dest>`
+- `[timestamp] STEP_BEGIN: Step <N> — <description>`
+- `[timestamp] STEP_SKIP_MANUAL: Step <N> — <description>`
+- `[timestamp] STEP_COMPLETE: Step <N>`
+- `[timestamp] STEP_FAILED: Step <N> — <reason>`
+- `[timestamp] PR_CREATED: #<number> (draft)`
+- `[timestamp] PR_READY: #<number>`
+- `[timestamp] PR_MERGED: #<number>`
+- `[timestamp] IMPLEMENTATION_COMPLETE: <feature_name>`
 
 ## Step 1b: Mark Roadmap as Implementing
 
@@ -213,6 +243,7 @@ Worktree path: <worktree_path>
 Dashboard CLI: <$DASH_CLI>
 Dashboard URL: <$DASH_URL>
 Roadmap ID: <roadmap_id>
+Implementation log: <$IMPL_LOG>
 
 Implement ONLY this step. Commit your changes to the existing branch.
 When done, update the roadmap to mark this step Complete, then return.

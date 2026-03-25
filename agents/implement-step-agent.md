@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "8"
+version: "9"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v8
+> implement-step-agent v9
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -45,8 +45,31 @@ Your task prompt contains:
 - **Dashboard CLI** — path to the `dash` CLI tool (may be empty if unavailable)
 - **Dashboard URL** — base URL of the dashboard server
 - **Roadmap ID** — UUID of the roadmap in the dashboard
+- **Implementation log** — path to the implementation log file
 
 Read the Roadmap's Verification Strategy section to understand the build and test commands.
+
+## IMPLEMENTATION LOG
+
+If the implementation log path is provided, append entries at each phase:
+
+```bash
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] <ENTRY>" >> "<impl_log_path>"
+```
+
+Log entries to write (same format as the coordinator):
+- `STEP_BEGIN: Step <N> — <description>`
+- `READING_CODEBASE: <files examined>`
+- `COMMITTED: <commit message>`
+- `BUILD_PASSED` or `BUILD_FAILED: <error>`
+- `TESTS_PASSED: <count>` or `TESTS_FAILED: <error>`
+- `STEP_COMPLETE: Step <N>`
+- `STEP_FAILED: Step <N> — <reason>`
+- `PR_CREATED: #<number> (draft)`
+- `PR_READY: #<number>`
+- `PR_MERGED: #<number>`
+
+If the log path is empty or the file is not writable, skip logging — it is not required.
 
 ## DASHBOARD LOGGING
 
