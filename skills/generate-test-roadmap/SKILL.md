@@ -1,6 +1,6 @@
 ---
 name: generate-test-roadmap
-version: "2"
+version: "3"
 description: "Generate a test roadmap with silly cat-herding steps for testing the implement-roadmap workflow. No prompts, no approvals — just creates everything and exits."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> generate-test-roadmap v2
+> generate-test-roadmap v3
 
 Then stop. Do not continue with the rest of the skill.
 

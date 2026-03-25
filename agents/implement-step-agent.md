@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "5"
+version: "6"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v5
+> implement-step-agent v6
 
 Then stop. Do not continue with the rest of the agent.
 

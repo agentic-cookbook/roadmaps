@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "20"
+version: "21"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v20
+   > implement-roadmap v21
 
 2. Print the worker agent version by running:
    ```bash
