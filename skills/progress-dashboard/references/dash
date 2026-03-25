@@ -51,8 +51,53 @@ _service_client = None
 _service_checked = False
 
 
+def _find_project_root():
+    """Find the project root relative to this script."""
+    # dash is at skills/progress-dashboard/references/dash
+    candidate = Path(__file__).resolve().parent.parent.parent.parent
+    if (candidate / "services" / "dashboard").exists():
+        return candidate
+    return None
+
+
+def _auto_start_server():
+    """Start the dashboard Flask service if it's not running.
+
+    Returns True if the server is reachable after this call.
+    """
+    project_root = _find_project_root()
+    if not project_root:
+        return False
+
+    server_sh = project_root / "services" / "dashboard" / "server.sh"
+    if not server_sh.exists():
+        return False
+
+    try:
+        subprocess.run(
+            ["bash", str(server_sh), "start"],
+            cwd=str(project_root),
+            capture_output=True, text=True, timeout=10,
+        )
+        # Wait for server to accept connections
+        for _ in range(20):
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.5)
+                    s.connect(("127.0.0.1", int(os.environ.get("DASHBOARD_PORT", 8888))))
+                    return True
+            except OSError:
+                time.sleep(0.25)
+    except Exception as e:
+        print(f"WARNING: Failed to auto-start dashboard: {e}", file=sys.stderr)
+    return False
+
+
 def _try_service():
-    """Try to connect to the dashboard service. Returns client or None."""
+    """Try to connect to the dashboard service, auto-starting if needed.
+
+    Returns client or None.
+    """
     global _service_client, _service_checked
     if _service_checked:
         return _service_client
@@ -68,7 +113,12 @@ def _try_service():
                 break
         from dashboard_client import DashboardClient, DashboardUnavailable
         client = DashboardClient()
-        client.ping()
+        try:
+            client.ping()
+        except DashboardUnavailable:
+            if not _auto_start_server():
+                return None
+            client.ping()
         _service_client = client
         return client
     except Exception:

@@ -5,9 +5,14 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Always resolve the project root from the script location (not CWD)
+# so the server finds its static files even when started from a worktree.
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PID_FILE="${HOME}/.claude/dashboard.pid"
 PORT="${DASHBOARD_PORT:-8888}"
+LOG_FILE="${HOME}/.claude/dashboard.log"
 
-# Parse --port argument (before setting PID/LOG paths)
+# Parse --port argument
 while [[ $# -gt 0 ]]; do
     case "$1" in
         start|stop|status|restart) CMD="$1"; shift ;;
@@ -17,8 +22,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 CMD="${CMD:-status}"
-PID_FILE="${HOME}/.claude/dashboard-${PORT}.pid"
-LOG_FILE="${HOME}/.claude/dashboard-${PORT}.log"
 
 _is_running() {
     if [ -f "$PID_FILE" ]; then
@@ -43,6 +46,7 @@ _start() {
     mkdir -p "$(dirname "$PID_FILE")"
 
     echo "Starting dashboard service on port $PORT..."
+    cd "$PROJECT_ROOT"
     DASHBOARD_PORT="$PORT" python3 -m services.dashboard.app \
         > "$LOG_FILE" 2>&1 &
     local pid=$!
