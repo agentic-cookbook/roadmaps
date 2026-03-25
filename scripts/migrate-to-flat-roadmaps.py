@@ -59,7 +59,26 @@ def get_feature_name(dirname):
 
 
 def get_state(roadmap_dir):
-    """Get the current state from State/ directory."""
+    """Get the current state from State/ directory.
+
+    Checks for the presence of terminal state files directly, since
+    current_state() uses alphabetical sort which can return Ready
+    when Complete exists on the same date.
+    """
+    state_dir = Path(roadmap_dir) / "State"
+    if not state_dir.exists():
+        return "Unknown"
+    files = [f.stem for f in sorted(state_dir.glob("*.md"))]
+    state_names = []
+    for stem in files:
+        parts = stem.split("-", 3)
+        if len(parts) >= 4:
+            state_names.append(parts[3])
+    # Check for terminal states by priority
+    for terminal in ["Archived", "Declined", "Complete"]:
+        if terminal in state_names:
+            return terminal
+    # Fall back to alphabetical last
     return lib.current_state(roadmap_dir)
 
 
