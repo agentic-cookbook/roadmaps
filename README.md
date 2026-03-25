@@ -73,6 +73,7 @@ Done → run /implement-roadmap to build it
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v9 | 2026-03-25 | Completion Checklist replaced with Change History section (commits, issues, PR link); finished roadmaps copied as flat `<Name>-Roadmap.md` files to `Roadmaps/` |
 | v8 | 2026-03-25 | Merged Definition.md into Roadmap.md — single file per roadmap; definition sections (goal, acceptance criteria, verification strategy) are now at the top of Roadmap.md |
 | v7 | 2026-03-25 | Drafts stay in `~/.roadmaps/` (no repo writes, no git, no gh auth); `plan-version` field added to Roadmap frontmatter; removed `.gitignore` manipulation and GitHub issue creation |
 | v4 | 2026-03-23 | Per-directory File Record layout (`Roadmaps/YYYY-MM-DD-Name/`); YAML frontmatter; State/ directory for lifecycle; History/ for event log |

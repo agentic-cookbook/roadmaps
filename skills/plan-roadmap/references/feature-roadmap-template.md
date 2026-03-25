@@ -114,14 +114,24 @@ _Links to related GitHub issues, features, or prior work._
 
 _Repeat for each step..._
 
-## Completion Checklist
-
-- [ ] All steps marked Complete
-- [ ] All GitHub issues closed
-- [ ] All PRs merged
-- [ ] Project docs updated (README, CHANGELOG, API docs as relevant)
-- [ ] Feature Summary written
-
 ## Deviations from Plan
 
 _Filled in at completion — what changed from the original plan and why._
+
+## Change History
+
+_Populated automatically by /implement-roadmap when the feature is complete._
+
+### Commits
+
+| Hash | Description |
+|------|-------------|
+
+### Issues
+
+| Issue | Title |
+|-------|-------|
+
+### Pull Request
+
+_TBD_

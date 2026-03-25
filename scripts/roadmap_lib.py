@@ -152,7 +152,7 @@ def write_frontmatter(metadata, body=""):
 # ---------------------------------------------------------------------------
 
 def find_roadmap_dirs(repo_dir):
-    """Find all roadmap directories in a repo (new layout).
+    """Find all roadmap directories in a repo (directory layout).
 
     Returns list of Path objects for directories containing Roadmap.md.
     """
@@ -164,6 +164,18 @@ def find_roadmap_dirs(repo_dir):
         if d.is_dir() and (d / "Roadmap.md").exists():
             dirs.append(d)
     return dirs
+
+
+def find_roadmap_files(repo_dir):
+    """Find flat *-Roadmap.md files in a repo's Roadmaps/ directory.
+
+    Returns list of Path objects for files matching *-Roadmap.md.
+    These are finished roadmaps copied by /implement-roadmap.
+    """
+    roadmaps_dir = Path(repo_dir) / "Roadmaps"
+    if not roadmaps_dir.exists():
+        return []
+    return sorted(roadmaps_dir.glob("*-Roadmap.md"))
 
 
 def find_roadmaps_old_layout(repo_dir):
@@ -492,6 +504,26 @@ def copy_roadmap_to_branch(roadmap_dir, target_dir):
         raise FileExistsError(f"Target already exists: {dest}")
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copytree(str(src), str(dest))
+    return dest
+
+
+def copy_roadmap_file(roadmap_dir, target_dir, feature_name):
+    """Copy Roadmap.md as <feature_name>-Roadmap.md into target_dir.
+
+    Copies only the single Roadmap.md file (not State/, History/, etc.).
+    Creates parent directories if needed.
+    Raises FileExistsError if the target file already exists.
+    Returns the new Path.
+    """
+    src = Path(roadmap_dir) / "Roadmap.md"
+    if not src.exists():
+        raise FileNotFoundError(f"Source not found: {src}")
+    dest_dir = Path(target_dir)
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest = dest_dir / f"{feature_name}-Roadmap.md"
+    if dest.exists():
+        raise FileExistsError(f"Target already exists: {dest}")
+    shutil.copy2(str(src), str(dest))
     return dest
 
 

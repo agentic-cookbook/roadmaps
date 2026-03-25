@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "8"
+version: "9"
 description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v8
+> plan-roadmap v9
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -163,7 +163,7 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`8`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`9`).
 
 **Feature definition sections** (top of file): Using everything from the Discussion phase, fill in Goal and Purpose, Extended Description, and other definition sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
 

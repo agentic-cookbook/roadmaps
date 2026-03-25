@@ -99,31 +99,91 @@ Then stop. Do not continue to other steps.
 
 If the step description contains **"Create & Review Feature PR"**, perform the following instead of the standard implementation flow:
 
-1. **Copy the finished roadmap to the feature branch**:
-   If the roadmap lives in `~/.roadmaps/<project>/` (not in the repo's `Roadmaps/`), copy it to the worktree so it's included in the PR:
-   ```bash
-   cp -r <roadmap_dir> <worktree_path>/Roadmaps/
-   git -C <worktree_path> add Roadmaps/
-   git -C <worktree_path> commit -m "docs: add finished roadmap for <feature_name>"
-   ```
-   Skip this if the roadmap is already in the repo's `Roadmaps/` directory.
+1. **Populate Change History in Roadmap.md**:
 
-2. **Push the feature branch**:
+   Collect implementation data and write it into the `## Change History` section of the Roadmap.md file (replacing the placeholder content).
+
+   **Commits** — get the list of commits on the feature branch:
+   ```bash
+   git -C <worktree_path> log --oneline --no-merges origin/main..HEAD
+   ```
+   Format each as a row: `| \`<hash>\` | <description> |`
+
+   **Issues** — read each step's `**GitHub Issue**:` field from the Roadmap.md. For each issue number, get the title:
+   ```bash
+   gh issue view <number> --json title,url --jq '"| [#\(.number)](\(.url)) | \(.title) |"'
+   ```
+
+   **Pull Request** — this will be filled in after the PR is created (step 4 below). Leave it as `_TBD_` for now.
+
+   Write the populated Change History into the Roadmap.md using the Edit tool. The format:
+
+   ```markdown
+   ## Change History
+
+   ### Commits
+
+   | Hash | Description |
+   |------|-------------|
+   | `a1b2c3d` | feat: add auth middleware (#12) |
+   | ...  | ... |
+
+   ### Issues
+
+   | Issue | Title |
+   |-------|-------|
+   | [#12](url) | Add authentication middleware |
+   | ...   | ... |
+
+   ### Pull Request
+
+   _TBD_
+   ```
+
+2. **Rename and copy Roadmap to repo**:
+
+   Copy only the Roadmap.md file (not the directory) into the worktree's `Roadmaps/` folder, renamed to `<FeatureName>-Roadmap.md`:
+
+   ```bash
+   mkdir -p <worktree_path>/Roadmaps
+   DEST="<worktree_path>/Roadmaps/<FeatureName>-Roadmap.md"
+   ```
+
+   **Check for naming conflicts** before copying:
+   ```bash
+   test -f "$DEST" && echo "CONFLICT" || echo "OK"
+   ```
+
+   If `CONFLICT`: **STOP** and ask the user what filename to use. Do NOT overwrite.
+
+   If `OK`:
+   ```bash
+   cp <roadmap_dir>/Roadmap.md "$DEST"
+   git -C <worktree_path> add "Roadmaps/<FeatureName>-Roadmap.md"
+   git -C <worktree_path> commit -m "docs: add <FeatureName> roadmap"
+   ```
+
+3. **Push the feature branch**:
    ```bash
    git -C <worktree_path> push -u origin <feature_branch>
    ```
 
-3. **Build the PR body**:
+4. **Build the PR body and create the PR**:
    - Read the Roadmap.md to collect all issue numbers from every step.
    - Write a PR body file at `/tmp/gh-pr-body.md` containing:
      - Summary of the feature
      - A `Closes #N` line for **every** step's GitHub issue
      - List of steps implemented
-
-4. **Create the PR**:
    ```bash
    gh pr create --head <feature_branch> --title "feat: <feature_name>" --body-file /tmp/gh-pr-body.md
    ```
+
+   After the PR is created, **update the Pull Request section** in the copied roadmap file:
+   ```bash
+   # Get the PR number and URL from the gh output, then update the file
+   ```
+   Edit `<worktree_path>/Roadmaps/<FeatureName>-Roadmap.md` to replace `_TBD_` under `### Pull Request` with `[#<number>: feat: <feature_name>](<url>)`.
+   Commit and push the update.
 
 5. **Run code review and security review** on the PR. Use `gh pr diff` and review the changes for:
    - Code quality issues
@@ -147,7 +207,7 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    gh issue close <number>
    ```
 
-9. **Mark this step as Complete** in the Roadmap.md and commit:
+9. **Mark this step as Complete** in the working directory Roadmap.md and commit:
    ```bash
    git -C <worktree_path> add <roadmap_file>
    git -C <worktree_path> commit -m "docs: mark step <N> complete"

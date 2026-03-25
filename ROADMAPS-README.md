@@ -329,24 +329,20 @@ roadmaps --decline                 # Interactively decline roadmaps
 
 ## File Records
 
-Every roadmap lives in its own directory under `Roadmaps/`. The directory name encodes the creation date and feature name.
+During planning and implementation, roadmaps live in their own directory under `~/.roadmaps/<project>/` with State/ and History/ subdirectories for lifecycle tracking.
+
+When implementation is complete, only the **Roadmap.md** file is copied to the repo as a flat file:
 
 ```
 Roadmaps/
-└── 2026-03-21-DashboardBugfixes/
-    ├── Roadmap.md             # Feature definition + implementation steps
-    ├── State/                 # Lifecycle markers (one file per transition)
-    │   ├── 2026-03-23-Ready.md
-    │   └── 2026-03-24-Declined.md
-    └── History/               # Event log
-        └── 2026-03-23-080212-Migrated.md
+├── DashboardBugfixes-Roadmap.md
+├── AuthMiddleware-Roadmap.md
+└── UserSettings-Roadmap.md
 ```
 
-**Roadmap.md** has YAML frontmatter with a UUID, author, description, and change history. The body contains the feature definition sections (goal, platform, acceptance criteria, verification strategy), followed by a progress summary table and a section per step with status, type (Auto/Manual), complexity (S/M/L), GitHub issue, PR, dependencies, acceptance criteria, and testing notes.
+**`<FeatureName>-Roadmap.md`** has YAML frontmatter with a UUID, author, description, and change history. The body contains the feature definition sections (goal, platform, acceptance criteria, verification strategy), followed by implementation steps, a Deviations from Plan section, and a Change History section with commits, linked issues, and the PR.
 
-**State/** tracks the lifecycle: `Ready` → `Implementing` → `Complete` (or `Declined` / `Archived`). Each state is a dated markdown file. The most recent file determines the current state.
-
-**History/** records events like migrations, state changes, and errors with timestamps.
+The working directory (`~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/`) retains State/ and History/ during the lifecycle but is cleaned up after the PR merges.
 
 ---
 

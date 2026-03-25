@@ -132,57 +132,16 @@ This outputs JSON. Parse it:
 - If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
 - If `"action": "done"` — all implementation steps are complete. Exit the loop and do the following:
 
-  1. **Write State and History files:**
-
-     ```bash
-     ROADMAP_DIR="$(dirname "$WT_ROADMAP_PATH")"
-     TODAY="$(date +%Y-%m-%d)"
-     NOW="$(date +%Y-%m-%d-%H%M%S)"
-     AUTHOR="$(git config user.name) <$(git config user.email)>"
-
-     # Write Complete state file
-     cat > "$ROADMAP_DIR/State/$TODAY-Complete.md" << STATEEOF
-     ---
-     id: $(python3 -c "import uuid; print(uuid.uuid4())")
-     created: $TODAY
-     author: $AUTHOR
-     previous-state: Implementing
-     ---
-
-     # State: Complete
-
-     All auto steps finished.
-     STATEEOF
-
-     # Write History entry
-     cat > "$ROADMAP_DIR/History/$NOW-ImplementationComplete.md" << HISTEOF
-     ---
-     id: $(python3 -c "import uuid; print(uuid.uuid4())")
-     created: $TODAY
-     author: $AUTHOR
-     ---
-
-     # Event: ImplementationComplete
-
-     All auto steps finished for <feature_name>.
-     HISTEOF
-     ```
-
-  2. **Commit to feature branch (do NOT push — the PR step in the roadmap handles that):**
-
-     ```bash
-     git -C "$WORKTREE_PATH" add -A Roadmaps/
-     git -C "$WORKTREE_PATH" commit -m "docs: complete feature <feature_name> — all steps done"
-     ```
-
-  3. **Dashboard: complete and shutdown:**
+  1. **Dashboard: complete and shutdown:**
 
      ```bash
      python3 "$DASH_CLI" complete
      python3 "$DASH_CLI" shutdown
      ```
 
-  4. Print: `All steps complete for <feature_name>.` Then **STOP**.
+  2. Print: `All steps complete for <feature_name>.` Then **STOP**.
+
+  Note: The final "Create & Review Feature PR" step (handled by the worker agent) populates the Change History, copies the roadmap to the repo, creates the PR, and cleans up.
 
 ### 3b: Print Step Info
 
