@@ -110,7 +110,7 @@ class TestGenerateIssueBody:
         )
         assert "## Context" in body
         assert "Part of the MyFeature feature." in body
-        assert "Roadmaps/2026-03-24-MyFeature/Definition.md" in body
+
         assert "Roadmaps/2026-03-24-MyFeature/Roadmap.md" in body
         assert "## Step Details" in body
         assert "Build the widget" in body
@@ -203,7 +203,6 @@ class TestValidatePlanningComplete:
         rd.mkdir()
         (rd / "State").mkdir()
         (rd / "History").mkdir()
-        (rd / "Definition.md").write_text("# Feature Definition: TestFeature\n\nGoal: test\n")
         (rd / "Roadmap.md").write_text(
             "# Feature Roadmap: TestFeature\n\n"
             "### Step 1: First\n\n- **GitHub Issue**: #42\n- **Status**: Not Started\n"
@@ -219,26 +218,12 @@ class TestValidatePlanningComplete:
         assert ok is True
         assert errors == []
 
-    def test_catches_missing_definition(self, tmp_path):
-        rd = self._make_complete_dir(tmp_path)
-        (rd / "Definition.md").unlink()
-        ok, errors = lib.validate_planning_complete(rd)
-        assert ok is False
-        assert any("Definition.md" in e for e in errors)
-
     def test_catches_missing_roadmap(self, tmp_path):
         rd = self._make_complete_dir(tmp_path)
         (rd / "Roadmap.md").unlink()
         ok, errors = lib.validate_planning_complete(rd)
         assert ok is False
         assert any("Roadmap.md" in e for e in errors)
-
-    def test_catches_empty_definition(self, tmp_path):
-        rd = self._make_complete_dir(tmp_path)
-        (rd / "Definition.md").write_text("")
-        ok, errors = lib.validate_planning_complete(rd)
-        assert ok is False
-        assert any("empty" in e.lower() or "Definition.md" in e for e in errors)
 
     def test_catches_missing_state_files(self, tmp_path):
         rd = self._make_complete_dir(tmp_path)
@@ -271,4 +256,4 @@ class TestValidatePlanningComplete:
         # No State/, no files at all
         ok, errors = lib.validate_planning_complete(rd)
         assert ok is False
-        assert len(errors) >= 2  # At least Definition.md and Roadmap.md missing
+        assert len(errors) >= 2  # At least Roadmap.md missing + state files

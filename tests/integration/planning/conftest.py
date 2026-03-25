@@ -32,12 +32,11 @@ def planning_dir(test_branch):
 
 @pytest.fixture
 def planning_dir_with_files(test_branch):
-    """Create a full planning directory with Definition.md, Roadmap.md, and state files."""
+    """Create a full planning directory with Roadmap.md and state files."""
     rd = lib.create_planning_dir(test_branch.repo_path, "PlanFull", date="2026-03-24")
 
     # Copy fixture files
     fixture = FIXTURES_DIR / "planning_3step"
-    shutil.copy(fixture / "Definition.md", rd / "Definition.md")
     shutil.copy(fixture / "Roadmap.md", rd / "Roadmap.md")
 
     # Create state files

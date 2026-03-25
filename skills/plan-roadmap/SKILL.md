@@ -1,7 +1,7 @@
 ---
 name: plan-roadmap
-version: "7"
-description: "Plan a new feature — discuss, then create Feature Definition and Roadmap. Use when starting a new feature or component."
+version: "8"
+description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v7
+> plan-roadmap v8
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -22,10 +22,9 @@ Two-phase collaborative planning workflow for new features.
 **Phase 1 — Discussion**: Conversational exploration of the feature idea.
 **Phase 2 — Planning**: Structured creation of planning artifacts.
 
-Produces exactly **two deliverables** (all in Phase 2):
+Produces exactly **one deliverable** (in Phase 2):
 
-1. A **Feature Definition** file (written to `~/.roadmaps/`)
-2. A **Feature Roadmap** file (written to `~/.roadmaps/`)
+1. A **Feature Roadmap** file (written to `~/.roadmaps/`) — contains the feature definition (goal, scope, acceptance criteria) and the implementation steps
 
 GitHub issues are **not** created during planning — the Roadmap uses `{{REPO}}#{{ISSUE_NUMBER}}` placeholders. Issues are created by `/implement-roadmap`.
 
@@ -122,8 +121,7 @@ Here's what I heard:
 Proposed feature name: <FeatureName>
 
 If this looks right, I'll move to Planning and create:
-  - Definition.md (feature definition)
-  - Roadmap.md (implementation steps with issue placeholders)
+  - Roadmap.md (feature definition + implementation steps with issue placeholders)
 
 No implementation code will be written. No GitHub issues will be created.
 Issues are created later by /implement-roadmap.
@@ -155,23 +153,23 @@ Activate plan mode with deep thinking enabled. All design work happens in plan m
 
 ---
 
-## Step 5: Create Planning Documents
+## Step 5: Create Roadmap
 
-Draft both the Feature Definition and Roadmap together, present them for a single approval.
+Draft the Roadmap, present it for approval.
 
-### 5a: Read both templates
+### 5a: Read the template
 
-Read:
-- `${CLAUDE_SKILL_DIR}/references/feature-definition-template.md`
-- `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
+Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
-### 5b: Draft both documents
+### 5b: Draft the document
 
-Set the `plan-version` field in both documents' frontmatter to the current version of this skill (`7`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`8`).
 
-**Feature Definition**: Using everything from the Discussion phase, fill in as many sections of the template as you can. The discussion content should be captured in the Extended Description and Goal sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
+**Feature definition sections** (top of file): Using everything from the Discussion phase, fill in Goal and Purpose, Extended Description, and other definition sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
 
-**Feature Roadmap**: Write a `description` field in the Roadmap frontmatter — a single sentence (~80 chars) summarizing what this feature does, written for someone unfamiliar with the project. This appears on the dashboard overview.
+**`description` frontmatter field**: Write a single sentence (~80 chars) summarizing what this feature does, written for someone unfamiliar with the project. This appears on the dashboard overview.
+
+**Verification Strategy**: Fill in the build and test commands for this project.
 
 Break the feature into ordered implementation steps. Each step must be:
 
@@ -227,14 +225,14 @@ Every Roadmap must include these two bookend steps. Implementation steps go betw
 
 **Do NOT include `Implementing`, `Phase`, or `Status` fields in the Roadmap.** Lifecycle state is tracked solely via files in the `State/` directory.
 
-### 5c: Present both drafts and request approval
+### 5c: Present draft and request approval
 
-Print the **complete Feature Definition** followed by the **complete Feature Roadmap** to the terminal. Not summaries — the full documents.
+Print the **complete Roadmap** to the terminal. Not a summary — the full document.
 
 Then ask:
 
 ```
-Above are the draft Feature Definition and Feature Roadmap (<N> implementation steps).
+Above is the draft Feature Roadmap (<N> implementation steps).
 
 Sections marked _NEEDS INPUT_ need your input.
 
@@ -246,10 +244,10 @@ Sections marked _NEEDS INPUT_ need your input.
 
 ### 5d: Revise or write
 
-- If the user requests changes: incorporate them, re-present both documents with the same prompt from 5c. Repeat until approved.
-- If the user selects **approved**: proceed to write both files.
+- If the user requests changes: incorporate them, re-present the document with the same prompt from 5c. Repeat until approved.
+- If the user selects **approved**: proceed to write the file.
 
-### 5e: Create the draft directory and write both files
+### 5e: Create the draft directory and write the Roadmap
 
 Use today's date (YYYY-MM-DD) for the directory prefix. Write to the **draft directory**, not the repo:
 
@@ -259,11 +257,6 @@ DRAFT_DIR="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>"
 mkdir -p "$DRAFT_DIR/State" "$DRAFT_DIR/History"
 ```
 
-Write the Feature Definition to:
-```
-~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md
-```
-
 Write the Feature Roadmap to:
 ```
 ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
@@ -271,7 +264,7 @@ Write the Feature Roadmap to:
 
 ### 5f: Create initial state files
 
-After writing both documents, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
+After writing the Roadmap, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
 
 Write to `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/YYYY-MM-DD-Created.md`:
 
@@ -293,9 +286,8 @@ date: YYYY-MM-DD
 
 ### 5g: Verify all files exist and have content
 
-Use the **Read tool** to read the first few lines of each file. If any file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
+Use the **Read tool** to read the first few lines of the Roadmap. If the file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
 
-Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md`
 Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 
 Use the **Glob tool** to verify state files exist:
@@ -317,7 +309,7 @@ date: YYYY-MM-DD
 ---
 ```
 
-Validate the draft: verify all five files exist (Definition.md, Roadmap.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
+Validate the draft: verify all four files exist (Roadmap.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
 
 Print: **"Draft complete."**
 
@@ -329,10 +321,7 @@ Print: **"Draft complete."**
 
 Execute all of the following checks. **Every check must pass.**
 
-Use the **Read tool** to verify each file exists and has content:
-
-Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md`
-— PASS if file exists and is not empty.
+Use the **Read tool** to verify the Roadmap exists and has content:
 
 Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
 — PASS if file exists and is not empty.
@@ -357,10 +346,6 @@ Print the complete summary, then ask:
 
 ```
 === PLANNING COMPLETE: <FeatureName> ===
-
-Feature Definition:
-  File: ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Definition.md
-  Sections: <list key sections>
 
 Roadmap:
   File: ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md

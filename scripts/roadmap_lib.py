@@ -294,11 +294,6 @@ def roadmap_path(roadmap_dir):
     return Path(roadmap_dir) / "Roadmap.md"
 
 
-def definition_path(roadmap_dir):
-    """Return the Definition.md path for a roadmap directory."""
-    return Path(roadmap_dir) / "Definition.md"
-
-
 def summary_path(roadmap_dir):
     """Return the Summary.md path for a roadmap directory."""
     return Path(roadmap_dir) / "Summary.md"
@@ -428,7 +423,6 @@ def generate_issue_body(feature_name, step_description, acceptance_criteria,
     return (
         f"## Context\n\n"
         f"Part of the {feature_name} feature.\n"
-        f"Feature Definition: `{roadmap_dir}/Definition.md`\n"
         f"Roadmap: `{roadmap_dir}/Roadmap.md`\n\n"
         f"## Step Details\n\n"
         f"{step_description}\n\n"
@@ -524,13 +518,6 @@ def validate_planning_complete(roadmap_dir, allow_placeholders=False):
     """
     rd = Path(roadmap_dir)
     errors = []
-
-    # Check Definition.md
-    defn = rd / "Definition.md"
-    if not defn.exists():
-        errors.append("Missing Definition.md")
-    elif defn.stat().st_size == 0:
-        errors.append("Definition.md is empty")
 
     # Check Roadmap.md
     rm = rd / "Roadmap.md"

@@ -81,7 +81,7 @@ You will initialize the dashboard after the user selects a feature (since you ne
 
 ### Step 1: Scan Roadmaps
 
-Scan all roadmap directories under `Roadmaps/`. Each roadmap lives in its own directory (`Roadmaps/YYYY-MM-DD-FeatureName/`) containing `Roadmap.md`, `Definition.md`, `State/`, and `History/`.
+Scan all roadmap directories under `Roadmaps/`. Each roadmap lives in its own directory (`Roadmaps/YYYY-MM-DD-FeatureName/`) containing `Roadmap.md`, `State/`, and `History/`.
 
 For each directory containing a `Roadmap.md`, determine:
 
@@ -206,15 +206,15 @@ Work inside the worktree for all implementation.
 
 ### Step 6: Build and Verify
 
-**Control check.** Run the build command from the Feature Definition's verification strategy. Fix errors until the build is clean.
+**Control check.** Run the build command from the Roadmap's Verification Strategy section. Fix errors until the build is clean.
 
 ### Step 7: Test
 
-**Control check.** Run the test suite from the Feature Definition's verification strategy:
+**Control check.** Run the test suite from the Roadmap's Verification Strategy section:
 
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass
-- If the Feature Definition flags this step for manual verification, **pause and ask the user to verify** before proceeding
+- If the Roadmap flags this step for manual verification, **pause and ask the user to verify** before proceeding
 
 ### Step 8: Create PR
 
@@ -348,10 +348,10 @@ git worktree list
 git worktree remove <path>
 ```
 
-### Step 3: Update Feature Definition
+### Step 3: Update Deviations from Plan
 
-Edit the Feature Definition file (`Roadmaps/<YYYY-MM-DD-FeatureName>/Definition.md`):
-- Fill in "Deviations from Plan" — what changed from the original plan and why
+Edit the Roadmap file (`Roadmaps/<YYYY-MM-DD-FeatureName>/Roadmap.md`):
+- Fill in the "Deviations from Plan" section — what changed from the original plan and why
 
 ### Step 4: Update Project Docs
 
@@ -373,7 +373,7 @@ id: <generate UUID>
 created: <today>
 modified: <today>
 author: <git user.name> <<git user.email>>
-definition-id: <id from Definition.md frontmatter>
+roadmap-id: <id from Roadmap.md frontmatter>
 change-history:
   - date: <today>
     author: <git user.name> <<git user.email>>
@@ -404,7 +404,7 @@ change-history:
 
 ## Final State vs. Original Plan
 
-<What changed from the original Feature Definition and why>
+<What changed from the original plan and why>
 ```
 
 ### Step 6: Write Complete State
@@ -422,7 +422,7 @@ cat > "$ROADMAP_DIR/State/$TODAY-Complete.md" << 'EOF'
 id: <generate UUID>
 created: <today>
 author: <git author>
-definition-id: <from Definition.md>
+roadmap-id: <from Roadmap.md>
 previous-state: Implementing
 ---
 
@@ -437,7 +437,7 @@ cat > "$ROADMAP_DIR/History/$NOW-ImplementationComplete.md" << 'EOF'
 id: <generate UUID>
 created: <today>
 author: <git author>
-definition-id: <from Definition.md>
+roadmap-id: <from Roadmap.md>
 ---
 
 # Event: ImplementationComplete

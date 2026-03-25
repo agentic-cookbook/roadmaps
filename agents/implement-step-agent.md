@@ -42,9 +42,8 @@ Your task prompt contains:
 - **Complexity** — S, M, or L
 - **Worktree path** — the shared worktree where all steps are implemented
 - **Roadmap file path** — e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`
-- **Feature Definition path** — sibling file in the same directory, e.g., `Roadmaps/2026-03-21-FeatureName/Definition.md`
 
-Read the Feature Definition to understand the verification strategy (build command, test command).
+Read the Roadmap's Verification Strategy section to understand the build and test commands.
 
 ---
 
@@ -187,11 +186,11 @@ Write the code following project conventions:
 
 ### 3. Build and Verify
 
-Run the build command from the Feature Definition's verification strategy. Fix errors until the build is clean.
+Run the build command from the Roadmap's Verification Strategy section. Fix errors until the build is clean.
 
 ### 4. Test
 
-Run the test suite from the Feature Definition's verification strategy:
+Run the test suite from the Roadmap's Verification Strategy section:
 
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass

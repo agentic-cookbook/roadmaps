@@ -91,17 +91,13 @@ class TestRoadmapWorkDirLifecycle:
 class TestValidateCatchesIncompleteDraft:
     """validate_planning_complete returns errors for incomplete drafts."""
 
-    def test_missing_definition_returns_errors(self, tmp_path):
-        # Draft with no Definition.md
-        draft_dir = tmp_path / "NoDef"
+    def test_missing_roadmap_returns_errors(self, tmp_path):
+        # Draft with no Roadmap.md
+        draft_dir = tmp_path / "NoRoadmap"
         draft_dir.mkdir()
         state_dir = draft_dir / "State"
         state_dir.mkdir()
         (draft_dir / "History").mkdir()
-        (draft_dir / "Roadmap.md").write_text(
-            "# Feature Roadmap: NoDef\n\n### Step 1: Do something\n\n"
-            "- **GitHub Issue**: N/A\n- **Status**: Not Started\n"
-        )
         (state_dir / "2026-01-01-Created.md").write_text(
             "---\nevent: created\ndate: 2026-01-01\n---\n"
         )
@@ -114,7 +110,7 @@ class TestValidateCatchesIncompleteDraft:
 
         ok, errors = lib.validate_planning_complete(draft_dir)
         assert ok is False
-        assert any("Definition.md" in e for e in errors)
+        assert any("Roadmap.md" in e for e in errors)
 
     def test_empty_roadmap_returns_errors(self, tmp_path):
         # Draft with empty Roadmap.md
@@ -123,9 +119,6 @@ class TestValidateCatchesIncompleteDraft:
         state_dir = draft_dir / "State"
         state_dir.mkdir()
         (draft_dir / "History").mkdir()
-        (draft_dir / "Definition.md").write_text(
-            "# Definition: EmptyRoadmap\n\nPurpose: test.\n"
-        )
         (draft_dir / "Roadmap.md").write_text("")  # empty
         (state_dir / "2026-01-01-Created.md").write_text(
             "---\nevent: created\ndate: 2026-01-01\n---\n"

@@ -77,15 +77,10 @@ def tmp_roadmap_dir(tmp_path):
     (rd1 / "State").mkdir()
     (rd1 / "History").mkdir()
 
-    (rd1 / "Definition.md").write_text(
-        "---\nid: def-alpha-id\ncreated: 2026-03-21\nmodified: 2026-03-21\nauthor: Test User <test@test.com>\n"
-        "change-history:\n  - date: 2026-03-21\n    author: Test User <test@test.com>\n    summary: Initial\n---\n\n"
-        "# Feature Definition: FeatureAlpha\n\n## Goal and Purpose\n\nTest feature.\n"
-    )
     (rd1 / "Roadmap.md").write_text(
         "---\nid: rm-alpha-id\ncreated: 2026-03-21\nmodified: 2026-03-21\nauthor: Test User <test@test.com>\n"
-        "definition-id: def-alpha-id\nchange-history:\n  - date: 2026-03-21\n    author: Test User <test@test.com>\n    summary: Initial\n---\n\n"
-        "# Feature Roadmap: FeatureAlpha\n\n## Implementation Steps\n\n"
+        "change-history:\n  - date: 2026-03-21\n    author: Test User <test@test.com>\n    summary: Initial\n---\n\n"
+        "# Feature Roadmap: FeatureAlpha\n\n## Goal and Purpose\n\nTest feature.\n\n## Implementation Steps\n\n"
         "### Step 1: Do thing one\n\n- **Status**: Complete\n- **Type**: Auto\n- **Complexity**: S\n\n"
         "### Step 2: Do thing two\n\n- **Status**: Not Started\n- **Type**: Auto\n- **Complexity**: M\n\n"
         "### Step 3: Manual review\n\n- **Status**: Not Started\n- **Type**: Manual\n- **Complexity**: S\n"

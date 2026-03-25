@@ -24,7 +24,6 @@ class TestFullPlanningFlow:
         # Verify directory structure
         assert (rd / "State").is_dir()
         assert (rd / "History").is_dir()
-        assert (rd / "Definition.md").exists()
         assert (rd / "Roadmap.md").exists()
 
         # Verify state files were created correctly
@@ -80,21 +79,8 @@ class TestFullPlanningFlow:
 class TestValidationCatchesIncomplete:
     """Validation correctly identifies missing artifacts."""
 
-    def test_missing_definition(self, planning_dir):
-        rd = planning_dir
-        # Only Roadmap.md, no Definition.md
-        (rd / "Roadmap.md").write_text("# Feature Roadmap: PlanTest\n\n### Step 1: Foo\n\n- **GitHub Issue**: #1\n")
-        lib.create_state_file(rd, "created", date="2026-03-24")
-        lib.create_state_file(rd, "planning", date="2026-03-24")
-        lib.create_state_file(rd, "ready", date="2026-03-24")
-
-        ok, errors = lib.validate_planning_complete(rd)
-        assert ok is False
-        assert any("Definition.md" in e for e in errors)
-
     def test_missing_ready_state(self, planning_dir):
         rd = planning_dir
-        (rd / "Definition.md").write_text("# Definition\n")
         (rd / "Roadmap.md").write_text("# Roadmap\n\n### Step 1: Foo\n\n- **GitHub Issue**: #1\n")
         lib.create_state_file(rd, "created", date="2026-03-24")
         lib.create_state_file(rd, "planning", date="2026-03-24")
@@ -106,7 +92,6 @@ class TestValidationCatchesIncomplete:
 
     def test_unresolved_placeholders(self, planning_dir):
         rd = planning_dir
-        (rd / "Definition.md").write_text("# Definition\n")
         (rd / "Roadmap.md").write_text(
             "# Roadmap\n\n### Step 1: Foo\n\n- **GitHub Issue**: {{REPO}}#{{ISSUE_NUMBER}}\n"
         )

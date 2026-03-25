@@ -17,7 +17,7 @@ Then stop. Do not continue with the rest of the skill.
 
 # Generate Test Roadmap
 
-Creates a complete test roadmap for exercising the `/implement-roadmap` skill and `implement-roadmap-agent`. Generates all planning artifacts (Feature Definition, Feature Roadmap, GitHub issues) in one shot with no user interaction.
+Creates a complete test roadmap for exercising the `/implement-roadmap` skill and `implement-roadmap-agent`. Generates all planning artifacts (Feature Roadmap, GitHub issues) in one shot with no user interaction.
 
 The test feature is deliberately trivial — 20 steps that each append a line to `roadmap-test.md`. The content is silly cat-herding themed.
 
@@ -97,23 +97,29 @@ Each step:
 
 ---
 
-## Step 3: Write Feature Definition
+## Step 3: Write Feature Roadmap
 
 Create the per-directory structure:
 ```bash
 mkdir -p "Roadmaps/${TODAY}-${FEATURE_NAME}/{State,History}"
 ```
 
-Write `Roadmaps/${TODAY}-${FEATURE_NAME}/Definition.md`:
+Write `Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md` using the roadmap template structure.
 
+Use YAML frontmatter for metadata:
 ```markdown
 ---
 created: ${TODAY}
 feature: ${FEATURE_NAME}
 type: test
+status: Not Started
 ---
+```
 
-# Feature Definition: ${FEATURE_NAME}
+Include the feature definition sections at the top of the file:
+
+```markdown
+# Feature Roadmap: ${FEATURE_NAME}
 
 ## Goal and Purpose
 
@@ -154,31 +160,11 @@ None — this is a test fixture.
 | Local verification | `cat roadmap-test.md` and confirm 20 silly lines |
 ```
 
+Then the implementation steps:
+
 Write the initial State file:
 ```bash
 echo "Created by /generate-test-roadmap" > "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Created.md"
-```
-
-Commit and push:
-```bash
-git add "Roadmaps/${TODAY}-${FEATURE_NAME}/Definition.md" "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Created.md"
-git commit -m "docs: add Feature Definition for ${FEATURE_NAME}"
-git push
-```
-
----
-
-## Step 4: Write Feature Roadmap
-
-Write `Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md` using the roadmap template structure.
-
-Use YAML frontmatter for metadata:
-```markdown
----
-created: ${TODAY}
-feature: ${FEATURE_NAME}
-status: Not Started
----
 ```
 
 Include all 20 steps using the step template structure from the plan-roadmap skill. Each step should have:
@@ -192,14 +178,14 @@ Include all 20 steps using the step template structure from the plan-roadmap ski
 
 Commit and push:
 ```bash
-git add "Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md"
+git add "Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md" "Roadmaps/${TODAY}-${FEATURE_NAME}/State/${TODAY}-Created.md"
 git commit -m "docs: add Feature Roadmap for ${FEATURE_NAME}"
 git push
 ```
 
 ---
 
-## Step 5: Create GitHub Issues
+## Step 4: Create GitHub Issues
 
 For each of the 20 steps, create a GitHub issue:
 
@@ -224,7 +210,7 @@ git push
 
 ---
 
-## Step 6: Print Summary and Exit
+## Step 5: Print Summary and Exit
 
 Print:
 
@@ -232,7 +218,6 @@ Print:
 === TEST ROADMAP GENERATED: ${FEATURE_NAME} ===
 
 Directory: Roadmaps/${TODAY}-${FEATURE_NAME}/
-Definition: Roadmaps/${TODAY}-${FEATURE_NAME}/Definition.md
 Roadmap: Roadmaps/${TODAY}-${FEATURE_NAME}/Roadmap.md
 State: Ready
 Steps: 20

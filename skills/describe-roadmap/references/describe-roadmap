@@ -127,11 +127,11 @@ def parse_steps(content):
 
 
 def get_goal(roadmap_dir):
-    """Read the Goal and Purpose section from the sibling Definition.md."""
-    def_path = lib.definition_path(roadmap_dir)
-    if not def_path.exists():
+    """Read the Goal and Purpose section from Roadmap.md."""
+    rm_path = lib.roadmap_path(roadmap_dir)
+    if not rm_path.exists():
         return None
-    content = def_path.read_text()
+    content = rm_path.read_text()
     goal_m = re.search(
         r"## Goal and Purpose\s*\n+(.+?)(?:\n\n|\n##|\Z)",
         content, re.DOTALL,

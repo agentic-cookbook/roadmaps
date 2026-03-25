@@ -52,7 +52,6 @@ class TestCopyRoadmapToBranch:
         """Create a minimal roadmap directory with files."""
         rd = base / name
         rd.mkdir(parents=True)
-        (rd / "Definition.md").write_text("# Definition\n")
         (rd / "Roadmap.md").write_text("# Roadmap\n")
         (rd / "State").mkdir()
         (rd / "State" / "2026-03-24-Ready.md").write_text("ready\n")
@@ -78,7 +77,6 @@ class TestCopyRoadmapToBranch:
         target = tmp_path / "worktree" / "Roadmaps"
         target.mkdir(parents=True)
         result = lib.copy_roadmap_to_branch(rd, target)
-        assert (result / "Definition.md").read_text() == "# Definition\n"
         assert (result / "Roadmap.md").read_text() == "# Roadmap\n"
         assert (result / "State" / "2026-03-24-Ready.md").exists()
 
@@ -141,7 +139,6 @@ class TestValidatePlanningCompleteAllowPlaceholders:
         rd.mkdir()
         (rd / "State").mkdir()
         (rd / "History").mkdir()
-        (rd / "Definition.md").write_text("# Feature Definition: Draft\n\nGoal: test\n")
         (rd / "Roadmap.md").write_text(
             "# Feature Roadmap: Draft\n\n"
             "### Step 1: First\n\n"
@@ -173,7 +170,7 @@ class TestValidatePlanningCompleteAllowPlaceholders:
 
     def test_allow_placeholders_does_not_skip_other_errors(self, tmp_path):
         rd = self._make_dir_with_placeholders(tmp_path)
-        (rd / "Definition.md").unlink()
+        (rd / "Roadmap.md").unlink()
         ok, errors = lib.validate_planning_complete(rd, allow_placeholders=True)
         assert ok is False
-        assert any("Definition.md" in e for e in errors)
+        assert any("Roadmap.md" in e for e in errors)

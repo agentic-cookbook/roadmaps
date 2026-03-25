@@ -146,7 +146,6 @@ This outputs JSON. Parse it:
      id: $(python3 -c "import uuid; print(uuid.uuid4())")
      created: $TODAY
      author: $AUTHOR
-     definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
      previous-state: Implementing
      ---
 
@@ -161,7 +160,6 @@ This outputs JSON. Parse it:
      id: $(python3 -c "import uuid; print(uuid.uuid4())")
      created: $TODAY
      author: $AUTHOR
-     definition-id: $(grep '^definition-id:' "$ROADMAP_DIR/Roadmap.md" | head -1 | sed 's/definition-id: //')
      ---
 
      # Event: ImplementationComplete
@@ -214,7 +212,6 @@ Step <N>: <description>
 GitHub Issue: <issue>
 Complexity: <complexity>
 Roadmap file: <wt_roadmap_path>
-Feature Definition: <wt_roadmap_dir>/Definition.md
 Worktree path: <worktree_path>
 
 Implement ONLY this step. Commit your changes to the existing branch.

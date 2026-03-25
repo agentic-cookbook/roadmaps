@@ -256,12 +256,6 @@ class TestPathHelpers:
         result = lib.roadmap_path(rd)
         assert result == rd / "Roadmap.md"
 
-    def test_definition_path(self, tmp_path):
-        rd = tmp_path / "2026-03-21-FeatureAlpha"
-        rd.mkdir()
-        result = lib.definition_path(rd)
-        assert result == rd / "Definition.md"
-
     def test_summary_path(self, tmp_path):
         rd = tmp_path / "2026-03-21-FeatureAlpha"
         rd.mkdir()

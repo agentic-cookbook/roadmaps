@@ -25,7 +25,7 @@ This system handles the full lifecycle — from a conversation about what you wa
 │   ┌─────────────────────────────────────────────────────┐   │
 │   │              📁 File Records                         │   │
 │   │   Roadmaps/YYYY-MM-DD-FeatureName/                  │   │
-│   │   Definition.md · Roadmap.md · State/ · History/     │   │
+│   │   Roadmap.md · State/ · History/                      │   │
 │   └─────────────────────────────────────────────────────┘   │
 │                                                              │
 │   Supported by:                                              │
@@ -41,7 +41,7 @@ The three phases operate on shared **File Records** — markdown files with YAML
 
 **1. You have an idea.** Maybe it's a new feature, maybe it's a batch of bugs. You run `/plan-roadmap` (or `/plan-bugfix-roadmap` for existing issues) and have a conversation about what you want to build.
 
-**2. Planning produces artifacts.** The skill creates a Feature Definition (the "what and why"), a Feature Roadmap (the steps), and GitHub issues for each step. These are committed to your repo in `Roadmaps/YYYY-MM-DD-FeatureName/`.
+**2. Planning produces artifacts.** The skill creates a Feature Roadmap containing both the feature definition (what and why) and the implementation steps. Drafts are written to `~/.roadmaps/` and moved to the repo by `/implement-roadmap`.
 
 **3. Implementation is automated.** You run `/implement-roadmap`. A coordinator script reads the roadmap, picks the next incomplete step, and launches a worker agent to implement it. The worker implements, tests, commits, and updates the roadmap file. Repeat until done.
 
@@ -63,17 +63,14 @@ Skills are Claude Code slash commands — you type `/skill-name` and Claude foll
 
 ---
 
-#### `/plan-roadmap` (v5)
+#### `/plan-roadmap` (v8)
 
 **What it does:** Two-phase collaborative planning for new features.
 
 - **Phase 1 — Discussion:** Conversational exploration of the feature idea. No files created. Claude asks questions, you refine the scope.
-- **Phase 2 — Planning:** Structured creation of three deliverables:
-  1. A **Feature Definition** file (goal, scope, acceptance criteria)
-  2. A **Feature Roadmap** file (implementation steps with status, complexity, dependencies)
-  3. **GitHub issues** (one per step, confirmed via `gh issue view`)
+- **Phase 2 — Planning:** Creates a single **Feature Roadmap** file containing the feature definition (goal, scope, acceptance criteria, verification strategy) and implementation steps with status, complexity, and dependencies.
 
-Hard rule: this skill produces planning documents and GitHub issues. It will never write implementation code.
+Hard rule: this skill produces planning documents only. It will never write implementation code.
 
 When planning is complete, it tells you to run `/implement-roadmap`.
 
@@ -186,7 +183,7 @@ python3 "$DASH_CLI" check-control
 
 **What it does:** Creates a complete test roadmap for exercising the implementation workflow.
 
-Generates all planning artifacts (Definition, Roadmap, GitHub issues) in one shot with no user interaction. The test feature is deliberately trivial — 20 steps that each append a line to `roadmap-test.md`. The content is cat-herding themed, because of course it is.
+Generates all planning artifacts (Roadmap, GitHub issues) in one shot with no user interaction. The test feature is deliberately trivial — 20 steps that each append a line to `roadmap-test.md`. The content is cat-herding themed, because of course it is.
 
 Useful for integration testing and demos.
 
@@ -337,8 +334,7 @@ Every roadmap lives in its own directory under `Roadmaps/`. The directory name e
 ```
 Roadmaps/
 └── 2026-03-21-DashboardBugfixes/
-    ├── Definition.md          # What and why — goal, scope, acceptance criteria
-    ├── Roadmap.md             # The steps — status, complexity, issues, PRs
+    ├── Roadmap.md             # Feature definition + implementation steps
     ├── State/                 # Lifecycle markers (one file per transition)
     │   ├── 2026-03-23-Ready.md
     │   └── 2026-03-24-Declined.md
@@ -346,9 +342,7 @@ Roadmaps/
         └── 2026-03-23-080212-Migrated.md
 ```
 
-**Definition.md** has YAML frontmatter with a UUID, author, and change history, followed by the goal, platform, acceptance criteria, and verification strategy.
-
-**Roadmap.md** has its own UUID linked to the definition's UUID, a progress summary table, and a section per step with status, type (Auto/Manual), complexity (S/M/L), GitHub issue, PR, dependencies, acceptance criteria, and testing notes.
+**Roadmap.md** has YAML frontmatter with a UUID, author, description, and change history. The body contains the feature definition sections (goal, platform, acceptance criteria, verification strategy), followed by a progress summary table and a section per step with status, type (Auto/Manual), complexity (S/M/L), GitHub issue, PR, dependencies, acceptance criteria, and testing notes.
 
 **State/** tracks the lifecycle: `Ready` → `Implementing` → `Complete` (or `Declined` / `Archived`). Each state is a dated markdown file. The most recent file determines the current state.
 
