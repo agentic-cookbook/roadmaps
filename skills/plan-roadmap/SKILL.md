@@ -165,6 +165,8 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 Set the `plan-version` field in the frontmatter to the current version of this skill (`9`).
 
+Set the `project` field in the frontmatter to the git repo name (`basename $(git rev-parse --show-toplevel)`). This links the roadmap to its project so `/implement-roadmap` can verify it's running in the right repo.
+
 **Feature definition sections** (top of file): Using everything from the Discussion phase, fill in Goal and Purpose, Extended Description, and other definition sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
 
 **`description` frontmatter field**: Write a single sentence (~80 chars) summarizing what this feature does, written for someone unfamiliar with the project. This appears on the dashboard overview.

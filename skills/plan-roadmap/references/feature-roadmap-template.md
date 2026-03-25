@@ -1,5 +1,6 @@
 ---
 id: "{{ROADMAP_ID}}"
+project: "{{PROJECT}}"
 plan-version: "{{PLAN_VERSION}}"
 created: "{{DATE}}"
 modified: "{{DATE}}"

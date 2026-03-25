@@ -71,6 +71,8 @@ This outputs JSON. Parse it:
 - If it has `"choose"` — present the list to the user and ask them to pick. Then use the chosen path.
 - If it has `"error"` — print the error and **STOP**.
 
+**Verify project field**: After resolving, read the Roadmap.md frontmatter and check the `project` field. If it exists and does not match `$PROJECT`, **STOP** and tell the user: "This roadmap belongs to project `<project field>` but you are in `<$PROJECT>`. Run this from the correct repo." If the field is missing, continue (older roadmaps may not have it).
+
 ## Step 1b: Mark Roadmap as Implementing
 
 Write an Implementing state file so other sessions won't try to start this roadmap:
