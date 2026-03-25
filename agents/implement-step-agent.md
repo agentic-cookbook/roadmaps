@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "6"
+version: "7"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v6
+> implement-step-agent v7
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -42,8 +42,27 @@ Your task prompt contains:
 - **Complexity** — S, M, or L
 - **Worktree path** — the shared worktree where all steps are implemented
 - **Roadmap file path** — e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`
+- **Dashboard CLI** — path to the `dash` CLI tool (may be empty if unavailable)
+- **Dashboard URL** — base URL of the dashboard server
+- **Roadmap ID** — UUID of the roadmap in the dashboard
 
 Read the Roadmap's Verification Strategy section to understand the build and test commands.
+
+## DASHBOARD LOGGING
+
+If the Dashboard CLI path is provided and the file exists, log progress at each phase using:
+
+```bash
+python3 "<dash_cli>" log "<message>"
+```
+
+Set `DASH_FEATURE` and `DASHBOARD_URL` in the environment before each call:
+
+```bash
+DASH_FEATURE="<feature_name>" DASHBOARD_URL="<dashboard_url>" python3 "<dash_cli>" log "<message>"
+```
+
+If the dash CLI is not available, skip logging — it is not required for implementation.
 
 ---
 
@@ -59,6 +78,7 @@ Use `git -C <worktree_path>` for all git commands. Do NOT create a new worktree 
 If the step description is **"Create GitHub Issues"**, perform the following instead of the standard implementation flow:
 
 1. **Read the Roadmap.md** and find ALL steps whose GitHub Issue field contains `{{REPO}}#{{ISSUE_NUMBER}}` (the placeholder).
+   - **Log**: `Creating GitHub issues for <N> steps`
 
 2. **For each such step**, create a GitHub issue:
    - Write an issue body file at `/tmp/gh-issue-body.md` containing:
@@ -73,12 +93,14 @@ If the step description is **"Create GitHub Issues"**, perform the following ins
      ```
    - Capture the issue number from the output.
    - **Replace** the `{{REPO}}#{{ISSUE_NUMBER}}` placeholder in that step's section of Roadmap.md with `#<issue_number>`.
+   - **Log**: `Created issue #<number>: Step <N> — <step_description>`
 
 3. **Commit the updated Roadmap.md** after all issues are created:
    ```bash
    git -C <worktree_path> add <roadmap_file>
    git -C <worktree_path> commit -m "docs: create GitHub issues for <feature_name>"
    ```
+   - **Log**: `Committed roadmap with <N> issue numbers`
 
 4. **Comment on each newly created issue**:
    ```bash
@@ -100,6 +122,7 @@ Then stop. Do not continue to other steps.
 If the step description contains **"Create & Review Feature PR"**, perform the following instead of the standard implementation flow:
 
 1. **Populate Change History in Roadmap.md**:
+   - **Log**: `Populating Change History`
 
    Collect implementation data and write it into the `## Change History` section of the Roadmap.md file (replacing the placeholder content).
 
@@ -149,6 +172,8 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    DEST="<worktree_path>/Roadmaps/<FeatureName>-Roadmap.md"
    ```
 
+   - **Log**: `Copying roadmap as <FeatureName>-Roadmap.md`
+
    **Check for naming conflicts** before copying:
    ```bash
    test -f "$DEST" && echo "CONFLICT" || echo "OK"
@@ -164,11 +189,13 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    ```
 
 3. **Push the feature branch**:
+   - **Log**: `Pushing feature branch`
    ```bash
    git -C <worktree_path> push -u origin <feature_branch>
    ```
 
 4. **Build the PR body and create the PR**:
+   - **Log**: `Creating pull request`
    - Read the Roadmap.md to collect all issue numbers from every step.
    - Write a PR body file at `/tmp/gh-pr-body.md` containing:
      - Summary of the feature
@@ -185,7 +212,9 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    Edit `<worktree_path>/Roadmaps/<FeatureName>-Roadmap.md` to replace `_TBD_` under `### Pull Request` with `[#<number>: feat: <feature_name>](<url>)`.
    Commit and push the update.
 
-5. **Run code review and security review** on the PR. Use `gh pr diff` and review the changes for:
+5. **Run code review and security review** on the PR.
+   - **Log**: `Running code review`
+   Use `gh pr diff` and review the changes for:
    - Code quality issues
    - Security concerns
    - Test coverage gaps
@@ -198,6 +227,7 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    ```
 
 7. **If reviews pass**, merge with `--merge` (NOT `--squash`):
+   - **Log**: `Merging PR #<pr_number>`
    ```bash
    gh pr merge <pr_number> --merge
    ```
@@ -237,25 +267,37 @@ The sections below apply to **regular implementation steps** — any step that i
 
 ### 2. Implement
 
+- **Log**: `Reading codebase and planning implementation`
+
 Write the code following project conventions:
 
 - Read `CLAUDE.md` files for project-specific guidance
 - Make discrete, reasonable commits as work progresses
 - Each commit message references the GitHub issue: `feat: description (#<issue>)`
 - Follow existing patterns in the codebase
+- **Log** after each commit: `Committed: <commit message>`
 
 ### 3. Build and Verify
 
+- **Log**: `Running build`
+
 Run the build command from the Roadmap's Verification Strategy section. Fix errors until the build is clean.
 
+- **Log**: `Build passed` (or `Build failed — fixing` if retrying)
+
 ### 4. Test
+
+- **Log**: `Running tests`
 
 Run the test suite from the Roadmap's Verification Strategy section:
 
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass
+- **Log**: `Tests passed (<N> passed)` (or `Tests failed — fixing` if retrying)
 
 ### 5. Update Roadmap
+
+- **Log**: `Marking step <N> complete`
 
 In the roadmap file:
 - Mark this step's `**Status**:` as `Complete`
@@ -277,6 +319,8 @@ gh issue comment <number> --body "Step <N> implemented on shared branch. Will be
 Do NOT close the issue — it will be closed when the feature PR merges.
 
 ### 7. Return
+
+- **Log**: `Step <N> done`
 
 Print a summary:
 

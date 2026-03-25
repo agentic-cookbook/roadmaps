@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "21"
+version: "22"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v21
+   > implement-roadmap v22
 
 2. Print the worker agent version by running:
    ```bash
@@ -149,6 +149,7 @@ Step <N>: <description>
 
 ```bash
 python3 "$DASH_CLI" begin-step <N>
+python3 "$DASH_CLI" log "Starting step <N>: <description>"
 ```
 
 ### 3d: Launch Worker Agent
@@ -166,6 +167,9 @@ GitHub Issue: <issue>
 Complexity: <complexity>
 Roadmap file: <wt_roadmap_path>
 Worktree path: <worktree_path>
+Dashboard CLI: <$DASH_CLI>
+Dashboard URL: <$DASH_URL>
+Roadmap ID: <roadmap_id>
 
 Implement ONLY this step. Commit your changes to the existing branch.
 When done, update the roadmap to mark this step Complete, then return.
