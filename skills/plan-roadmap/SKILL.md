@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "10"
+version: "11"
 description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v10
+> plan-roadmap v11
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -77,6 +77,39 @@ touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify
 ```
 
 If this fails, **STOP**. Tell the user the directory is not writable.
+
+### 0d: Initialize planning log
+
+Create a planning log file that records every decision, action, command, and user interaction throughout the planning process. This log is saved in the roadmap directory for debugging and analysis.
+
+```bash
+PROJECT=$(basename $(git rev-parse --show-toplevel))
+PLAN_LOG="$HOME/.roadmaps/$PROJECT/planning.log"
+```
+
+Write the initial log entry:
+```
+[YYYY-MM-DD HH:MM:SS] plan-roadmap v11 started
+[YYYY-MM-DD HH:MM:SS] project: $PROJECT
+[YYYY-MM-DD HH:MM:SS] repo: $(git rev-parse --show-toplevel)
+[YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
+```
+
+**Throughout the rest of this skill, append to `$PLAN_LOG` before every significant action:**
+
+- `[timestamp] DECISION: <what was decided and why>`
+- `[timestamp] ACTION: <what was done>` (e.g., "Created directory", "Wrote Roadmap.md")
+- `[timestamp] USER_INPUT: <what the user said>` (summarize, don't copy verbatim)
+- `[timestamp] USER_CHOICE: <which option the user picked>`
+- `[timestamp] TOOL_CHECK: <tool> — installed: yes/no, authenticated: yes/no`
+- `[timestamp] STEP_TYPE: Step N "<name>" — Auto (reason) | Manual (reason)`
+- `[timestamp] ERROR: <what went wrong>`
+
+When the feature name is known (Step 3), move the log into the feature directory:
+```bash
+mv "$PLAN_LOG" "$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
+PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
+```
 
 ---
 
@@ -163,7 +196,7 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`10`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`11`).
 
 Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
 
@@ -188,8 +221,26 @@ Break the feature into ordered implementation steps. Each step must be:
 For each step, fill in: Description, Type (Auto or Manual), Complexity estimate (S/M/L), Dependencies, Acceptance criteria, Testing/verification approach.
 
 **Step types:**
-- **Auto** — Claude can implement this step autonomously (code changes, tests, PRs).
-- **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, app store submissions). During implementation, a GitHub issue is created and assigned to the `github-user` from the frontmatter. The agent skips the step and moves on.
+- **Auto** — Claude can implement this step autonomously (code changes, tests, PRs). **Default to Auto** unless the step literally cannot be performed via code or CLI.
+- **Manual** — Only for actions that require human-only access: physical device provisioning, app store submissions, signing into web UIs that have no CLI, purchasing licenses. During implementation, a GitHub issue is created and assigned to the `github-user` from the frontmatter.
+
+**Automation readiness check** — Before marking any step as Manual, check if the required tool or service has a CLI:
+
+1. Identify the external tool/service the step depends on (e.g., `gh`, `gcloud`, `aws`, `brew`, `npm`, `firebase`, etc.)
+2. Check if it's installed:
+   ```bash
+   which <tool> 2>/dev/null && echo "INSTALLED" || echo "NOT_INSTALLED"
+   ```
+3. If installed, check if it's authenticated/working:
+   ```bash
+   <tool> auth status 2>/dev/null || <tool> whoami 2>/dev/null || echo "UNKNOWN"
+   ```
+4. Report the result to the user:
+   - `INSTALLED + AUTHENTICATED` → mark as **Auto**
+   - `INSTALLED + NOT AUTHENTICATED` → ask the user: "Tool X is installed but not authenticated. Want to set it up now, or mark this step as Manual?"
+   - `NOT INSTALLED` → ask the user: "Tool X is needed but not installed. Want me to install it (e.g., `brew install X`), or mark this step as Manual?"
+
+The user can always override to Manual if they prefer. Log the decision and reasoning in the planning log.
 
 **Required first and last steps:**
 
