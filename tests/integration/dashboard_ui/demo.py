@@ -5,11 +5,15 @@ Starts a dashboard server on port 9888, opens a browser, and walks through
 the full roadmap lifecycle with realistic timing so you can watch the
 overview and detail pages update via polling.
 
+Every transition waits for the UI to actually render the change (via
+Playwright assertions) before pausing for the developer to see it.
+
 Usage:
     python3 tests/integration/dashboard_ui/demo.py
 """
 
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -26,13 +30,29 @@ import dashboard_client
 
 
 DEMO_PORT = 9888
-POLL_MS = 1500
-STEP_PAUSE = 3       # seconds to hold on each state change
-TRANSITION_PAUSE = 2  # seconds between begin/finish of a step
+POLL_MS = 1000
+HOLD = 2  # seconds to hold after content is confirmed visible
+WAIT_TIMEOUT = 10000  # ms for Playwright expect() to find content
+SCREENSHOT_DIR = "/tmp/dashboard-screenshots/demo"
+
+
+STEPS = [
+    "Create GitHub Issues",
+    "Add authentication middleware",
+    "Build user settings page",
+    "Write integration tests",
+    "Create & Review Feature PR",
+]
 
 
 def log(msg):
     print(f"  ▸ {msg}")
+
+
+def screenshot(page, name):
+    path = f"{SCREENSHOT_DIR}/{name}.png"
+    page.screenshot(path=path, full_page=True)
+    log(f"  📸 {name}.png")
 
 
 def start_server(db_path):
@@ -69,12 +89,12 @@ def start_server(db_path):
 
 
 def run_demo():
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import sync_playwright, expect
 
-    # --- Start server ---
     db_path = f"/tmp/dashboard-demo-{os.getpid()}.db"
     base_url = f"http://127.0.0.1:{DEMO_PORT}"
     poll = f"?poll={POLL_MS}"
+    n = len(STEPS)
 
     log("Starting dashboard server on port 9888...")
     proc = start_server(db_path)
@@ -83,70 +103,116 @@ def run_demo():
     rid = str(uuid.uuid4())
 
     try:
-        # --- Create roadmap ---
-        log("Creating roadmap with 5 steps...")
+        # --- Create roadmap with steps ---
+        log(f"Creating roadmap with {n} steps...")
         cli.create_roadmap("DemoFeature", id=rid, status="running")
         cli.set_steps(rid, [
-            {"number": 1, "description": "Create GitHub Issues",
-             "status": "not_started", "step_type": "Auto", "complexity": "S"},
-            {"number": 2, "description": "Add authentication middleware",
-             "status": "not_started", "step_type": "Auto", "complexity": "M"},
-            {"number": 3, "description": "Build user settings page",
-             "status": "not_started", "step_type": "Auto", "complexity": "L"},
-            {"number": 4, "description": "Write integration tests",
-             "status": "not_started", "step_type": "Auto", "complexity": "M"},
-            {"number": 5, "description": "Create & Review Feature PR",
-             "status": "not_started", "step_type": "Auto", "complexity": "M"},
+            {"number": i + 1, "description": name,
+             "status": "not_started", "step_type": "Auto",
+             "complexity": ["S", "M", "L", "M", "M"][i]}
+            for i, name in enumerate(STEPS)
         ])
 
-        # --- Open browser ---
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=False)
             page = browser.new_page()
 
-            # --- Overview ---
-            log("Opening overview page...")
+            # ── OVERVIEW ──────────────────────────────────────
+            log("Overview: waiting for card to render...")
             page.goto(f"{base_url}/{poll}")
-            time.sleep(STEP_PAUSE)
 
-            # --- Click through to detail ---
-            log("Clicking through to detail page...")
-            page.locator(".roadmap-card").first.click()
-            page.goto(page.url + poll)  # add poll param
-            time.sleep(STEP_PAUSE)
+            card = page.locator(".roadmap-card").first
+            expect(card).to_be_visible(timeout=WAIT_TIMEOUT)
+            expect(card.locator(".card-name")).to_have_text("DemoFeature", timeout=WAIT_TIMEOUT)
+            expect(card.locator(".progress-text")).to_contain_text(f"0/{n}", timeout=WAIT_TIMEOUT)
+            log(f"Overview: card visible — DemoFeature, 0/{n} steps")
+            screenshot(page, "01-overview-initial")
+            time.sleep(HOLD)
 
-            # --- Walk through each step ---
-            for step_num in range(1, 6):
-                step_name = ["Create GitHub Issues",
-                             "Add authentication middleware",
-                             "Build user settings page",
-                             "Write integration tests",
-                             "Create & Review Feature PR"][step_num - 1]
+            # ── NAVIGATE TO DETAIL ────────────────────────────
+            log("Clicking card → detail page...")
+            card.click()
+            # Reload with poll param so we use polling instead of SSE
+            page.goto(f"{base_url}/roadmap/{rid}{poll}")
 
-                log(f"Step {step_num}: {step_name} — starting...")
+            # Wait for all steps to render with their descriptions
+            expect(page.locator("#title")).to_contain_text("DemoFeature", timeout=WAIT_TIMEOUT)
+            steps_loc = page.locator("#steps .step")
+            expect(steps_loc).to_have_count(n, timeout=WAIT_TIMEOUT)
+            expect(page.locator("#progress-label")).to_contain_text(f"0 / {n}", timeout=WAIT_TIMEOUT)
+
+            # Verify each step description is visible
+            for i, name in enumerate(STEPS):
+                expect(steps_loc.nth(i)).to_contain_text(name, timeout=WAIT_TIMEOUT)
+
+            log(f"Detail: {n} steps loaded, all descriptions visible")
+            screenshot(page, "02-detail-initial")
+            time.sleep(HOLD)
+
+            # ── STEP-BY-STEP PROGRESSION ──────────────────────
+            for step_num in range(1, n + 1):
+                name = STEPS[step_num - 1]
+                step_el = steps_loc.nth(step_num - 1)
+
+                # Begin step
+                log(f"Step {step_num}/{n}: {name} — starting...")
                 cli.begin_step(rid, step_num)
-                time.sleep(TRANSITION_PAUSE)
 
-                log(f"Step {step_num}: {step_name} — complete ✓")
+                # Wait for spinner (step-active class) to appear
+                expect(step_el).to_have_class(
+                    re.compile(r"step-active"), timeout=WAIT_TIMEOUT
+                )
+                log(f"Step {step_num}/{n}: spinner visible ⟳")
+                screenshot(page, f"03-step{step_num}-active")
+                time.sleep(HOLD)
+
+                # Finish step
                 cli.finish_step(rid, step_num)
-                time.sleep(STEP_PAUSE)
 
-            # --- Complete ---
+                # Wait for checkmark icon
+                expect(step_el.locator(".step-icon")).to_have_text(
+                    "\u2713", timeout=WAIT_TIMEOUT
+                )
+                # Wait for progress to update
+                expect(page.locator("#progress-label")).to_contain_text(
+                    f"{step_num} / {n}", timeout=WAIT_TIMEOUT
+                )
+                pct = round(100 * step_num / n)
+                log(f"Step {step_num}/{n}: {name} — complete ✓  ({pct}%)")
+                screenshot(page, f"04-step{step_num}-complete")
+                time.sleep(HOLD)
+
+            # ── COMPLETE ──────────────────────────────────────
             log("Marking roadmap complete...")
             cli.complete(rid)
-            time.sleep(STEP_PAUSE)
 
-            # --- Back to overview ---
+            expect(page.locator("#status-badge")).to_contain_text(
+                "COMPLETE", timeout=WAIT_TIMEOUT
+            )
+            log("Detail: COMPLETE badge visible")
+            screenshot(page, "05-detail-complete")
+            time.sleep(HOLD)
+
+            # ── BACK TO OVERVIEW ──────────────────────────────
             log("Returning to overview...")
             page.goto(f"{base_url}/{poll}")
-            time.sleep(STEP_PAUSE)
 
-            log("Demo complete. Closing in 3 seconds...")
-            time.sleep(3)
+            card = page.locator(".roadmap-card").first
+            expect(card.locator(".progress-text")).to_contain_text(
+                f"{n}/{n}", timeout=WAIT_TIMEOUT
+            )
+            expect(card.locator(".card-badges")).to_contain_text(
+                "Complete", timeout=WAIT_TIMEOUT
+            )
+            log(f"Overview: card shows Complete, {n}/{n} steps")
+            screenshot(page, "06-overview-complete")
+            time.sleep(HOLD + 1)
+
+            log("Demo complete.")
+            time.sleep(2)
             browser.close()
 
     finally:
-        # Clean up
         try:
             os.kill(proc.pid, signal.SIGTERM)
             proc.wait(timeout=5)
