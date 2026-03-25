@@ -24,7 +24,7 @@ Collaborative planning skill for new features. Guides you through discussing an 
 **What it does:** Takes a feature idea from conversation to a concrete plan:
 
 1. **Discussion** — Talk through the idea naturally. Claude asks questions, clarifies scope, and summarizes.
-2. **Planning** — Creates a Feature Definition, Feature Roadmap, and GitHub issues.
+2. **Planning** — Creates a Feature Definition and Feature Roadmap.
 
 The transition from Discussion to Planning requires your explicit permission.
 
@@ -49,33 +49,32 @@ Phase Gate (requires your permission)
   → "May I transition from Discussion to Planning?"
 
 Planning Phase
-  → Feature Definition drafted, reviewed, approved, committed
-  → Feature Roadmap drafted, reviewed, approved, committed
-  → GitHub issues created and verified
-  → Roadmap Phase set to "Ready"
+  → Feature Definition drafted, reviewed, approved
+  → Feature Roadmap drafted, reviewed, approved
+  → Files written to ~/.roadmaps/<project>/
 
-Done → run /implement-roadmap-interactively to build it
+Done → run /implement-roadmap to build it
 ```
 
 **Key rules:**
 
-- **No implementation code** — ever. This skill only produces Markdown planning files and GitHub issues.
+- **No implementation code** — ever. This skill only produces Markdown planning files.
 - **Every draft is shown in full** and requires your approval before being written to disk.
 - **Checkpoint gates** pause for your acknowledgment between major steps.
 - **Phase gate** between Discussion and Planning requires explicit permission.
 
-**Files created:**
+**Files created (in `~/.roadmaps/<project>/`):**
 
-- `Roadmaps/YYYY-MM-DD-<Name>/Definition.md`
-- `Roadmaps/YYYY-MM-DD-<Name>/Roadmap.md`
-- `Roadmaps/YYYY-MM-DD-<Name>/State/` (lifecycle state files)
-- `Roadmaps/YYYY-MM-DD-<Name>/History/` (event log)
-- GitHub issues (one per implementation step)
+- `YYYY-MM-DD-<Name>/Definition.md`
+- `YYYY-MM-DD-<Name>/Roadmap.md`
+- `YYYY-MM-DD-<Name>/State/` (lifecycle state files)
+- `YYYY-MM-DD-<Name>/History/` (event log)
 
 **Changelog:**
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v7 | 2026-03-25 | Drafts stay in `~/.roadmaps/` (no repo writes, no git, no gh auth); `plan-version` field added to Definition and Roadmap frontmatter; removed `.gitignore` manipulation and GitHub issue creation |
 | v4 | 2026-03-23 | Per-directory File Record layout (`Roadmaps/YYYY-MM-DD-Name/`); YAML frontmatter; State/ directory for lifecycle; History/ for event log |
 | v2 | 2026-03-21 | Added `version` field to frontmatter; added `--version` argument support; restructured into Discussion + Planning phases; added phase gate requiring user permission; added `Phase: Planning \| Ready` field to Roadmap; reinforced no-implementation-code guardrails; moved Active Guards to references/; added `disable-model-invocation: true`; shortened description for context budget |
 | v1 | 2026-03-20 | Initial release — single-phase workflow with checkpoint gates and no-implementation-code guardrails |
