@@ -222,7 +222,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v21</span>
+  <span>Dashboard Service v22</span>
 </div>
 
 <script>
@@ -616,8 +616,9 @@ function startPolling() {
   var dot = document.getElementById('sse-dot');
   var status = document.getElementById('sse-status');
   dot.className = 'status-dot connected';
-  status.textContent = 'Polling every 10s';
-  pollInterval = setInterval(function() { loadRoadmaps(); }, 10000);
+  var pollMs = parseInt(new URLSearchParams(location.search).get('poll')) || 10000;
+  status.textContent = 'Polling every ' + (pollMs / 1000) + 's';
+  pollInterval = setInterval(function() { loadRoadmaps(); }, pollMs);
 }
 
 // --- Sort + Search handlers ---

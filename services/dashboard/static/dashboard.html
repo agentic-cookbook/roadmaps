@@ -628,7 +628,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v11</span>
+    <span class="footer-version">Dashboard Service v12</span>
   </div>
 </div><!-- /main-wrap -->
 
@@ -1351,7 +1351,13 @@ async function loadSidebarRoadmaps() {
 // --- Init ---
 debugLog('Dashboard loaded, connecting to API');
 loadData();
-connectSSE();
+var pollMs = parseInt(new URLSearchParams(location.search).get('poll'));
+if (pollMs) {
+  debugLog('Polling mode: every ' + pollMs + 'ms');
+  setInterval(function() { loadData(); }, pollMs);
+} else {
+  connectSSE();
+}
 </script>
 </body>
 </html>
