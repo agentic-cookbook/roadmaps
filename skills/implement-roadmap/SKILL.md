@@ -31,7 +31,7 @@ Uses a deterministic Python script for step selection (no LLM judgment) and the 
 
 ## Preflight: Dashboard Server Check
 
-Verify the dashboard server is running and serving pages:
+Verify the dashboard server is running. If not, start it automatically.
 
 ```bash
 DASH_URL="${DASHBOARD_URL:-http://localhost:8888}"
@@ -39,12 +39,15 @@ HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DASH_URL/" 2>/dev/null ||
 ```
 
 - If `HTTP_STATUS` is `200` — the server is running. Print: `Dashboard server OK ($DASH_URL)` and continue.
-- If `HTTP_STATUS` is anything else (including `000` for connection refused) — print the error and **STOP**:
+- If `HTTP_STATUS` is anything else — start the server:
+  ```bash
+  bash "$HOME/.claude/services/dashboard/server.sh" start
   ```
-  ERROR: Dashboard server is not running or not serving pages (HTTP $HTTP_STATUS at $DASH_URL/).
-  Start it with: bash <project_root>/services/dashboard/server.sh start
+  Wait up to 5 seconds for it to accept connections, then re-check:
+  ```bash
+  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DASH_URL/" 2>/dev/null || echo "000")
   ```
-  Do NOT continue with the rest of the skill.
+  If still not `200`, **STOP** and tell the user: `ERROR: Could not start dashboard server (HTTP $HTTP_STATUS at $DASH_URL/).`
 
 ## Step 1: Resolve Roadmap
 
