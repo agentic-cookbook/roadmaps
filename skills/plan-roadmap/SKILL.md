@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "9"
+version: "10"
 description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v9
+> plan-roadmap v10
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -163,9 +163,15 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`9`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`10`).
 
-Set the `project` field in the frontmatter to the git repo name (`basename $(git rev-parse --show-toplevel)`). This links the roadmap to its project so `/implement-roadmap` can verify it's running in the right repo.
+Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
+
+Set the `github-user` field to the GitHub username of the user. Get it with:
+```bash
+gh api user --jq .login
+```
+This is used to assign GitHub issues for manual steps.
 
 **Feature definition sections** (top of file): Using everything from the Discussion phase, fill in Goal and Purpose, Extended Description, and other definition sections. Leave sections you cannot fill marked with `_NEEDS INPUT_`.
 
@@ -183,47 +189,44 @@ For each step, fill in: Description, Type (Auto or Manual), Complexity estimate 
 
 **Step types:**
 - **Auto** — Claude can implement this step autonomously (code changes, tests, PRs).
-- **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, UI/UX decisions that need human judgment, app store submissions). The GitHub issue for manual steps will be assigned to the user.
+- **Manual** — Requires developer action (e.g., provisioning infrastructure, configuring third-party services, app store submissions). During implementation, a GitHub issue is created and assigned to the `github-user` from the frontmatter. The agent skips the step and moves on.
 
 **Required first and last steps:**
 
-Every Roadmap must include these two bookend steps. Implementation steps go between them (numbered 2 through N-1).
+Every Roadmap must include these two bookend steps. Implementation steps go between them.
 
 **Step 1 (always first):**
 
 ```markdown
-### Step 1: Create GitHub Issues
+### Step 1: Create Draft PR
 
-- **GitHub Issue**: (none — this step creates the issues)
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: S
 - **Dependencies**: None
 - **Acceptance Criteria**:
-  - [ ] GitHub issues created for all implementation steps
-  - [ ] Issue numbers populated in this roadmap
+  - [ ] Feature branch pushed
+  - [ ] Draft PR created
 ```
 
 **Step N (always last):**
 
 ```markdown
-### Step N: Create & Review Feature PR
+### Step N: Finalize & Merge PR
 
-- **GitHub Issue**: (none — this step creates the PR)
 - **Type**: Auto
 - **Status**: Not Started
 - **Complexity**: M
 - **Dependencies**: Step N-1
 - **Acceptance Criteria**:
-  - [ ] Feature branch pushed
-  - [ ] PR created with Closes lines for all issues
+  - [ ] Change History populated in roadmap
+  - [ ] Roadmap copied to repo as <Name>-Roadmap.md
+  - [ ] PR marked as ready
+  - [ ] CI passed
   - [ ] Code review passed
   - [ ] PR merged with --merge
-  - [ ] All issues closed
   - [ ] Worktree cleaned up
 ```
-
-**Implementation steps** (Steps 2 through N-1) use `{{REPO}}#{{ISSUE_NUMBER}}` as the GitHub Issue placeholder. No real issues are created during planning.
 
 **Do NOT include `Implementing`, `Phase`, or `Status` fields in the Roadmap.** Lifecycle state is tracked solely via files in the `State/` directory.
 

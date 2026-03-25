@@ -1,6 +1,7 @@
 ---
 id: "{{ROADMAP_ID}}"
 project: "{{PROJECT}}"
+github-user: "{{GITHUB_USER}}"
 plan-version: "{{PLAN_VERSION}}"
 created: "{{DATE}}"
 modified: "{{DATE}}"
@@ -82,7 +83,6 @@ _Links to related GitHub issues, features, or prior work._
 
 ### Step 1: {{DESCRIPTION}}
 
-- **GitHub Issue**: {{REPO}}#{{ISSUE_NUMBER}}
 - **Type**: Auto | Manual
 - **Status**: Not Started | In Progress | Complete | Blocked
 - **Complexity**: S | M | L
@@ -99,7 +99,6 @@ _Links to related GitHub issues, features, or prior work._
 
 ### Step 2: {{DESCRIPTION}}
 
-- **GitHub Issue**: {{REPO}}#{{ISSUE_NUMBER}}
 - **Type**: Auto | Manual
 - **Status**: Not Started
 - **Complexity**: S | M | L
@@ -127,11 +126,6 @@ _Populated automatically by /implement-roadmap when the feature is complete._
 
 | Hash | Description |
 |------|-------------|
-
-### Issues
-
-| Issue | Title |
-|-------|-------|
 
 ### Pull Request
 

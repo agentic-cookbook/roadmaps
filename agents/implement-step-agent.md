@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "7"
+version: "8"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v7
+> implement-step-agent v8
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -73,53 +73,36 @@ If the dash CLI is not available, skip logging — it is not required for implem
 Your task prompt includes a `Worktree path`. All implementation work happens there.
 Use `git -C <worktree_path>` for all git commands. Do NOT create a new worktree or branch.
 
-### 1a. "Create GitHub Issues" Step
+### 1a. "Create Draft PR" Step
 
-If the step description is **"Create GitHub Issues"**, perform the following instead of the standard implementation flow:
+If the step description is **"Create Draft PR"**, perform the following instead of the standard implementation flow:
 
-1. **Read the Roadmap.md** and find ALL steps whose GitHub Issue field contains `{{REPO}}#{{ISSUE_NUMBER}}` (the placeholder).
-   - **Log**: `Creating GitHub issues for <N> steps`
-
-2. **For each such step**, create a GitHub issue:
-   - Write an issue body file at `/tmp/gh-issue-body.md` containing:
-     - **Context**: Feature name, roadmap file path
-     - **Step Details**: Step number, description
-     - **Acceptance Criteria**: From the step's acceptance criteria in the roadmap
-     - **Complexity**: From the step's complexity
-     - **Dependencies**: From the step's dependencies (if any)
-   - Create the issue:
-     ```bash
-     gh issue create --title "Feature: [<feature_name>] Step <N>: <step_description>" --body-file /tmp/gh-issue-body.md
-     ```
-   - Capture the issue number from the output.
-   - **Replace** the `{{REPO}}#{{ISSUE_NUMBER}}` placeholder in that step's section of Roadmap.md with `#<issue_number>`.
-   - **Log**: `Created issue #<number>: Step <N> — <step_description>`
-
-3. **Commit the updated Roadmap.md** after all issues are created:
+1. **Push the feature branch**:
    ```bash
-   git -C <worktree_path> add <roadmap_file>
-   git -C <worktree_path> commit -m "docs: create GitHub issues for <feature_name>"
+   git -C <worktree_path> push -u origin <feature_branch>
    ```
-   - **Log**: `Committed roadmap with <N> issue numbers`
+   - **Log**: `Pushed feature branch`
 
-4. **Comment on each newly created issue**:
+2. **Create a draft PR**:
    ```bash
-   gh issue comment <number> --body "Created as part of <feature_name> roadmap implementation."
+   gh pr create --head <feature_branch> --title "feat: <feature_name>" --body "Draft PR for <feature_name> roadmap implementation." --draft
    ```
+   - **Log**: `Created draft PR #<number>`
 
-5. **Mark this step as Complete** in the Roadmap.md and commit:
+3. **Mark this step as Complete** in the Roadmap.md and commit:
    ```bash
    git -C <worktree_path> add <roadmap_file>
    git -C <worktree_path> commit -m "docs: mark step <N> complete"
+   git -C <worktree_path> push
    ```
 
-6. **Return** with a summary of issues created. Do **NOT** close any issues — they will be closed when the feature PR merges.
+4. **Return** with the PR number and URL.
 
 Then stop. Do not continue to other steps.
 
-### 1b. "Create & Review Feature PR" Step
+### 1b. "Finalize & Merge PR" Step
 
-If the step description contains **"Create & Review Feature PR"**, perform the following instead of the standard implementation flow:
+If the step description contains **"Finalize & Merge PR"**, perform the following instead of the standard implementation flow:
 
 1. **Populate Change History in Roadmap.md**:
    - **Log**: `Populating Change History`
@@ -132,12 +115,11 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    ```
    Format each as a row: `| \`<hash>\` | <description> |`
 
-   **Issues** — read each step's `**GitHub Issue**:` field from the Roadmap.md. For each issue number, get the title:
+   **Pull Request** — get the existing draft PR number:
    ```bash
-   gh issue view <number> --json title,url --jq '"| [#\(.number)](\(.url)) | \(.title) |"'
+   PR_NUMBER=$(gh pr list --head <feature_branch> --json number --jq '.[0].number')
+   PR_URL=$(gh pr view $PR_NUMBER --json url --jq '.url')
    ```
-
-   **Pull Request** — this will be filled in after the PR is created (step 4 below). Leave it as `_TBD_` for now.
 
    Write the populated Change History into the Roadmap.md using the Edit tool. The format:
 
@@ -148,31 +130,23 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
 
    | Hash | Description |
    |------|-------------|
-   | `a1b2c3d` | feat: add auth middleware (#12) |
+   | `a1b2c3d` | feat: add auth middleware |
    | ...  | ... |
-
-   ### Issues
-
-   | Issue | Title |
-   |-------|-------|
-   | [#12](url) | Add authentication middleware |
-   | ...   | ... |
 
    ### Pull Request
 
-   _TBD_
+   [#<PR_NUMBER>: feat: <feature_name>](<PR_URL>)
    ```
 
 2. **Rename and copy Roadmap to repo**:
+   - **Log**: `Copying roadmap as <FeatureName>-Roadmap.md`
 
-   Copy only the Roadmap.md file (not the directory) into the worktree's `Roadmaps/` folder, renamed to `<FeatureName>-Roadmap.md`:
+   Copy only the Roadmap.md file into the worktree's `Roadmaps/` folder, renamed to `<FeatureName>-Roadmap.md`:
 
    ```bash
    mkdir -p <worktree_path>/Roadmaps
    DEST="<worktree_path>/Roadmaps/<FeatureName>-Roadmap.md"
    ```
-
-   - **Log**: `Copying roadmap as <FeatureName>-Roadmap.md`
 
    **Check for naming conflicts** before copying:
    ```bash
@@ -186,31 +160,21 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
    cp <roadmap_dir>/Roadmap.md "$DEST"
    git -C <worktree_path> add "Roadmaps/<FeatureName>-Roadmap.md"
    git -C <worktree_path> commit -m "docs: add <FeatureName> roadmap"
+   git -C <worktree_path> push
    ```
 
-3. **Push the feature branch**:
-   - **Log**: `Pushing feature branch`
+3. **Mark PR as ready**:
+   - **Log**: `Marking PR #<PR_NUMBER> as ready`
    ```bash
-   git -C <worktree_path> push -u origin <feature_branch>
+   gh pr ready <PR_NUMBER>
    ```
 
-4. **Build the PR body and create the PR**:
-   - **Log**: `Creating pull request`
-   - Read the Roadmap.md to collect all issue numbers from every step.
-   - Write a PR body file at `/tmp/gh-pr-body.md` containing:
-     - Summary of the feature
-     - A `Closes #N` line for **every** step's GitHub issue
-     - List of steps implemented
+4. **Wait for CI to pass**:
+   - **Log**: `Waiting for CI checks`
    ```bash
-   gh pr create --head <feature_branch> --title "feat: <feature_name>" --body-file /tmp/gh-pr-body.md
+   gh pr checks <PR_NUMBER> --watch
    ```
-
-   After the PR is created, **update the Pull Request section** in the copied roadmap file:
-   ```bash
-   # Get the PR number and URL from the gh output, then update the file
-   ```
-   Edit `<worktree_path>/Roadmaps/<FeatureName>-Roadmap.md` to replace `_TBD_` under `### Pull Request` with `[#<number>: feat: <feature_name>](<url>)`.
-   Commit and push the update.
+   If CI fails, attempt to fix (max 3 iterations). If unfixable, **STOP** and report the failure.
 
 5. **Run code review and security review** on the PR.
    - **Log**: `Running code review`
@@ -222,40 +186,34 @@ If the step description contains **"Create & Review Feature PR"**, perform the f
 6. **If reviews find issues**, fix them, commit, push, and re-review (max 3 iterations):
    ```bash
    git -C <worktree_path> add -A
-   git -C <worktree_path> commit -m "fix: address review feedback (#<pr_number>)"
+   git -C <worktree_path> commit -m "fix: address review feedback (#<PR_NUMBER>)"
    git -C <worktree_path> push
    ```
 
 7. **If reviews pass**, merge with `--merge` (NOT `--squash`):
-   - **Log**: `Merging PR #<pr_number>`
+   - **Log**: `Merging PR #<PR_NUMBER>`
    ```bash
-   gh pr merge <pr_number> --merge
+   gh pr merge <PR_NUMBER> --merge
    ```
 
-8. **Close any issues** not auto-closed by the `Closes #N` lines:
-   ```bash
-   gh issue close <number>
-   ```
-
-9. **Mark this step as Complete** in the working directory Roadmap.md and commit:
+8. **Mark this step as Complete** in the working directory Roadmap.md and commit:
    ```bash
    git -C <worktree_path> add <roadmap_file>
    git -C <worktree_path> commit -m "docs: mark step <N> complete"
    ```
-   Note: This commit happens before worktree removal.
 
-10. **Clean up the worktree**:
+9. **Clean up the worktree**:
     ```bash
     git worktree remove <worktree_path>
     ```
 
-11. **Clean up the working directory roadmap** (if it was in `~/.roadmaps/`):
+10. **Clean up the working directory roadmap** (if it was in `~/.roadmaps/`):
     ```bash
     rm -rf ~/.roadmaps/<project>/<roadmap_dir_name>
     ```
     The finished roadmap is now in the repo via the merged PR.
 
-12. **Return** with a summary including the PR URL and merge status.
+11. **Return** with a summary including the PR URL and merge status.
 
 Then stop. Do not continue to other steps.
 
@@ -263,7 +221,7 @@ Then stop. Do not continue to other steps.
 
 ## STANDARD IMPLEMENTATION FLOW
 
-The sections below apply to **regular implementation steps** — any step that is NOT "Create GitHub Issues" or "Create & Review Feature PR".
+The sections below apply to **regular implementation steps** — any step that is NOT "Create Draft PR" or "Finalize & Merge PR".
 
 ### 2. Implement
 
@@ -302,21 +260,25 @@ Run the test suite from the Roadmap's Verification Strategy section:
 In the roadmap file:
 - Mark this step's `**Status**:` as `Complete`
 - Update the progress table
-- Commit (do not push — the coordinator pushes the branch at the end):
+- Commit:
   ```bash
   git -C <worktree_path> add <roadmap_file>
-  git -C <worktree_path> commit -m "docs: mark step <N> complete (#<issue>)"
+  git -C <worktree_path> commit -m "docs: mark step <N> complete"
   ```
 
-### 6. Comment on Issue
+### 6. Push and Comment on PR
 
-If the step has a GitHub issue:
+Push the branch and add a comment to the draft PR explaining what this step did:
 
 ```bash
-gh issue comment <number> --body "Step <N> implemented on shared branch. Will be included in feature PR."
+git -C <worktree_path> push
+PR_NUMBER=$(gh pr list --head <feature_branch> --json number --jq '.[0].number')
+gh pr comment $PR_NUMBER --body "**Step <N>: <description>**
+
+<brief summary of what was implemented, files changed, and how it was tested>"
 ```
 
-Do NOT close the issue — it will be closed when the feature PR merges.
+- **Log**: `Pushed and commented on PR #$PR_NUMBER`
 
 ### 7. Return
 
@@ -326,8 +288,8 @@ Print a summary:
 
 ```
 Step <N> complete:
-  Commits: <count> commits on shared branch
-  Issue: #<number> — commented (not closed)
+  Commits: <count> commits pushed
+  PR: #<PR_NUMBER> — commented
 ```
 
 Then stop. Do not continue to other steps.

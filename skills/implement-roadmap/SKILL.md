@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "22"
+version: "23"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v22
+   > implement-roadmap v23
 
 2. Print the worker agent version by running:
    ```bash
@@ -73,8 +73,14 @@ Write an Implementing state file so other sessions won't try to start this roadm
 ROADMAP_DIR="$(dirname "<roadmap_path>")"
 TODAY="$(date +%Y-%m-%d)"
 printf -- '---\nevent: implementing\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$TODAY-Implementing.md"
+```
+
+If `ROADMAP_SOURCE=repo`, commit and push the state change:
+```bash
 git -C "$(dirname "$ROADMAP_DIR")" add -A Roadmaps/ && git -C "$(dirname "$ROADMAP_DIR")" commit -m "state: mark <feature_name> as Implementing" && git -C "$(dirname "$ROADMAP_DIR")" push
 ```
+
+If `ROADMAP_SOURCE=workdir`, the state file is already in `~/.roadmaps/` — no git commit needed.
 
 ## Step 2: Start Dashboard
 
@@ -100,15 +106,35 @@ Print: `Working on branch: $FEATURE_BRANCH`
 
 All steps will commit to this single branch. One PR will be created at the end.
 
-## Step 3: Implementation Loop
+## Step 2c: Copy Roadmap to Worktree
 
-**IMPORTANT**: All roadmap paths from this point forward must reference the **worktree copy**. Derive the worktree roadmap path:
+The roadmap must be inside the worktree so the coordinator and worker agent can read and update it.
+
+**If `ROADMAP_SOURCE=workdir`** (roadmap is in `~/.roadmaps/`):
 
 ```bash
-WT_ROADMAP_PATH="$WORKTREE_PATH/<roadmap_path>"
+ROADMAP_DIR_NAME="$(basename "$(dirname "<roadmap_path>")")"
+mkdir -p "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/State" "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/History"
+cp "$ROADMAP_DIR/Roadmap.md" "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/Roadmap.md"
+cp "$ROADMAP_DIR"/State/*.md "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/State/" 2>/dev/null || true
+git -C "$WORKTREE_PATH" add Roadmaps/
+git -C "$WORKTREE_PATH" commit -m "docs: add roadmap for <feature_name>"
 ```
 
-Where `<roadmap_path>` is the **relative** path from Step 1 (e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`). It must be relative to the repo root — do not use an absolute path here, or the concatenation will break.
+Set the relative roadmap path for all subsequent steps:
+```bash
+ROADMAP_PATH="Roadmaps/$ROADMAP_DIR_NAME/Roadmap.md"
+```
+
+**If `ROADMAP_SOURCE=repo`**: The roadmap is already in the repo. Set `ROADMAP_PATH` to the relative path from Step 1. No copy needed.
+
+## Step 3: Implementation Loop
+
+Derive the worktree roadmap path from the **relative** `ROADMAP_PATH` set in Step 2c:
+
+```bash
+WT_ROADMAP_PATH="$WORKTREE_PATH/$ROADMAP_PATH"
+```
 
 This is a loop. Repeat until done:
 
@@ -124,12 +150,23 @@ This outputs JSON. Parse it:
 
 - If `"action": "implement"` — continue with 3b.
 - If there are `"manual_skipped"` entries, for each one:
-  1. Print: `Skipping manual step N: <description>`
-  2. Update the dashboard so progress reflects the skip:
+  1. **Create a GitHub issue** assigned to the roadmap creator:
+     ```bash
+     GITHUB_USER=$(python3 -c "
+     import sys; sys.path.insert(0, '$(dirname ${CLAUDE_SKILL_DIR})/../../scripts')
+     import roadmap_lib as lib
+     meta, _ = lib.parse_frontmatter('$WT_ROADMAP_PATH')
+     print(meta.get('github-user', ''))
+     ")
+     gh issue create --title "[<feature_name>] Step <N>: <description>" --body "<acceptance criteria from step>" --assignee "$GITHUB_USER"
+     ```
+  2. Print: `Skipping manual step N: <description> — created issue #<number> assigned to $GITHUB_USER`
+  3. Update the dashboard:
      ```bash
      python3 "$DASH_CLI" finish-step <N>
-     python3 "$DASH_CLI" log "Skipped manual step <N>: <description>"
+     python3 "$DASH_CLI" log "Manual step <N>: created issue #<number> for $GITHUB_USER"
      ```
+  If `gh issue create` fails (e.g., not a GitHub repo), just skip the step without creating an issue.
 - If `"action": "done"` — all implementation steps are complete. Exit the loop and do the following:
 
   1. **Dashboard: complete and shutdown:**
