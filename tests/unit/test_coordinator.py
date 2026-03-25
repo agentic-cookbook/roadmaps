@@ -181,15 +181,40 @@ class TestSummary:
 # Helpers shared by new tests
 # ---------------------------------------------------------------------------
 
-def _make_roadmap_dir(tmp_path, date_name, steps_text, state="Ready"):
+def _make_roadmap_dir(tmp_path, date_name, steps_text, state="Ready", project=None):
     """Create a minimal roadmap directory with State/ and Roadmap.md."""
     rd = tmp_path / "Roadmaps" / date_name
     rd.mkdir(parents=True)
     state_dir = rd / "State"
     state_dir.mkdir()
     (state_dir / f"2026-03-21-{state}.md").write_text(f"# State: {state}\n")
-    (rd / "Roadmap.md").write_text(steps_text)
+    if project:
+        frontmatter = f"---\nproject: {project}\n---\n\n"
+        (rd / "Roadmap.md").write_text(frontmatter + steps_text)
+    else:
+        (rd / "Roadmap.md").write_text(steps_text)
     return rd
+
+
+def _make_workdir_roadmap(base, project, date_name, steps_text, state="Ready"):
+    """Create a roadmap in ~/.roadmaps/<project>/ style layout."""
+    rd = base / project / date_name
+    rd.mkdir(parents=True)
+    state_dir = rd / "State"
+    state_dir.mkdir()
+    (state_dir / f"2026-03-21-{state}.md").write_text(f"# State: {state}\n")
+    frontmatter = f"---\nproject: {project}\n---\n\n"
+    (rd / "Roadmap.md").write_text(frontmatter + steps_text)
+    return rd
+
+
+def _init_git_repo(path, name=None):
+    """Initialize a bare git repo at path so git rev-parse works."""
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["git", "init"], cwd=str(path), capture_output=True)
+    if name:
+        # Rename to control basename
+        pass  # basename is already correct if path ends with name
 
 
 # ---------------------------------------------------------------------------
@@ -416,3 +441,113 @@ class TestParseStepFieldsEdgeCases:
         fields = coord.parse_step_fields(block)
         assert "PR" in fields
         assert fields["PR"] == ""
+
+
+# ---------------------------------------------------------------------------
+# TestResolveProjectFiltering
+# ---------------------------------------------------------------------------
+
+STEP_TEXT = (
+    "# Feature Roadmap: {name}\n\n"
+    "### Step 1: Do thing\n\n- **Status**: Not Started\n- **Type**: Auto\n"
+)
+
+
+class TestResolveProjectFiltering:
+    """Coordinator resolve filters roadmaps by project frontmatter field."""
+
+    def test_filters_out_wrong_project(self, tmp_path):
+        """Roadmap with project=other-repo is excluded when running in my-repo."""
+        repo = tmp_path / "my-repo"
+        _init_git_repo(repo)
+        _make_roadmap_dir(repo, "2026-03-25-Feature",
+                          STEP_TEXT.format(name="Feature"), project="other-repo")
+        result = subprocess.run(
+            [sys.executable, str(COORDINATOR), "resolve"],
+            capture_output=True, text=True, cwd=str(repo),
+        )
+        data = json.loads(result.stdout)
+        assert "error" in data
+
+    def test_includes_matching_project(self, tmp_path):
+        """Roadmap with project=my-repo is included when running in my-repo."""
+        repo = tmp_path / "my-repo"
+        _init_git_repo(repo)
+        _make_roadmap_dir(repo, "2026-03-25-Feature",
+                          STEP_TEXT.format(name="Feature"), project="my-repo")
+        result = subprocess.run(
+            [sys.executable, str(COORDINATOR), "resolve"],
+            capture_output=True, text=True, cwd=str(repo),
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["name"] == "Feature"
+
+    def test_includes_roadmap_without_project_field(self, tmp_path):
+        """Roadmap with no project field is included (backward compat)."""
+        repo = tmp_path / "my-repo"
+        _init_git_repo(repo)
+        _make_roadmap_dir(repo, "2026-03-25-Legacy",
+                          STEP_TEXT.format(name="Legacy"))  # no project
+        result = subprocess.run(
+            [sys.executable, str(COORDINATOR), "resolve"],
+            capture_output=True, text=True, cwd=str(repo),
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["name"] == "Legacy"
+
+    def test_mixed_projects_only_returns_matching(self, tmp_path):
+        """Two roadmaps, one matching project, one not — only matching returned."""
+        repo = tmp_path / "my-repo"
+        _init_git_repo(repo)
+        _make_roadmap_dir(repo, "2026-03-25-Mine",
+                          STEP_TEXT.format(name="Mine"), project="my-repo")
+        _make_roadmap_dir(repo, "2026-03-25-Theirs",
+                          STEP_TEXT.format(name="Theirs"), project="other-repo")
+        result = subprocess.run(
+            [sys.executable, str(COORDINATOR), "resolve"],
+            capture_output=True, text=True, cwd=str(repo),
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        # Should return single match, not choose
+        assert "path" in data
+        assert data["name"] == "Mine"
+
+
+class TestResolveWorkDir:
+    """Coordinator resolve scans ~/.roadmaps/<project>/ for drafts."""
+
+    def test_finds_roadmap_in_workdir(self, tmp_path, monkeypatch):
+        """Roadmap in ~/.roadmaps/<project>/ is found by resolve."""
+        repo = tmp_path / "my-repo"
+        _init_git_repo(repo)
+        work_root = tmp_path / "fake-home" / ".roadmaps"
+        _make_workdir_roadmap(work_root, "my-repo", "2026-03-25-Draft",
+                              STEP_TEXT.format(name="Draft"))
+        monkeypatch.setenv("HOME", str(tmp_path / "fake-home"))
+        result = subprocess.run(
+            [sys.executable, str(COORDINATOR), "resolve"],
+            capture_output=True, text=True, cwd=str(repo),
+            env={**dict(__import__("os").environ), "HOME": str(tmp_path / "fake-home")},
+        )
+        assert result.returncode == 0
+        data = json.loads(result.stdout)
+        assert data["name"] == "Draft"
+
+    def test_workdir_roadmap_filtered_by_project(self, tmp_path):
+        """Roadmap in ~/.roadmaps/other-repo/ is NOT found when in my-repo."""
+        repo = tmp_path / "my-repo"
+        _init_git_repo(repo)
+        work_root = tmp_path / "fake-home" / ".roadmaps"
+        # Roadmap is under other-repo directory but has project=other-repo
+        _make_workdir_roadmap(work_root, "other-repo", "2026-03-25-Wrong",
+                              STEP_TEXT.format(name="Wrong"))
+        result = subprocess.run(
+            [sys.executable, str(COORDINATOR), "resolve"],
+            capture_output=True, text=True, cwd=str(repo),
+            env={**dict(__import__("os").environ), "HOME": str(tmp_path / "fake-home")},
+        )
+        data = json.loads(result.stdout)
+        assert "error" in data

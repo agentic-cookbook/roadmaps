@@ -174,3 +174,92 @@ class TestValidatePlanningCompleteAllowPlaceholders:
         ok, errors = lib.validate_planning_complete(rd, allow_placeholders=True)
         assert ok is False
         assert any("Roadmap.md" in e for e in errors)
+
+
+# ---------------------------------------------------------------------------
+# find_roadmap_files (flat *-Roadmap.md files)
+# ---------------------------------------------------------------------------
+
+class TestFindRoadmapFiles:
+    def test_finds_flat_roadmap_files(self, tmp_path):
+        roadmaps = tmp_path / "Roadmaps"
+        roadmaps.mkdir()
+        (roadmaps / "MyFeature-Roadmap.md").write_text("# Roadmap\n")
+        (roadmaps / "Other-Roadmap.md").write_text("# Roadmap\n")
+        result = lib.find_roadmap_files(tmp_path)
+        assert len(result) == 2
+        names = [f.name for f in result]
+        assert "MyFeature-Roadmap.md" in names
+        assert "Other-Roadmap.md" in names
+
+    def test_ignores_non_roadmap_files(self, tmp_path):
+        roadmaps = tmp_path / "Roadmaps"
+        roadmaps.mkdir()
+        (roadmaps / "MyFeature-Roadmap.md").write_text("# Roadmap\n")
+        (roadmaps / "README.md").write_text("# Readme\n")
+        (roadmaps / "notes.txt").write_text("notes\n")
+        result = lib.find_roadmap_files(tmp_path)
+        assert len(result) == 1
+        assert result[0].name == "MyFeature-Roadmap.md"
+
+    def test_empty_when_no_roadmaps_dir(self, tmp_path):
+        assert lib.find_roadmap_files(tmp_path) == []
+
+    def test_empty_when_no_matching_files(self, tmp_path):
+        roadmaps = tmp_path / "Roadmaps"
+        roadmaps.mkdir()
+        (roadmaps / "README.md").write_text("# Readme\n")
+        assert lib.find_roadmap_files(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# copy_roadmap_file (single file copy with rename)
+# ---------------------------------------------------------------------------
+
+class TestCopyRoadmapFile:
+    def _make_roadmap(self, base):
+        rd = base / "2026-03-25-Feature"
+        rd.mkdir(parents=True)
+        (rd / "Roadmap.md").write_text("# Feature Roadmap: Feature\n")
+        (rd / "State").mkdir()
+        (rd / "History").mkdir()
+        return rd
+
+    def test_copies_as_renamed_file(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "repo" / "Roadmaps"
+        result = lib.copy_roadmap_file(rd, target, "Feature")
+        assert result == target / "Feature-Roadmap.md"
+        assert result.exists()
+        assert "Feature Roadmap" in result.read_text()
+
+    def test_only_copies_roadmap_not_state(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "repo" / "Roadmaps"
+        lib.copy_roadmap_file(rd, target, "Feature")
+        # Only the single file, no subdirectories
+        contents = list(target.iterdir())
+        assert len(contents) == 1
+        assert contents[0].name == "Feature-Roadmap.md"
+
+    def test_creates_parent_dirs(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "repo" / "Roadmaps"
+        assert not target.exists()
+        lib.copy_roadmap_file(rd, target, "Feature")
+        assert target.is_dir()
+
+    def test_raises_if_target_exists(self, tmp_path):
+        rd = self._make_roadmap(tmp_path / "work")
+        target = tmp_path / "repo" / "Roadmaps"
+        target.mkdir(parents=True)
+        (target / "Feature-Roadmap.md").write_text("existing\n")
+        with pytest.raises(FileExistsError):
+            lib.copy_roadmap_file(rd, target, "Feature")
+
+    def test_raises_if_source_missing(self, tmp_path):
+        rd = tmp_path / "empty"
+        rd.mkdir()
+        target = tmp_path / "repo" / "Roadmaps"
+        with pytest.raises(FileNotFoundError):
+            lib.copy_roadmap_file(rd, target, "Feature")
