@@ -243,20 +243,38 @@ HIDDEN_STATES = {"Archived", "Declined"}
 COMPLETE_STATES = {"Complete"}
 ARCHIVED_STATES = {"Archived"}
 
+# Lifecycle ordering: later states have higher numbers.
+# Used to break ties when multiple state files share the same date.
+_STATE_ORDER = {
+    "Created": 0, "Planning": 1, "Ready": 2,
+    "Implementing": 3, "Paused": 4,
+    "Complete": 5, "Declined": 6, "Archived": 7,
+}
+
+
+def _state_sort_key(path):
+    """Sort key for state files: date first, then lifecycle order."""
+    stem = path.stem
+    parts = stem.split("-", 3)
+    date_part = stem[:10] if len(stem) >= 10 else ""
+    state_name = parts[3] if len(parts) >= 4 else ""
+    return (date_part, _STATE_ORDER.get(state_name, 99))
+
 
 def current_state(roadmap_dir):
     """Get the current state from the newest file in State/.
 
     Filename format: YYYY-MM-DD-StateName.md
+    Sorts by date first, then by lifecycle order (not alphabetical)
+    so that Complete on the same date as Ready returns Complete.
     Returns the StateName portion, or 'Unknown'.
     """
     state_dir = Path(roadmap_dir) / "State"
     if not state_dir.exists():
         return "Unknown"
-    files = sorted(state_dir.glob("*.md"))
+    files = sorted(state_dir.glob("*.md"), key=_state_sort_key)
     if not files:
         return "Unknown"
-    # "2026-03-24-Complete" → "Complete"
     stem = files[-1].stem
     parts = stem.split("-", 3)
     return parts[3] if len(parts) >= 4 else "Unknown"

@@ -98,6 +98,25 @@ class TestCurrentState:
         # Should pick the newest by name sort: Ready > Created
         assert state == "Ready"
 
+    def test_complete_beats_ready_on_same_date(self, tmp_path):
+        """Complete should win over Ready when both are on the same date."""
+        rd = tmp_path / "2026-03-24-SameDate"
+        rd.mkdir()
+        (rd / "State").mkdir()
+        (rd / "State" / "2026-03-24-Created.md").write_text("created\n")
+        (rd / "State" / "2026-03-24-Planning.md").write_text("planning\n")
+        (rd / "State" / "2026-03-24-Ready.md").write_text("ready\n")
+        (rd / "State" / "2026-03-24-Complete.md").write_text("complete\n")
+        assert lib.current_state(rd) == "Complete"
+
+    def test_archived_beats_complete_on_same_date(self, tmp_path):
+        rd = tmp_path / "2026-03-24-Archived"
+        rd.mkdir()
+        (rd / "State").mkdir()
+        (rd / "State" / "2026-03-24-Complete.md").write_text("complete\n")
+        (rd / "State" / "2026-03-24-Archived.md").write_text("archived\n")
+        assert lib.current_state(rd) == "Archived"
+
     def test_empty_state_dir(self, tmp_path):
         rd = tmp_path / "EmptyRoadmap"
         rd.mkdir()
