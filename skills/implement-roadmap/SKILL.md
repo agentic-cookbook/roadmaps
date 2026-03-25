@@ -123,7 +123,13 @@ python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "$WT_ROADMAP_PATH
 This outputs JSON. Parse it:
 
 - If `"action": "implement"` — continue with 3b.
-- If there are `"manual_skipped"` entries, print them once: `Skipping manual step N: <description>`
+- If there are `"manual_skipped"` entries, for each one:
+  1. Print: `Skipping manual step N: <description>`
+  2. Update the dashboard so progress reflects the skip:
+     ```bash
+     python3 "$DASH_CLI" finish-step <N>
+     python3 "$DASH_CLI" log "Skipped manual step <N>: <description>"
+     ```
 - If `"action": "done"` — all implementation steps are complete. Exit the loop and do the following:
 
   1. **Dashboard: complete and shutdown:**
