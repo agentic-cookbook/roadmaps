@@ -116,6 +116,27 @@ Pass issue numbers, or `all` to include every open issue.
 
 ---
 
+### /guideline-review
+
+Review all code in the current repo against the installed coding guidelines. Launches 4 review agents in parallel to check compliance with general rules, engineering principles, platform conventions, and error handling.
+
+**Usage:**
+
+```
+/guideline-review              Review entire repo
+/guideline-review src/         Review specific directory
+/guideline-review --changed    Review only uncommitted changes
+/guideline-review --branch     Review only branch diff vs main
+```
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-26 | Initial release — 4 parallel review agents, severity-grouped report, optional fix mode |
+
+---
+
 ### /repair-roadmap
 
 Repair an existing incomplete roadmap. Re-plans steps using the same logic as `/plan-roadmap`, preserving the roadmap ID and archiving the original for comparison.

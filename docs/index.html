@@ -1800,7 +1800,28 @@ change-history:
       <p>Validate skills and agents against best practices. Produces structured PASS/WARN/FAIL report. Read-only.</p>
       <span class="card-tag tag-arch">v2</span>
     </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/guideline-review">/guideline-review</a></h4>
+      <p>Review all code against coding guidelines. 4 parallel agents check general rules, engineering principles, platform conventions, and error handling.</p>
+      <span class="card-tag tag-test">v1</span>
+    </div>
   </div>
+
+  <details>
+    <summary>/guideline-review &mdash; Full Codebase Audit <span class="tag tag-test">testing</span></summary>
+    <div class="detail-body">
+      <p>Launches 4 review agents in parallel, each checking a different aspect of the codebase against the <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="gh">coding guidelines</a>:</p>
+      <table>
+        <tr><th>Agent</th><th>Checks Against</th><th>Focus</th></tr>
+        <tr><td>code-reviewer</td><td>general.md (21 rules)</td><td>Native controls, threading, progress, testing, accessibility, privacy, feature flags</td></tr>
+        <tr><td>code-reviewer</td><td>engineering-principles.md (15 principles)</td><td>Simplicity, DI, immutability, fail fast, YAGNI, boundaries</td></tr>
+        <tr><td>code-reviewer</td><td>Platform guideline (swift/kotlin/typescript/python)</td><td>Logging, secure storage, linting, previews, concurrency</td></tr>
+        <tr><td>silent-failure-hunter</td><td>Fail fast + security rules</td><td>Swallowed exceptions, empty catch blocks, missing error handling</td></tr>
+      </table>
+      <p><strong>Scope options:</strong> entire repo, specific directory, uncommitted changes (<code>--changed</code>), or branch diff (<code>--branch</code>).</p>
+      <p><strong>Output:</strong> severity-grouped report (high/medium/low) with file, line, rule number, and description. Optionally fixes high-severity findings.</p>
+    </div>
+  </details>
 </section>
 
 </div>
