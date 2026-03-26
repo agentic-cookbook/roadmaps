@@ -470,5 +470,6 @@ Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. 
 | `python.md` | Python (cat-herding conventions) |
 | `csharp.md` | C# / .NET |
 | `windows.md` | Windows / WinUI 3 |
+| `ui.md` | Cross-platform UI design principles |
 | `specs.md` | Spec writing format |
 | `best-practices-references.md` | External reference links |
