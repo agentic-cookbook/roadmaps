@@ -110,16 +110,23 @@ If the step description is **"Create Draft PR"**, perform the following instead 
    ```bash
    gh pr create --head <feature_branch> --title "feat: <feature_name>" --body "Draft PR for <feature_name> roadmap implementation." --draft
    ```
+   Capture the PR number and URL from the output.
    - **Log**: `Created draft PR #<number>`
 
-3. **Mark this step as Complete** in the Roadmap.md and commit:
+3. **Register the PR on the dashboard**:
+   ```bash
+   python3 "<dash_cli>" add-pr <step_number> <pr_number> "<pr_url>"
+   python3 "<dash_cli>" log "Draft PR created: #<number> — feat: <feature_name>"
+   ```
+
+4. **Mark this step as Complete** in the Roadmap.md and commit:
    ```bash
    git -C <worktree_path> add <roadmap_file>
    git -C <worktree_path> commit -m "docs: mark step <N> complete"
    git -C <worktree_path> push
    ```
 
-4. **Return** with the PR number and URL.
+5. **Return** with the PR number and URL.
 
 Then stop. Do not continue to other steps.
 

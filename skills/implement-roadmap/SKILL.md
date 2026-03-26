@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "24"
+version: "25"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v24
+   > implement-roadmap v25
 
 2. Print the worker agent version by running:
    ```bash
@@ -122,13 +122,70 @@ test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<feature_name>" && python3 "$DA
 
 **IMPORTANT**: Always set `export DASH_FEATURE="<feature_name>"` before ANY `dash` command. This ensures concurrent sessions don't interfere with each other. The `DASH_FEATURE` must be set in the shell so all subsequent `python3 "$DASH_CLI" ...` calls inherit it.
 
+## Step 2a: Check for Previous Implementation Artifacts
+
+Before creating a new branch, check if a previous implementation left behind artifacts:
+
+```bash
+FEATURE_BRANCH="feature/<feature_name>"
+WORKTREE_PATH="../$(basename $(pwd))-wt/<feature_name>"
+```
+
+**Check for existing worktree:**
+```bash
+git worktree list | grep "$WORKTREE_PATH" && echo "WORKTREE_EXISTS" || echo "NO_WORKTREE"
+```
+
+**Check for existing local branch:**
+```bash
+git branch --list "$FEATURE_BRANCH" | grep -q . && echo "LOCAL_BRANCH" || echo "NO_LOCAL_BRANCH"
+```
+
+**Check for existing remote branch:**
+```bash
+git ls-remote --heads origin "$FEATURE_BRANCH" | grep -q . && echo "REMOTE_BRANCH" || echo "NO_REMOTE_BRANCH"
+```
+
+**Check for existing PR:**
+```bash
+gh pr list --head "$FEATURE_BRANCH" --state all --json number,title,state,url --jq '.[0]' 2>/dev/null || echo "NO_PR"
+```
+
+If ANY of these exist, present the findings and ask:
+
+```
+Found artifacts from a previous implementation of <feature_name>:
+  - Worktree: <path> (if exists)
+  - Local branch: <branch> (if exists)
+  - Remote branch: <branch> (if exists)
+  - PR: #<number> <title> (<state>) (if exists)
+
+This roadmap will start fresh. Clean up and continue?
+
+[x] yes — remove all artifacts and start fresh
+[ ] no — stop so I can investigate
+```
+
+**STOP. Wait for the user's response.**
+
+If yes, clean up:
+```bash
+git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
+git branch -D "$FEATURE_BRANCH" 2>/dev/null || true
+git push origin --delete "$FEATURE_BRANCH" 2>/dev/null || true
+```
+If there's an open PR, close it:
+```bash
+gh pr close <number> -c "Superseded by fresh implementation run" 2>/dev/null || true
+```
+
+If no artifacts exist, continue silently.
+
 ## Step 2b: Create Feature Branch and Worktree
 
 Create a single feature branch and worktree for all steps:
 
 ```bash
-FEATURE_BRANCH="feature/<feature_name>"
-WORKTREE_PATH="../$(basename $(pwd))-wt/<feature_name>"
 git worktree add "$WORKTREE_PATH" -b "$FEATURE_BRANCH"
 ```
 
