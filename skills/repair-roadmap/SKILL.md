@@ -159,16 +159,27 @@ Changes from original:
 
 ## Step 5: Write Revised Roadmap
 
-### 5a: Archive the original
+### 5a: Move the original to Trash
 
-Rename the original Roadmap.md so it's preserved:
+Move the original Roadmap.md to the system Trash so it can be recovered if needed:
 
 ```bash
 TODAY=$(date +%Y-%m-%d)
-mv "$ROADMAP_DIR/Roadmap.md" "$ROADMAP_DIR/Roadmap.repaired-$TODAY.md"
 ```
 
-**Log**: `ACTION: archived original as Roadmap.repaired-$TODAY.md`
+On macOS:
+```bash
+mv "$ROADMAP_DIR/Roadmap.md" "$HOME/.Trash/Roadmap-$(basename $ROADMAP_DIR)-$TODAY.md"
+```
+
+On Linux (freedesktop trash):
+```bash
+TRASH_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/Trash/files"
+mkdir -p "$TRASH_DIR"
+mv "$ROADMAP_DIR/Roadmap.md" "$TRASH_DIR/Roadmap-$(basename $ROADMAP_DIR)-$TODAY.md"
+```
+
+**Log**: `ACTION: moved original to Trash as Roadmap-$(basename $ROADMAP_DIR)-$TODAY.md`
 
 ### 5b: Write the new Roadmap.md
 
@@ -189,7 +200,7 @@ event: repaired
 date: $TODAY
 ---
 
-Roadmap repaired. Original saved as Roadmap.repaired-$TODAY.md.
+Roadmap repaired. Original moved to Trash.
 Changes: <brief summary of what was changed>
 ```
 
@@ -203,8 +214,8 @@ printf -- '---\nevent: ready\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$T
 
 Use the **Read tool** to verify:
 - `$ROADMAP_DIR/Roadmap.md` exists and is not empty
-- `$ROADMAP_DIR/Roadmap.repaired-$TODAY.md` exists (the original)
 - `$ROADMAP_DIR/State/$TODAY-Ready.md` exists
+- Original is no longer in `$ROADMAP_DIR/` (moved to Trash)
 
 ---
 
@@ -216,7 +227,7 @@ Exit plan mode, then print:
 === REPAIR COMPLETE: <FeatureName> ===
 
 Roadmap: $ROADMAP_DIR/Roadmap.md
-Original: $ROADMAP_DIR/Roadmap.repaired-$TODAY.md
+Original: moved to Trash
 State: Ready
 Steps: <N> total
 Log: $ROADMAP_DIR/repair.log
