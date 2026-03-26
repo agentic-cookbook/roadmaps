@@ -243,6 +243,27 @@ Completion
 
 ---
 
+### /import-shared-project
+
+Add a shared project reference to the current project's CLAUDE.md. Takes a project name (looked up in `~/projects/`) or a Git URL (cloned next to the current project).
+
+**What it does:** Resolves the shared project, asks what it provides (specs, libraries, conventions), builds a reference block with path, repo URL, and usage instructions, and appends it to CLAUDE.md. Future sessions will know about the shared project automatically.
+
+**Usage:**
+
+```
+/import-shared-project litterbox
+/import-shared-project git@github.com:user/repo.git
+```
+
+**Changelog:**
+
+| Version | Date | Changes |
+|---------|------|---------|
+| v1 | 2026-03-25 | Initial release — resolve by name or URL, clone if needed, build reference block |
+
+---
+
 ### /generate-test-roadmap
 
 Generates a complete test roadmap for exercising `/implement-roadmap-interactively` and `implement-roadmap-agent`. Creates all planning artifacts (Feature Definition, Feature Roadmap, 20 GitHub issues) in one shot with no user interaction.
