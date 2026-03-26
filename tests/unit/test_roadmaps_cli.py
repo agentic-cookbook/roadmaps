@@ -704,3 +704,124 @@ class TestExtractPrLink:
         rd = _make_roadmap_dir(tmp_path, "repo", "2026-03-25-NoPR", STEPS_3)
         link = roadmaps._extract_pr_link(rd / "Roadmap.md")
         assert link is None
+
+
+# ---------------------------------------------------------------------------
+# cmd_status
+# ---------------------------------------------------------------------------
+
+class TestCmdStatus:
+    def test_status_shows_all_sections(self, tmp_path, capsys):
+        fm = '---\nid: status-uuid\nproject: repo\ngithub-user: testuser\nplan-version: 11\ncreated: 2026-03-25\nmodified: 2026-03-25\n---\n\n'
+        rd = _make_roadmap_dir(tmp_path, "repo", "2026-03-25-StatusFeature",
+                               STEPS_DETAILED, frontmatter=fm)
+        (rd / "planning.log").write_text("log entry\n")
+
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=1, stdout="", stderr="")
+            with mock.patch("roadmaps._dashboard_request") as mock_dash:
+                mock_dash.return_value = (None, "not found")
+                roadmaps.cmd_status(tmp_path, "StatusFeature")
+
+        out = capsys.readouterr().out
+        assert "StatusFeature" in out
+        assert "Frontmatter:" in out
+        assert "status-uuid" in out
+        assert "testuser" in out
+        assert "State files:" in out
+        assert "Log files:" in out
+        assert "planning.log" in out
+        assert "Git artifacts:" in out
+
+    def test_status_not_found(self, tmp_path, capsys):
+        roadmaps.cmd_status(tmp_path, "Ghost")
+        out = capsys.readouterr().out
+        assert "No roadmap found" in out
+
+    def test_status_shows_workdir(self, tmp_path, capsys):
+        fm = '---\nid: wd-uuid\n---\n\n'
+        workdir = tmp_path / "fake-home" / ".roadmaps"
+        _make_workdir_roadmap(workdir, "repo", "2026-03-25-WorkdirTest", STEPS_3)
+        (tmp_path / "repo").mkdir()
+
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=1, stdout="", stderr="")
+            with mock.patch("roadmaps._dashboard_request") as mock_dash:
+                mock_dash.return_value = (None, "not found")
+                roadmaps.cmd_status(tmp_path, "WorkdirTest",)
+
+        # Should not crash on workdir roadmaps
+        out = capsys.readouterr().out
+        assert "WorkdirTest" in out
+
+
+# ---------------------------------------------------------------------------
+# cmd_diagnose
+# ---------------------------------------------------------------------------
+
+class TestCmdDiagnose:
+    def test_clean_system(self, tmp_path, capsys):
+        _make_roadmap_dir(tmp_path, "repo", "2026-03-25-Clean", STEPS_3,
+                          frontmatter='---\nid: clean-id\nproject: repo\n---\n\n')
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+            roadmaps.cmd_diagnose(tmp_path)
+        out = capsys.readouterr().out
+        assert "No issues found" in out
+
+    def test_detects_orphaned_directory(self, tmp_path, capsys):
+        fm = '---\nid: orphan-id\nproject: repo\n---\n\n'
+        _make_flat_roadmap(tmp_path, "repo", "Feature", STEPS_3, frontmatter=fm)
+        _make_roadmap_dir(tmp_path, "repo", "2026-03-25-Feature", STEPS_3,
+                          state="Implementing", frontmatter=fm)
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+            roadmaps.cmd_diagnose(tmp_path)
+        out = capsys.readouterr().out
+        assert "orphaned_directory" in out
+        assert "1 warning" in out
+
+    def test_detects_stale_implementing(self, tmp_path, capsys):
+        fm = '---\nid: stale-id\nproject: repo\n---\n\n'
+        rd = _make_roadmap_dir(tmp_path, "repo", "2026-03-25-Stale", STEPS_3,
+                               state="Implementing", frontmatter=fm)
+        state_file = list((rd / "State").glob("*-Implementing.md"))[0]
+        old_time = time.time() - (48 * 3600)
+        os.utime(state_file, (old_time, old_time))
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+            roadmaps.cmd_diagnose(tmp_path)
+        out = capsys.readouterr().out
+        assert "stale_implementing" in out
+        assert "48" in out
+
+    def test_detects_missing_project_field(self, tmp_path, capsys):
+        fm = '---\nid: noproj-id\n---\n\n'
+        _make_roadmap_dir(tmp_path, "repo", "2026-03-25-NoProj", STEPS_3,
+                          frontmatter=fm)
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+            roadmaps.cmd_diagnose(tmp_path)
+        out = capsys.readouterr().out
+        assert "missing_project_field" in out
+
+    def test_detects_missing_id(self, tmp_path, capsys):
+        _make_roadmap_dir(tmp_path, "repo", "2026-03-25-NoId", STEPS_3)
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+            roadmaps.cmd_diagnose(tmp_path)
+        out = capsys.readouterr().out
+        assert "missing_id" in out
+
+    def test_project_filter(self, tmp_path, capsys):
+        fm_a = '---\nid: a-id\nproject: repo-a\n---\n\n'
+        fm_b = '---\nid: b-id\n---\n\n'  # missing project
+        _make_roadmap_dir(tmp_path, "repo-a", "2026-03-25-A", STEPS_3, frontmatter=fm_a)
+        _make_roadmap_dir(tmp_path, "repo-b", "2026-03-25-B", STEPS_3, frontmatter=fm_b)
+        with mock.patch("roadmaps.subprocess.run") as mock_run:
+            mock_run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+            roadmaps.cmd_diagnose(tmp_path, project="repo-a")
+        out = capsys.readouterr().out
+        # repo-a has project field, so no missing_project_field for it
+        # repo-b is filtered out
+        assert "repo-b" not in out

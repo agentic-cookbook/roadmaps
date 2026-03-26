@@ -931,6 +931,306 @@ def cmd_dashboard_sync(projects_dir, project=None):
         print(f"\033[31m{errors} error(s)\033[0m")
 
 
+def cmd_status(projects_dir, name):
+    """Show full diagnostic status of a single roadmap."""
+    roadmap, err = _find_roadmap_by_name(projects_dir, name)
+    if err:
+        print(err)
+        return
+
+    feature_name = roadmap["name"]
+    repo = roadmap["repo"]
+    source = roadmap.get("source", "unknown")
+    roadmap_dir = roadmap.get("roadmap_dir")
+    roadmap_path = roadmap["path"]
+
+    print(f"\n\033[1m{feature_name}\033[0m  [{repo}]\n")
+
+    # Basic info
+    print(f"  Source:    {source}")
+    print(f"  Path:     {roadmap_path}")
+    if roadmap_dir:
+        print(f"  Dir:      {roadmap_dir}")
+    print(f"  State:    {roadmap['state']}")
+    print(f"  Progress: {roadmap['complete']}/{roadmap['total']} steps")
+
+    # Frontmatter
+    meta, _ = lib.parse_frontmatter(roadmap_path)
+    rid = meta.get("id", "")
+    project_field = meta.get("project", "")
+    github_user = meta.get("github-user", "")
+    plan_version = meta.get("plan-version", "")
+    print(f"\n  \033[1mFrontmatter:\033[0m")
+    print(f"    id:          {rid or '(none)'}")
+    print(f"    project:     {project_field or '(none)'}")
+    print(f"    github-user: {github_user or '(none)'}")
+    print(f"    plan-version: {plan_version or '(none)'}")
+    print(f"    created:     {meta.get('created', '?')}")
+    print(f"    modified:    {meta.get('modified', '?')}")
+
+    # State files
+    if roadmap_dir:
+        state_dir = Path(roadmap_dir) / "State"
+        if state_dir.exists():
+            state_files = sorted(state_dir.glob("*.md"))
+            print(f"\n  \033[1mState files:\033[0m")
+            for sf in state_files:
+                mtime = datetime.fromtimestamp(sf.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+                print(f"    {sf.name}  ({mtime})")
+        else:
+            print(f"\n  \033[90mNo State/ directory\033[0m")
+
+        # Log files
+        log_files = sorted(Path(roadmap_dir).glob("*.log"))
+        if log_files:
+            print(f"\n  \033[1mLog files:\033[0m")
+            for lf in log_files:
+                size = lf.stat().st_size
+                print(f"    {lf.name}  ({size} bytes)")
+
+    # Git artifacts
+    repo_path = Path(projects_dir).expanduser() / repo
+    branch_name = f"feature/{feature_name}"
+    print(f"\n  \033[1mGit artifacts:\033[0m")
+
+    # Worktree
+    try:
+        result = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            capture_output=True, text=True, cwd=str(repo_path)
+        )
+        worktrees = [l.split(" ")[1] for l in result.stdout.splitlines()
+                     if l.startswith("worktree ") and feature_name in l]
+        if worktrees:
+            for wt in worktrees:
+                print(f"    \033[33mWorktree:\033[0m {wt}")
+        else:
+            print(f"    Worktree:  none")
+    except Exception:
+        print(f"    Worktree:  (could not check)")
+
+    # Local branch
+    try:
+        result = subprocess.run(
+            ["git", "branch", "--list", branch_name],
+            capture_output=True, text=True, cwd=str(repo_path)
+        )
+        if result.stdout.strip():
+            print(f"    \033[33mLocal branch:\033[0m {branch_name}")
+        else:
+            print(f"    Local branch: none")
+    except Exception:
+        print(f"    Local branch: (could not check)")
+
+    # Remote branch
+    try:
+        result = subprocess.run(
+            ["git", "ls-remote", "--heads", "origin", branch_name],
+            capture_output=True, text=True, cwd=str(repo_path)
+        )
+        if result.stdout.strip():
+            print(f"    \033[33mRemote branch:\033[0m {branch_name}")
+        else:
+            print(f"    Remote branch: none")
+    except Exception:
+        print(f"    Remote branch: (could not check)")
+
+    # PR
+    try:
+        result = subprocess.run(
+            ["gh", "pr", "list", "--head", branch_name, "--state", "all",
+             "--json", "number,title,state,url", "--jq", ".[0]"],
+            capture_output=True, text=True, cwd=str(repo_path)
+        )
+        if result.stdout.strip() and result.stdout.strip() != "null":
+            pr = json.loads(result.stdout)
+            print(f"    PR: #{pr.get('number')} — {pr.get('title')} ({pr.get('state')})")
+            print(f"        {pr.get('url')}")
+        else:
+            print(f"    PR: none")
+    except Exception:
+        print(f"    PR: (could not check)")
+
+    # Dashboard
+    dash_url = _dashboard_url()
+    if rid:
+        data, err = _dashboard_request("GET", f"/roadmaps/{rid}")
+        if data:
+            print(f"\n  \033[1mDashboard:\033[0m")
+            print(f"    Status: {data.get('status', '?')}")
+            print(f"    State:  {data.get('state', '?')}")
+            steps = data.get("steps", [])
+            complete = sum(1 for s in steps if s.get("status") == "complete")
+            print(f"    Steps:  {complete}/{len(steps)}")
+            print(f"    URL:    {dash_url}/roadmap/{rid}")
+        else:
+            print(f"\n  \033[90mDashboard: not found or not running\033[0m")
+
+    # Workdir copy
+    workdir = Path.home() / ".roadmaps" / repo / f"*{feature_name}*"
+    workdir_matches = list(Path.home().joinpath(".roadmaps", repo).glob(f"*{feature_name}*")) if (Path.home() / ".roadmaps" / repo).exists() else []
+    if workdir_matches:
+        print(f"\n  \033[1mWorking directory:\033[0m")
+        for wd in workdir_matches:
+            print(f"    {wd}")
+    else:
+        print(f"\n  Working directory: none")
+
+    # PR link from roadmap content
+    pr_link = _extract_pr_link(roadmap_path)
+    if pr_link:
+        print(f"\n  \033[1mPR link (from roadmap):\033[0m {pr_link}")
+
+    print()
+
+
+def cmd_diagnose(projects_dir, project=None):
+    """Scan all repos and report issues that need attention."""
+    all_roadmaps = find_all_roadmaps(projects_dir)
+    if project:
+        all_roadmaps = [r for r in all_roadmaps if r["repo"] == project]
+
+    issues = []
+
+    # Build a map of IDs to detect duplicates
+    by_id = {}
+    for r in all_roadmaps:
+        meta, _ = lib.parse_frontmatter(r["path"])
+        rid = meta.get("id", "")
+        if rid:
+            by_id.setdefault(rid, []).append(r)
+
+    # Check for orphaned directories (flat file exists with same ID)
+    projects_path = Path(projects_dir).expanduser()
+    for repo_dir in sorted(projects_path.iterdir()):
+        if not repo_dir.is_dir():
+            continue
+        roadmaps_dir = repo_dir / "Roadmaps"
+        if not roadmaps_dir.exists():
+            continue
+
+        flat_ids = set()
+        for rf in lib.find_roadmap_files(repo_dir):
+            meta, _ = lib.parse_frontmatter(rf)
+            rid = meta.get("id", "")
+            if rid:
+                flat_ids.add(rid)
+
+        for rd in lib.find_roadmap_dirs(repo_dir):
+            rm_file = lib.roadmap_path(rd)
+            meta, _ = lib.parse_frontmatter(rm_file)
+            rid = meta.get("id", "")
+            if rid and rid in flat_ids:
+                issues.append({
+                    "type": "orphaned_directory",
+                    "severity": "warn",
+                    "repo": repo_dir.name,
+                    "name": lib.get_feature_name(rd),
+                    "detail": f"Directory {rd.name} exists but flat file with same ID also exists",
+                    "path": str(rd),
+                })
+
+    # Check for stale Implementing state
+    for r in all_roadmaps:
+        if r["state"] != "Implementing":
+            continue
+        roadmap_dir = r.get("roadmap_dir")
+        if not roadmap_dir:
+            continue
+        state_dir = Path(roadmap_dir) / "State"
+        for sf in state_dir.glob("*-Implementing.md"):
+            age_hours = (time.time() - sf.stat().st_mtime) / 3600
+            if age_hours > 24:
+                issues.append({
+                    "type": "stale_implementing",
+                    "severity": "warn",
+                    "repo": r["repo"],
+                    "name": r["name"],
+                    "detail": f"Implementing for {age_hours:.0f}h (likely timed out)",
+                    "path": str(sf),
+                })
+
+    # Check for dangling worktrees
+    for repo_dir in sorted(projects_path.iterdir()):
+        if not repo_dir.is_dir() or not (repo_dir / ".git").exists():
+            continue
+        try:
+            result = subprocess.run(
+                ["git", "worktree", "list", "--porcelain"],
+                capture_output=True, text=True, cwd=str(repo_dir)
+            )
+            for line in result.stdout.splitlines():
+                if line.startswith("worktree ") and "-wt/" in line:
+                    wt_path = line.split(" ", 1)[1]
+                    # Check if the worktree dir still exists
+                    if not Path(wt_path).exists():
+                        issues.append({
+                            "type": "dangling_worktree",
+                            "severity": "warn",
+                            "repo": repo_dir.name,
+                            "name": Path(wt_path).name,
+                            "detail": f"Worktree registered but directory missing: {wt_path}",
+                            "path": wt_path,
+                        })
+        except Exception:
+            pass
+
+    # Check for roadmaps missing project field
+    for r in all_roadmaps:
+        meta, _ = lib.parse_frontmatter(r["path"])
+        if not meta.get("project"):
+            issues.append({
+                "type": "missing_project_field",
+                "severity": "info",
+                "repo": r["repo"],
+                "name": r["name"],
+                "detail": "No 'project' field in frontmatter",
+                "path": r["path"],
+            })
+
+    # Check for roadmaps missing ID
+    for r in all_roadmaps:
+        meta, _ = lib.parse_frontmatter(r["path"])
+        if not meta.get("id"):
+            issues.append({
+                "type": "missing_id",
+                "severity": "info",
+                "repo": r["repo"],
+                "name": r["name"],
+                "detail": "No 'id' field in frontmatter",
+                "path": r["path"],
+            })
+
+    # Print results
+    print(f"\n\033[1mRoadmap Diagnosis\033[0m")
+    print(f"Scanned {len(all_roadmaps)} roadmap(s)\n")
+
+    if not issues:
+        print("\033[32mNo issues found. Everything looks healthy.\033[0m\n")
+        return
+
+    # Group by severity
+    warns = [i for i in issues if i["severity"] == "warn"]
+    infos = [i for i in issues if i["severity"] == "info"]
+
+    if warns:
+        print(f"\033[33m⚠ {len(warns)} warning(s):\033[0m\n")
+        for i in warns:
+            print(f"  \033[33m⚠\033[0m  [{i['repo']}] {i['name']}")
+            print(f"     {i['type']}: {i['detail']}")
+            print(f"     \033[90m{i['path']}\033[0m")
+            print()
+
+    if infos:
+        print(f"\033[90mℹ {len(infos)} info:\033[0m\n")
+        for i in infos:
+            print(f"  ℹ  [{i['repo']}] {i['name']}")
+            print(f"     {i['type']}: {i['detail']}")
+            print()
+
+    print(f"Total: {len(warns)} warning(s), {len(infos)} info\n")
+
+
 def cmd_monitor(projects_dir, interval, project=None):
     """Live monitor: show roadmaps and dashboards, refresh in a loop."""
     try:
@@ -1013,8 +1313,10 @@ def main():
     parser.add_argument("--sort", choices=["number", "name", "modified", "created"], default="number", help="Sort order (default: number)")
     parser.add_argument("--json", action="store_true", help="Output --list results as JSON")
     parser.add_argument("--show", metavar="NAME", help="Show detailed view of a single roadmap")
+    parser.add_argument("--status", metavar="NAME", help="Full diagnostic status of a single roadmap")
     parser.add_argument("--logs", metavar="NAME", help="Show log files for a roadmap")
     parser.add_argument("--cancel", metavar="NAME", help="Cancel a stuck roadmap (cleanup worktree, branches, PRs)")
+    parser.add_argument("--diagnose", action="store_true", help="Scan all repos for issues (orphans, stale state, missing fields)")
     parser.add_argument("--stale", nargs="?", const=24, type=int, metavar="HOURS", help="Find stale Implementing roadmaps (default: 24h)")
     parser.add_argument("--dashboard", action="store_true", help="Show dashboard server status")
     parser.add_argument("--dashboard-sync", action="store_true", help="Sync all roadmaps to the dashboard")
@@ -1031,6 +1333,14 @@ def main():
 
     if args.show:
         cmd_show(projects_dir, args.show)
+        return
+
+    if args.status:
+        cmd_status(projects_dir, args.status)
+        return
+
+    if args.diagnose:
+        cmd_diagnose(projects_dir, project=project)
         return
 
     if args.logs:
