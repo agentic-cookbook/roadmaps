@@ -342,18 +342,33 @@ Before presenting the draft to the user, review the Roadmap against the Discussi
 5. **Constraints honored** — Are the Out of Scope items and Constraints from the discussion summary respected? Flag any violations.
 6. **User quotes check** — Re-read the User's Exact Words section. Does the Roadmap honor the intent behind those quotes? Flag if something was "reinterpreted" away from what the user said.
 
-**If any divergence is found:**
+**If ANY check fails — this is a hard stop. No exceptions.**
 
-Fix the Roadmap draft to align with the discussion summary BEFORE presenting it to the user. If a divergence seems intentional (e.g., you split a vague requirement into concrete steps), add a note in the Roadmap explaining why.
-
-**If the Roadmap needed changes, log them:**
+1. **Do NOT present the draft to the user.**
+2. **Do NOT attempt to fix it in place.** The draft is tainted — patching it risks carrying forward the same misunderstanding.
+3. **Warn the user** — tell them exactly which checks failed and what was wrong:
 
 ```
-[timestamp] ALIGNMENT_REVIEW: <N> divergences found and corrected
-[timestamp] ALIGNMENT_FIX: <description of what was changed and why>
+⚠️ ALIGNMENT FAILURE — Roadmap does not match the discussion.
+
+Violations:
+- <check name>: <what was wrong>
+- <check name>: <what was wrong>
+
+The Roadmap draft has been discarded. Restarting planning from Step 5b
+with the discussion summary as the source of truth.
 ```
 
-If no divergence: `[timestamp] ALIGNMENT_REVIEW: Roadmap aligns with discussion summary`
+4. **Discard the draft entirely** and return to Step 5b to redraft from scratch, using the discussion summary as the authoritative input.
+5. **Re-run this alignment review** on the new draft. If it fails again, warn the user and restart again. After 3 consecutive failures, **STOP** and ask the user for guidance.
+
+Log every failure:
+```
+[timestamp] ALIGNMENT_FAILURE: <check name> — <what was wrong>
+[timestamp] ACTION: Draft discarded, restarting from Step 5b (attempt <N>)
+```
+
+If all checks pass: `[timestamp] ALIGNMENT_REVIEW: PASSED — Roadmap aligns with discussion summary`
 
 ### 5d: Present draft and request approval
 
