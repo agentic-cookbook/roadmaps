@@ -3,7 +3,7 @@
 Cross-platform conventions for client-server communication. Covers API design, resilience,
 caching, offline support, and real-time patterns.
 
-## References
+## §10.1. References
 
 1. [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines)
 2. [Google API Design Guide](https://cloud.google.com/apis/design)
@@ -11,7 +11,7 @@ caching, offline support, and real-time patterns.
 4. [RFC 9457: Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457)
 5. [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111)
 
-## API Design
+## §10.2. API Design
 
 Use REST with consistent conventions. Follow the platform API guidelines (Microsoft, Google,
 Zalando) for details — the essentials below are consensus across all three.
@@ -43,7 +43,7 @@ Zalando) for details — the essentials below are consensus across all three.
 **Versioning:** URL path versioning (`/v1/users`). Simple, explicit, industry consensus. Bump
 major version only for breaking changes.
 
-## Error Responses
+## §10.3. Error Responses
 
 Use [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) format with
 `Content-Type: application/problem+json`:
@@ -69,7 +69,7 @@ Use [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457) format wi
 - **instance** — identifies the specific request
 - Add extension fields (`errors`, `trace_id`) as needed
 
-## Pagination
+## §10.4. Pagination
 
 Prefer **cursor pagination** for most APIs — stable under concurrent mutations, consistent
 performance at any depth. Use offset pagination only when users need page numbers or data
@@ -102,7 +102,7 @@ References:
 - [Google AIP-158: Pagination](https://google.aip.dev/158)
 - [Zalando: Pagination](https://opensource.zalando.com/restful-api-guidelines/#pagination)
 
-## Retry and Resilience
+## §10.5. Retry and Resilience
 
 Not every failure is permanent. Retry transient failures with exponential backoff and jitter.
 
@@ -133,7 +133,7 @@ References:
 - [Microsoft: Transient Fault Handling](https://learn.microsoft.com/en-us/azure/architecture/best-practices/transient-faults)
 - [Microsoft: Circuit Breaker Pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/circuit-breaker)
 
-## Timeouts
+## §10.6. Timeouts
 
 Always set both connection and read timeouts. Never use infinite timeouts.
 
@@ -146,7 +146,7 @@ Always set both connection and read timeouts. Never use infinite timeouts.
 For long-running operations, use **202 Accepted** + polling pattern instead of extending
 timeouts.
 
-## Caching
+## §10.7. Caching
 
 Use HTTP caching headers. The server controls cache policy; the client honors it.
 
@@ -180,7 +180,7 @@ References:
 - [web.dev: HTTP Cache](https://web.dev/articles/http-cache)
 - [MDN: Cache-Control](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control)
 
-## Offline and Connectivity
+## §10.8. Offline and Connectivity
 
 For apps that must work offline, design for local-first with background sync.
 
@@ -202,7 +202,7 @@ References:
 - [web.dev: Offline Cookbook](https://web.dev/articles/offline-cookbook)
 - [CRDTs](https://crdt.tech/)
 
-## Rate Limiting
+## §10.9. Rate Limiting
 
 Respect server rate limits. Handle 429 responses gracefully.
 
@@ -214,7 +214,7 @@ Respect server rate limits. Handle 429 responses gracefully.
 References:
 - [RFC 6585: 429 Too Many Requests](https://www.rfc-editor.org/rfc/rfc6585)
 
-## Real-Time Communication
+## §10.10. Real-Time Communication
 
 Choose the simplest technique that meets your needs.
 
