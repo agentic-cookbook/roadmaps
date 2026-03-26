@@ -24,6 +24,7 @@ All lengthy work must run on background threads/tasks using platform async primi
 - **Android**: Kotlin Coroutines (`viewModelScope`, `Dispatchers.IO`)
 - **Web**: `Promise`/`async`, Web Workers
 - **Python**: `asyncio`, threading for I/O
+- **Windows/.NET**: `async`/`await`, `Task.Run` for CPU-bound work, `DispatcherQueue` for UI updates
 
 Never block the main/UI thread.
 
@@ -47,7 +48,7 @@ One logical change per commit. A change may touch multiple files if they are par
 
 Every generated artifact must be verified:
 
-1. **Build**: Compile for all target platforms (`xcodebuild`, `./gradlew build`, `npm run build`)
+1. **Build**: Compile for all target platforms (`xcodebuild`, `./gradlew build`, `npm run build`, `dotnet build`)
 2. **Test**: Run the full test suite — all tests must pass
 3. **Lint**: Run the platform linter (see Rule 21)
 4. **Log verification**: Build, run, and grep for expected log messages from the Logging section
@@ -64,6 +65,7 @@ Every component and flow must be instrumented with structured logging using the 
 - **Android**: `Timber` (or `android.util.Log`)
 - **Web**: `console` with structured prefixes, or `pino`/`winston` in Node
 - **Python**: `logging` module with module-level loggers
+- **Windows/.NET**: `ILogger<T>` from `Microsoft.Extensions.Logging` — category per class via generic parameter
 
 Use `debug` level for flow instrumentation. Log state transitions, user interactions, async task start/completion/failure, and branching logic.
 
@@ -74,6 +76,7 @@ All significant feature points and views MUST be deep linkable using the platfor
 - **Apple**: Universal Links + custom URL schemes. `onOpenURL` in SwiftUI, `NavigationPath` for state restoration.
 - **Android**: App Links + intent filters. Navigation component deep link support.
 - **Web**: URL routing. Every view should have a unique, shareable URL.
+- **Windows**: Protocol activation via `<uap:Protocol>` declaration in manifest. `AppInstance.GetActivatedEventArgs()` for rich activation handling.
 
 Each spec SHOULD include a **Deep Linking** section defining URL patterns.
 
@@ -85,6 +88,7 @@ Components and flows SHOULD be scriptable where the platform supports it:
 - **Apple (iOS)**: `AppIntents` for Shortcuts and Siri integration
 - **Android**: `AppActions` for Google Assistant, `Intent`-based automation
 - **Web**: API endpoints or query parameter-driven actions
+- **Windows**: Protocol activation, command-line activation, `AppInstance` APIs. WinUI 3 has limited scripting support compared to other platforms.
 
 ## 12. Accessibility from day one
 
@@ -97,6 +101,9 @@ All components MUST integrate with platform accessibility APIs from initial impl
 5. WCAG AA minimum contrast (4.5:1 for text, 3:1 for large text)
 6. Meaningful focus order following visual layout
 
+Platform-specific tooling:
+- **Windows**: UI Automation patterns, Narrator testing, [Accessibility Insights](https://accessibilityinsights.io/), minimum 40x40 epx recommended touch targets
+
 ## 13. Localizability
 
 All user-facing strings MUST be localizable — no hardcoded strings:
@@ -104,6 +111,7 @@ All user-facing strings MUST be localizable — no hardcoded strings:
 - **Apple**: `String(localized:)` or `NSLocalizedString`. Store in `.xcstrings` or `.strings`.
 - **Android**: `strings.xml` resources. Reference via `R.string.*` or `stringResource()`.
 - **Web**: i18n library (`react-intl`, `i18next`). Extract to message catalogs.
+- **Windows**: `.resw` resource files with `x:Uid` in XAML. `ResourceLoader` from MRT Core for code-behind access.
 
 ## 14. RTL layout support
 
@@ -118,6 +126,7 @@ Platform notes:
 - **Apple**: Use `.environment(\.layoutDirection, .rightToLeft)` in previews. SwiftUI handles leading/trailing automatically.
 - **Android**: Set `android:supportsRtl="true"`. Use `start`/`end` instead of `left`/`right`.
 - **Web**: Use `dir="rtl"` attribute. Use CSS logical properties (`margin-inline-start` not `margin-left`).
+- **Windows**: Use `FlowDirection` property. WinUI 3 XAML handles leading/trailing automatically.
 
 ## 15. Respect accessibility display options
 
@@ -127,7 +136,7 @@ Components MUST respond to platform accessibility and display settings including
 
 1. **Data minimization**: Collect only what is needed. Prefer on-device processing.
 2. **Consent**: Opt-in for non-essential data collection. Honor "deny" gracefully — the app must remain functional.
-3. **Secure storage**: Tokens and credentials MUST use platform secure storage (Keychain, EncryptedSharedPreferences, HttpOnly cookies).
+3. **Secure storage**: Tokens and credentials MUST use platform secure storage (Keychain, EncryptedSharedPreferences, DPAPI, HttpOnly cookies).
 4. **No PII logging**: Never log personally identifiable information, even at debug level.
 5. **TLS only**: All network communication MUST use HTTPS.
 6. **Input sanitization**: Sanitize all user input before display (prevent XSS, injection).
@@ -164,6 +173,7 @@ Access methods:
 - **Apple (macOS)**: Debug menu item, guarded by `#if DEBUG`
 - **Android**: Shake gesture, guarded by `BuildConfig.DEBUG`
 - **Web**: `/debug` route, guarded by `NODE_ENV === 'development'`
+- **Windows**: Debug-only settings page, guarded by `#if DEBUG`
 
 ## 21. Linting from day one
 
@@ -174,5 +184,6 @@ All projects MUST include linting configured from initial generation:
 | Swift | SwiftLint | swift-format |
 | Kotlin | ktlint | ktlint |
 | TypeScript | ESLint | Prettier |
+| C# / .NET | Roslyn Analyzers + .editorconfig | dotnet format |
 
 Linter config MUST be committed. Linting MUST run as part of the build or pre-commit process. Formatting MUST be auto-fixable.
