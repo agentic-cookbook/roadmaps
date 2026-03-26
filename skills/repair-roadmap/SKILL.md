@@ -43,20 +43,22 @@ git rev-parse --is-inside-work-tree
 
 If this fails, **STOP**. Tell the user this skill must run inside a git repository.
 
-### 0b: Initialize planning log
+### 0b: Repair log
+
+The repair log lives inside the roadmap directory (set in Step 1 after resolving):
 
 ```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-PLAN_LOG="$HOME/.roadmaps/$PROJECT/repair.log"
+REPAIR_LOG="$ROADMAP_DIR/repair.log"
 ```
 
-Write the initial log entry:
+Write the header once the roadmap is resolved:
 ```
 [YYYY-MM-DD HH:MM:SS] repair-roadmap v1 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
+[YYYY-MM-DD HH:MM:SS] roadmap: $ROADMAP_DIR
 ```
 
-Throughout this skill, append to `$PLAN_LOG` before every significant action (same format as plan-roadmap's planning log).
+Throughout this skill, append to `$REPAIR_LOG` before every significant action (same format as plan-roadmap's planning log).
 
 ---
 
@@ -197,13 +199,7 @@ Changes: <brief summary of what was changed>
 printf -- '---\nevent: ready\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$TODAY-Ready.md"
 ```
 
-### 5e: Move log into roadmap directory
-
-```bash
-mv "$PLAN_LOG" "$ROADMAP_DIR/repair.log"
-```
-
-### 5f: Verify all files
+### 5e: Verify all files
 
 Use the **Read tool** to verify:
 - `$ROADMAP_DIR/Roadmap.md` exists and is not empty

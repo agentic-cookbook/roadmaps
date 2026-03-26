@@ -78,16 +78,17 @@ touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify
 
 If this fails, **STOP**. Tell the user the directory is not writable.
 
-### 0d: Initialize planning log
+### 0d: Planning log
 
-Create a planning log file that records every decision, action, command, and user interaction throughout the planning process. This log is saved in the roadmap directory for debugging and analysis.
+This skill writes a planning log that records every decision, action, command, and user interaction. The log lives inside the roadmap directory for debugging and analysis.
+
+The log file is created in Step 5e when the roadmap directory is created. Until then, accumulate log entries in memory. Once the directory exists:
 
 ```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-PLAN_LOG="$HOME/.roadmaps/$PROJECT/planning.log"
+PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 ```
 
-Write the initial log entry:
+Write the accumulated entries plus the header:
 ```
 [YYYY-MM-DD HH:MM:SS] plan-roadmap v11 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
@@ -95,21 +96,15 @@ Write the initial log entry:
 [YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
 ```
 
-**Throughout the rest of this skill, append to `$PLAN_LOG` before every significant action:**
+**Throughout this skill, log every significant action** (append to `$PLAN_LOG` once it exists):
 
 - `[timestamp] DECISION: <what was decided and why>`
-- `[timestamp] ACTION: <what was done>` (e.g., "Created directory", "Wrote Roadmap.md")
-- `[timestamp] USER_INPUT: <what the user said>` (summarize, don't copy verbatim)
+- `[timestamp] ACTION: <what was done>`
+- `[timestamp] USER_INPUT: <what the user said>` (summarize)
 - `[timestamp] USER_CHOICE: <which option the user picked>`
 - `[timestamp] TOOL_CHECK: <tool> — installed: yes/no, authenticated: yes/no`
 - `[timestamp] STEP_TYPE: Step N "<name>" — Auto (reason) | Manual (reason)`
 - `[timestamp] ERROR: <what went wrong>`
-
-When the feature name is known (Step 3), move the log into the feature directory:
-```bash
-mv "$PLAN_LOG" "$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
-PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
-```
 
 ---
 
