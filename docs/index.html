@@ -1999,7 +1999,7 @@ change-history:
 </div>
 
 <footer>
-  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a> &middot; <span style="color:var(--text-dim);font-size:0.6rem;">v1</span>
+  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a> &middot; <span style="color:var(--text-dim);font-size:0.6rem;">v2</span>
 </footer>
 
 <script>
@@ -2025,7 +2025,7 @@ document.querySelectorAll('nav a').forEach(function(a) {
     if (target) {
       e.preventDefault();
       setTimeout(function() {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
       }, 50);
     }
   });
