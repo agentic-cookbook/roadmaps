@@ -91,31 +91,36 @@ header h1 em {
 }
 
 header .cat-name {
-  font-family: var(--sans);
-  font-size: 0.95rem;
-  color: var(--text-muted);
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--text);
   margin-bottom: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 10px;
+  letter-spacing: 0.01em;
+}
+
+header .cat-name .cat-img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(232,151,107,0.4));
 }
 
 header .cat-name a {
-  color: var(--accent);
+  color: #e8976b;
   text-decoration: none;
-  border-bottom: 1px solid rgba(196,163,90,0.3);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  border-bottom: 1px solid rgba(232,151,107,0.3);
+  font-weight: 600;
+  font-size: 1.25rem;
+  transition: all 0.2s;
 }
 
 header .cat-name a:hover {
-  border-bottom-color: var(--accent);
-}
-
-header .cat-name svg {
-  vertical-align: middle;
+  border-bottom-color: #e8976b;
+  text-shadow: 0 0 12px rgba(232,151,107,0.4);
 }
 
 header .tagline {
@@ -280,23 +285,38 @@ p strong { color: var(--text); font-weight: 500; }
   border: 1px solid var(--border);
   border-radius: 8px;
   font-family: var(--sans);
-  font-size: 1.1rem;
+  font-size: 0.92rem;
   line-height: 1.85;
   color: var(--text-muted);
 }
 
 .story p {
   font-family: var(--sans);
-  font-size: 1.1rem;
+  font-size: 0.92rem;
   line-height: 1.85;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
   color: var(--text-muted);
 }
 
-.story p:nth-last-child(2) {
+.story .story-tagline {
   color: var(--accent);
   font-weight: 600;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
+}
+
+.story {
+  position: relative;
+  overflow: hidden;
+}
+
+.story .story-cat {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .story .story-coda {
@@ -602,7 +622,7 @@ footer {
 <header>
   <div class="dev-stamp">UNDER DEVELOPMENT</div>
   <h1>Cat <em>Herding</em></h1>
-  <div class="cat-name">My cat's name is <a href="https://docs.anthropic.com/en/docs/claude-code/overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.604 2.985L9.627 20.199a.875.875 0 01-1.626-.003L1.07 3.005a.875.875 0 011.18-1.098l6.251 3.126 6.26-3.126a.875.875 0 011.18 1.078l-.337.02v-.02zM22.93 3.005l-6.932 17.18a.875.875 0 01-1.625-.003" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Claude</a></div>
+  <div class="cat-name">My cat&rsquo;s name is <a href="https://docs.anthropic.com/en/docs/claude-code/overview">Claude</a></div>
   <div class="tagline">Automated Roadmap Planning &amp; Implementation for Claude Code</div>
   <div class="version"><a href="https://github.com/mikefullerton/cat-herding" class="gh" style="border:none;color:var(--text-dim)">github.com/mikefullerton/cat-herding</a></div>
 </header>
@@ -613,7 +633,10 @@ footer {
     <label for="hamburger-toggle" class="hamburger-btn">&#9776;</label>
   </div>
   <div class="nav-links">
+    <a href="#intro">Flummix your Greebles</a>
+    <span class="nav-divider"></span>
     <a href="#overview">Overview</a>
+    <a href="#repo">Roadmap System</a>
     <a href="#guidelines">Guidelines</a>
     <a href="#code-review">Code Review</a>
     <a href="#data-integrity">Data Integrity</a>
@@ -628,8 +651,6 @@ footer {
     <a href="#api">API</a>
     <span class="nav-divider"></span>
     <a href="#general-skills">General Skills</a>
-    <span class="nav-divider"></span>
-    <a href="#repo">Repository</a>
   </div>
 </nav>
 
@@ -642,10 +663,11 @@ footer {
     <p>Claude asks the right questions. What&rsquo;s the core use case? What can we cut? Where are the tricky parts? You go back and forth for a bit, and before you know it there&rsquo;s a full roadmap. You look it over, tweak a couple of details, and then say &ldquo;yes&rdquo; when Claude asks you, &ldquo;Run it through <code>/implement-roadmap</code> now?&rdquo;</p>
     <p>Yes. You watch for a bit - a draft pull request is opened, commits start getting added, with lots of context and explanation. Then you go to sleep. Or try to. You keep sneaking a look at the progress dashboard. One, two, three hours go by&hellip; You see the roadmap steps light up green one by one, done and committed to the PR. Features, subsystems, and user flows taking shape. The app is becoming a real thing. It&rsquo;s like watching someone build your house in fast-forward.</p>
     <p>As you sleep, it&rsquo;s finalized - all code reviewed and double checked against best practices and standards, CI builds it just fine, and your pull request is merged automatically. It&rsquo;s waiting for you, sleepyhead.</p>
-    <p>Finally the garbage truck wakes you up and you stumble back to the dashboard - a big green checkbox! The pull request is merged. Forty-three commits&hellip; all the stuff you brainstormed. You read through the diffs with your coffee as it&rsquo;s building locally. Then you&rsquo;re running it and you&rsquo;re happily flummixing your widgets with a giggle, then you smile, and get on with your day.</p>
+    <p>Finally the garbage truck wakes you up and you stumble back to the dashboard - a big green checkbox! The pull request is merged. Forty-three commits&hellip; all the stuff you brainstormed. You read through the diffs with your coffee as it&rsquo;s building locally. Then you&rsquo;re running it and you&rsquo;re happily flummixing your greebles with a giggle, then you smile, and get on with your day.</p>
     <p>"Well, that didn&rsquo;t suck", you say.</p>
-    <p>That&rsquo;s Cat Herding.</p>
+    <p class="story-tagline">That&rsquo;s Cat Herding.</p>
     <p class="story-coda">That&rsquo;s a good kitty. <b>Good Claude.</b></p>
+    <img src="claude-cat.png?v=4" alt="" class="story-cat">
   </div>
 </section>
 
@@ -730,6 +752,139 @@ footer {
         <tr><td><code>feature-dev:code-architect</code></td><td>feature-dev</td><td>Architecture analysis against existing patterns</td></tr>
         <tr><td><code>superpowers:code-reviewer</code></td><td>superpowers</td><td>Review against plan and coding standards</td></tr>
       </table>
+    </div>
+  </details>
+</section>
+
+<!-- Roadmap System -->
+<section id="repo">
+  <h2><span class="num">02</span>Roadmap System <a href="https://github.com/mikefullerton/cat-herding" class="repo-header-link">View on GitHub &rarr;</a></h2>
+  <p class="lead">The roadmap tools automate the full roadmap lifecycle &mdash; from conversation to shipped code.</p>
+
+  <details>
+    <summary>/plan-roadmap &mdash; Two-Phase Feature Planning <span class="tag tag-algo">planning</span></summary>
+    <div class="detail-body">
+      <p>Collaborative planning workflow that turns a feature idea into a structured roadmap through conversation, then structured artifact creation.</p>
+      <table>
+        <tr><th>Phase</th><th>Action</th></tr>
+        <tr><td>Phase 1 &mdash; Discussion</td><td>Conversational exploration of the feature idea. Clarifies scope, constraints, and acceptance criteria. No files created.</td></tr>
+        <tr><td>Phase 2 &mdash; Planning</td><td>Produces a Feature Roadmap file in <code>~/.roadmaps/</code> with goal, scope, acceptance criteria, and implementation steps.</td></tr>
+        <tr><td>Alignment Review</td><td>Six-point intent verification ensures the roadmap matches the original discussion before finalizing.</td></tr>
+      </table>
+      <p><strong>Output:</strong> a single Roadmap.md file with YAML frontmatter. GitHub issues use <code>{{REPO}}#{{ISSUE_NUMBER}}</code> placeholders &mdash; issues are created by <code>/implement-roadmap</code>.</p>
+      <p><strong>Guard:</strong> no implementation code is ever generated. Only Markdown files in <code>~/.roadmaps/</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/implement-roadmap &mdash; Automated Step Execution <span class="tag tag-algo">implementation</span></summary>
+    <div class="detail-body">
+      <p>Deterministic coordinator that implements a planned roadmap step-by-step, using a Python script for step selection and the Agent tool for each worker.</p>
+      <table>
+        <tr><th>Component</th><th>Role</th></tr>
+        <tr><td>Python coordinator</td><td>Deterministic step selection via regex parsing &mdash; the LLM never decides what to do next</td></tr>
+        <tr><td>Worker agent</td><td>Implements one step: code, build, test, commit, push, comment on PR</td></tr>
+        <tr><td>Dashboard sync</td><td>Real-time progress updates pushed to the Flask dashboard via REST API</td></tr>
+        <tr><td>Draft PR flow</td><td>Creates a draft PR at the start; each step comments on it; final step marks it ready and merges</td></tr>
+      </table>
+      <p><strong>Worktree isolation:</strong> code goes in a git worktree. Roadmap files stay in <code>~/.roadmaps/</code>. Never mixed.</p>
+      <p><strong>Review agents:</strong> configurable per-step and final review agents (code-reviewer, silent-failure-hunter, pr-test-analyzer, etc.).</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/repair-roadmap &mdash; Re-Plan Incomplete Roadmaps <span class="tag tag-algo">planning</span></summary>
+    <div class="detail-body">
+      <p>Re-plans an existing incomplete roadmap while preserving its identity. Archives the original for comparison.</p>
+      <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>Resolve</td><td>Finds the roadmap to repair using the coordinator scanner</td></tr>
+        <tr><td>Diagnose</td><td>Reads current roadmap state, identifies stuck or incorrect steps</td></tr>
+        <tr><td>Re-plan</td><td>Produces a revised roadmap using the same planning logic as <code>/plan-roadmap</code></td></tr>
+        <tr><td>Archive</td><td>Renames the original roadmap for comparison; new roadmap keeps the same ID, project, and github-user</td></tr>
+      </table>
+      <p><strong>NO SCOPE REDUCTION rule:</strong> the repaired roadmap must not lose any functionality from the original. Step count comparison enforces this.</p>
+      <p><strong>Repair log:</strong> every action is logged to <code>repair.log</code> inside the roadmap directory.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/plan-bugfix-roadmap &mdash; Batch Bug Planning <span class="tag tag-algo">planning</span></summary>
+    <div class="detail-body">
+      <p>Lightweight roadmap generator for batches of existing GitHub issues. Skips discussion and produces a ready-to-implement roadmap.</p>
+      <table>
+        <tr><th>Feature</th><th>Detail</th></tr>
+        <tr><td>Input</td><td>Issue numbers (e.g., <code>3 4 5 6 7 8</code>) or <code>all</code> to fetch all open issues</td></tr>
+        <tr><td>Grouping</td><td>Automatically groups and orders bugs by component/area</td></tr>
+        <tr><td>Approval</td><td>Single approval &mdash; shows the full plan once, then writes everything</td></tr>
+        <tr><td>Output</td><td>Feature Roadmap in <code>~/.roadmaps/</code>, ready for <code>/implement-roadmap</code></td></tr>
+      </table>
+      <p><strong>Unlike /plan-roadmap:</strong> no discussion phase, uses existing GitHub issues (no new issues created), requires only one approval.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/progress-dashboard &mdash; Live Progress UI <span class="tag tag-arch">dashboard</span></summary>
+    <div class="detail-body">
+      <p>Reusable live progress dashboard with a Flask REST API backend and web UI frontend. Any agent or skill can push updates.</p>
+      <table>
+        <tr><th>Component</th><th>Detail</th></tr>
+        <tr><td>Server</td><td>Flask REST API on port 8888, SQLite (WAL mode) database, SSE/polling for real-time updates</td></tr>
+        <tr><td>Web UI</td><td>Overview page (all roadmaps) + detail page (single roadmap steps, event log, commit history)</td></tr>
+        <tr><td>Controls</td><td>Pause/resume/stop buttons in the UI; agents check control state via <code>dash check-control</code></td></tr>
+        <tr><td><code>dash</code> CLI</td><td>One command per state change: <code>init</code>, <code>step-start</code>, <code>step-complete</code>, <code>step-error</code>, <code>event</code>, <code>shutdown</code></td></tr>
+      </table>
+      <p><strong>Decoupled:</strong> the dashboard knows nothing about git, files, or Claude Code. Agents push data to it via REST.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/implement-step-agent &mdash; Single Step Worker <span class="tag tag-algo">agent</span></summary>
+    <div class="detail-body">
+      <p>Worker agent that implements exactly one roadmap step. Launched by the coordinator via the Agent tool, returns when done.</p>
+      <table>
+        <tr><th>Phase</th><th>Action</th></tr>
+        <tr><td>Parse</td><td>Reads step number, worktree path, roadmap path, dashboard CLI, and branch from the task prompt</td></tr>
+        <tr><td>Implement</td><td>Writes code in the worktree, following the step&rsquo;s description and acceptance criteria</td></tr>
+        <tr><td>Verify</td><td>Builds the project and runs tests using the roadmap&rsquo;s verification strategy</td></tr>
+        <tr><td>Commit &amp; Push</td><td>Stages changes, commits with a structured message, pushes to the feature branch</td></tr>
+        <tr><td>Report</td><td>Updates the roadmap step status, comments on the PR, logs to the implementation log</td></tr>
+      </table>
+      <p><strong>Special steps:</strong> &ldquo;Create Draft PR&rdquo; and &ldquo;Finalize &amp; Merge PR&rdquo; have dedicated handling for PR lifecycle.</p>
+      <p><strong>Critical rule:</strong> uses <code>git -C /path</code> instead of <code>cd /path &amp;&amp; git</code> to avoid security prompts.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>roadmaps CLI &mdash; Cross-Repo Scanner <span class="tag tag-arch">tooling</span></summary>
+    <div class="detail-body">
+      <p>Command-line tool that scans all repos in a projects directory for roadmaps and dashboards.</p>
+      <table>
+        <tr><th>Command</th><th>Purpose</th></tr>
+        <tr><td><code>--list</code></td><td>List active roadmaps with filters: <code>--running</code>, <code>--complete</code>, <code>--archived</code>, <code>--all</code>, <code>--search</code>, <code>--sort</code>, <code>--json</code></td></tr>
+        <tr><td><code>--show &lt;name&gt;</code></td><td>Detailed view of a single roadmap with step status</td></tr>
+        <tr><td><code>--logs &lt;name&gt;</code></td><td>Show log files for a roadmap</td></tr>
+        <tr><td><code>--cancel &lt;name&gt;</code></td><td>Cancel a stuck roadmap &mdash; cleans up worktree, branches, PRs</td></tr>
+        <tr><td><code>--stale [hours]</code></td><td>Find roadmaps stuck in Implementing state (default: 24h)</td></tr>
+        <tr><td><code>--dashboard-sync</code></td><td>Sync all roadmaps to the dashboard service</td></tr>
+        <tr><td><code>--monitor [seconds]</code></td><td>Live monitor with auto-refresh (default: 30s)</td></tr>
+      </table>
+      <p><strong>70 tests</strong> covering all commands, edge cases, and output formats.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>roadmap_lib &mdash; Core Python Library <span class="tag tag-test">library</span></summary>
+    <div class="detail-body">
+      <p>Shared library used by the coordinator, CLI, dashboard, and migration tools. No external dependencies.</p>
+      <table>
+        <tr><th>Module</th><th>Provides</th></tr>
+        <tr><td>Frontmatter parser</td><td>Custom YAML parser handling key-value pairs, nested lists, and change-history blocks &mdash; no PyYAML dependency</td></tr>
+        <tr><td>Roadmap discovery</td><td>Scans <code>~/.roadmaps/</code> and repo <code>Roadmaps/</code> directories; supports flat file and per-directory layouts</td></tr>
+        <tr><td>State management</td><td>Reads/writes roadmap lifecycle state (Ready, Implementing, Complete, Archived, Declined)</td></tr>
+        <tr><td>Step parsing</td><td>Extracts step status (pending/in-progress/complete/skipped) from Markdown checkboxes</td></tr>
+      </table>
+      <p><strong>54 tests</strong> covering parsing, discovery, state transitions, and edge cases.</p>
     </div>
   </details>
 </section>
@@ -1828,154 +1983,6 @@ change-history:
       </table>
       <p><strong>Scope options:</strong> entire repo, specific directory, uncommitted changes (<code>--changed</code>), or branch diff (<code>--branch</code>).</p>
       <p><strong>Output:</strong> severity-grouped report (high/medium/low) with file, line, rule number, and description. Optionally fixes high-severity findings.</p>
-    </div>
-  </details>
-</section>
-
-<!-- Repository Contents -->
-<section id="repo">
-  <h2><span class="num">00</span>Repository Contents <a href="https://github.com/mikefullerton/cat-herding" class="repo-header-link">View on GitHub &rarr;</a></h2>
-  <p class="lead">The roadmap tools automate the full roadmap lifecycle - from conversation to shipped code.</p>
-
-  <h3>Roadmap System</h3>
-
-  <details>
-    <summary>/plan-roadmap - Two-Phase Feature Planning <span class="tag tag-algo">planning</span></summary>
-    <div class="detail-body">
-      <p>Collaborative planning workflow that turns a feature idea into a structured roadmap through conversation, then structured artifact creation.</p>
-      <table>
-        <tr><th>Phase</th><th>Action</th></tr>
-        <tr><td>Phase 1 - Discussion</td><td>Conversational exploration of the feature idea. Clarifies scope, constraints, and acceptance criteria. No files created.</td></tr>
-        <tr><td>Phase 2 - Planning</td><td>Produces a Feature Roadmap file in <code>~/.roadmaps/</code> with goal, scope, acceptance criteria, and implementation steps.</td></tr>
-        <tr><td>Alignment Review</td><td>Six-point intent verification ensures the roadmap matches the original discussion before finalizing.</td></tr>
-      </table>
-      <p><strong>Output:</strong> a single Roadmap.md file with YAML frontmatter. GitHub issues use <code>{{REPO}}#{{ISSUE_NUMBER}}</code> placeholders - issues are created by <code>/implement-roadmap</code>.</p>
-      <p><strong>Guard:</strong> no implementation code is ever generated. Only Markdown files in <code>~/.roadmaps/</code>.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>/implement-roadmap - Automated Step Execution <span class="tag tag-algo">implementation</span></summary>
-    <div class="detail-body">
-      <p>Deterministic coordinator that implements a planned roadmap step-by-step, using a Python script for step selection and the Agent tool for each worker.</p>
-      <table>
-        <tr><th>Component</th><th>Role</th></tr>
-        <tr><td>Python coordinator</td><td>Deterministic step selection via regex parsing - the LLM never decides what to do next</td></tr>
-        <tr><td>Worker agent</td><td>Implements one step: code, build, test, commit, push, comment on PR</td></tr>
-        <tr><td>Dashboard sync</td><td>Real-time progress updates pushed to the Flask dashboard via REST API</td></tr>
-        <tr><td>Draft PR flow</td><td>Creates a draft PR at the start; each step comments on it; final step marks it ready and merges</td></tr>
-      </table>
-      <p><strong>Worktree isolation:</strong> code goes in a git worktree. Roadmap files stay in <code>~/.roadmaps/</code>. Never mixed.</p>
-      <p><strong>Review agents:</strong> configurable per-step and final review agents (code-reviewer, silent-failure-hunter, pr-test-analyzer, etc.).</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>/repair-roadmap - Re-Plan Incomplete Roadmaps <span class="tag tag-algo">planning</span></summary>
-    <div class="detail-body">
-      <p>Re-plans an existing incomplete roadmap while preserving its identity. Archives the original for comparison.</p>
-      <table>
-        <tr><th>Step</th><th>Action</th></tr>
-        <tr><td>Resolve</td><td>Finds the roadmap to repair using the coordinator scanner</td></tr>
-        <tr><td>Diagnose</td><td>Reads current roadmap state, identifies stuck or incorrect steps</td></tr>
-        <tr><td>Re-plan</td><td>Produces a revised roadmap using the same planning logic as <code>/plan-roadmap</code></td></tr>
-        <tr><td>Archive</td><td>Renames the original roadmap for comparison; new roadmap keeps the same ID, project, and github-user</td></tr>
-      </table>
-      <p><strong>NO SCOPE REDUCTION rule:</strong> the repaired roadmap must not lose any functionality from the original. Step count comparison enforces this.</p>
-      <p><strong>Repair log:</strong> every action is logged to <code>repair.log</code> inside the roadmap directory.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>/plan-bugfix-roadmap - Batch Bug Planning <span class="tag tag-algo">planning</span></summary>
-    <div class="detail-body">
-      <p>Lightweight roadmap generator for batches of existing GitHub issues. Skips discussion and produces a ready-to-implement roadmap.</p>
-      <table>
-        <tr><th>Feature</th><th>Detail</th></tr>
-        <tr><td>Input</td><td>Issue numbers (e.g., <code>3 4 5 6 7 8</code>) or <code>all</code> to fetch all open issues</td></tr>
-        <tr><td>Grouping</td><td>Automatically groups and orders bugs by component/area</td></tr>
-        <tr><td>Approval</td><td>Single approval - shows the full plan once, then writes everything</td></tr>
-        <tr><td>Output</td><td>Feature Roadmap in <code>~/.roadmaps/</code>, ready for <code>/implement-roadmap</code></td></tr>
-      </table>
-      <p><strong>Unlike /plan-roadmap:</strong> no discussion phase, uses existing GitHub issues (no new issues created), requires only one approval.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>/progress-dashboard - Live Progress UI <span class="tag tag-arch">dashboard</span></summary>
-    <div class="detail-body">
-      <p>Reusable live progress dashboard with a Flask REST API backend and web UI frontend. Any agent or skill can push updates.</p>
-      <table>
-        <tr><th>Component</th><th>Detail</th></tr>
-        <tr><td>Server</td><td>Flask REST API on port 8888, SQLite (WAL mode) database, SSE/polling for real-time updates</td></tr>
-        <tr><td>Web UI</td><td>Overview page (all roadmaps) + detail page (single roadmap steps, event log, commit history)</td></tr>
-        <tr><td>Controls</td><td>Pause/resume/stop buttons in the UI; agents check control state via <code>dash check-control</code></td></tr>
-        <tr><td><code>dash</code> CLI</td><td>One command per state change: <code>init</code>, <code>step-start</code>, <code>step-complete</code>, <code>step-error</code>, <code>event</code>, <code>shutdown</code></td></tr>
-      </table>
-      <p><strong>Decoupled:</strong> the dashboard knows nothing about git, files, or Claude Code. Agents push data to it via REST.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>/implement-step-agent - Single Step Worker <span class="tag tag-algo">agent</span></summary>
-    <div class="detail-body">
-      <p>Worker agent that implements exactly one roadmap step. Launched by the coordinator via the Agent tool, returns when done.</p>
-      <table>
-        <tr><th>Phase</th><th>Action</th></tr>
-        <tr><td>Parse</td><td>Reads step number, worktree path, roadmap path, dashboard CLI, and branch from the task prompt</td></tr>
-        <tr><td>Implement</td><td>Writes code in the worktree, following the step&rsquo;s description and acceptance criteria</td></tr>
-        <tr><td>Verify</td><td>Builds the project and runs tests using the roadmap&rsquo;s verification strategy</td></tr>
-        <tr><td>Commit &amp; Push</td><td>Stages changes, commits with a structured message, pushes to the feature branch</td></tr>
-        <tr><td>Report</td><td>Updates the roadmap step status, comments on the PR, logs to the implementation log</td></tr>
-      </table>
-      <p><strong>Special steps:</strong> &ldquo;Create Draft PR&rdquo; and &ldquo;Finalize &amp; Merge PR&rdquo; have dedicated handling for PR lifecycle.</p>
-      <p><strong>Critical rule:</strong> uses <code>git -C /path</code> instead of <code>cd /path &amp;&amp; git</code> to avoid security prompts.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>roadmaps CLI - Cross-Repo Scanner <span class="tag tag-arch">tooling</span></summary>
-    <div class="detail-body">
-      <p>Command-line tool that scans all repos in a projects directory for roadmaps and dashboards.</p>
-      <table>
-        <tr><th>Command</th><th>Purpose</th></tr>
-        <tr><td><code>--list</code></td><td>List active roadmaps with filters: <code>--running</code>, <code>--complete</code>, <code>--archived</code>, <code>--all</code>, <code>--search</code>, <code>--sort</code>, <code>--json</code></td></tr>
-        <tr><td><code>--show &lt;name&gt;</code></td><td>Detailed view of a single roadmap with step status</td></tr>
-        <tr><td><code>--logs &lt;name&gt;</code></td><td>Show log files for a roadmap</td></tr>
-        <tr><td><code>--cancel &lt;name&gt;</code></td><td>Cancel a stuck roadmap - cleans up worktree, branches, PRs</td></tr>
-        <tr><td><code>--stale [hours]</code></td><td>Find roadmaps stuck in Implementing state (default: 24h)</td></tr>
-        <tr><td><code>--dashboard-sync</code></td><td>Sync all roadmaps to the dashboard service</td></tr>
-        <tr><td><code>--monitor [seconds]</code></td><td>Live monitor with auto-refresh (default: 30s)</td></tr>
-      </table>
-      <p><strong>70 tests</strong> covering all commands, edge cases, and output formats.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>roadmap_lib - Core Python Library <span class="tag tag-test">library</span></summary>
-    <div class="detail-body">
-      <p>Shared library used by the coordinator, CLI, dashboard, and migration tools. No external dependencies.</p>
-      <table>
-        <tr><th>Module</th><th>Provides</th></tr>
-        <tr><td>Frontmatter parser</td><td>Custom YAML parser handling key-value pairs, nested lists, and change-history blocks - no PyYAML dependency</td></tr>
-        <tr><td>Roadmap discovery</td><td>Scans <code>~/.roadmaps/</code> and repo <code>Roadmaps/</code> directories; supports flat file and per-directory layouts</td></tr>
-        <tr><td>State management</td><td>Reads/writes roadmap lifecycle state (Ready, Implementing, Complete, Archived, Declined)</td></tr>
-        <tr><td>Step parsing</td><td>Extracts step status (pending/in-progress/complete/skipped) from Markdown checkboxes</td></tr>
-      </table>
-      <p><strong>54 tests</strong> covering parsing, discovery, state transitions, and edge cases.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>Other Skills <span class="tag tag-arch">architecture</span></summary>
-    <div class="detail-body">
-      <table>
-        <tr><th>Skill</th><th>Purpose</th></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/list-roadmaps" class="gh">/list-roadmaps</a></td><td>Quick progress scan with bars (v5)</td></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/describe-roadmap" class="gh">/describe-roadmap</a></td><td>Detailed single roadmap view (v4)</td></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/implement-roadmap-interactively" class="gh">/implement-roadmap-interactively</a></td><td>Step-by-step with per-step PRs and review checkpoints (v10)</td></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/generate-test-roadmap" class="gh">/generate-test-roadmap</a></td><td>Test roadmap generator - 20 cat-herding themed steps (v3)</td></tr>
-      </table>
     </div>
   </details>
 </section>
