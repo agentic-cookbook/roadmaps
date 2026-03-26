@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cat Herding — System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c0c0f;
+  --surface: #14141a;
+  --surface-hover: #1c1c24;
+  --border: #2a2a36;
+  --border-accent: #3d3d50;
+  --text: #e8e6e3;
+  --text-muted: #8a8a9a;
+  --text-dim: #5a5a6a;
+  --accent: #c4a35a;
+  --accent-dim: rgba(196, 163, 90, 0.15);
+  --green: #5cb270;
+  --green-dim: rgba(92, 178, 112, 0.12);
+  --red: #d45454;
+  --yellow: #d4a754;
+  --blue: #5a8fd4;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Instrument Serif', serif;
+  --sans: 'Manrope', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--accent-dim); color: var(--accent); }
+
+.grain {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 9999;
+}
+
+header {
+  padding: 80px 0 60px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(196,163,90,0.04) 0%, transparent 100%);
+}
+
+header h1 {
+  font-family: var(--serif);
+  font-size: 4rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+header h1 em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+header .tagline {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+header .version {
+  margin-top: 20px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(12, 12, 15, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+
+nav a {
+  display: block;
+  padding: 14px 20px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+nav a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+.container { max-width: 960px; margin: 0 auto; padding: 0 40px; }
+
+section {
+  padding: 60px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+section:last-child { border-bottom: none; }
+
+h2 {
+  font-family: var(--serif);
+  font-size: 2.2rem;
+  font-weight: 400;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+h2 .num {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  vertical-align: super;
+  margin-right: 8px;
+  letter-spacing: 0.05em;
+}
+
+h3 {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 30px 0 10px;
+}
+
+p { margin-bottom: 16px; color: var(--text-muted); }
+p strong { color: var(--text); font-weight: 500; }
+
+.lead {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  margin-bottom: 30px;
+  line-height: 1.8;
+}
+
+/* Disclosure sections */
+details {
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+details:hover { border-color: var(--border-accent); }
+
+details[open] { border-color: var(--accent); border-color: rgba(196,163,90,0.3); }
+
+summary {
+  padding: 14px 20px;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+summary:hover { background: var(--surface-hover); }
+
+summary::before {
+  content: '\25B6';
+  font-size: 0.55rem;
+  color: var(--accent);
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+details[open] summary::before { transform: rotate(90deg); }
+
+summary .tag {
+  margin-left: auto;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: 400;
+}
+
+.tag-algo { background: var(--accent-dim); color: var(--accent); }
+.tag-arch { background: var(--green-dim); color: var(--green); }
+.tag-test { background: rgba(90, 143, 212, 0.12); color: var(--blue); }
+.tag-api { background: rgba(212, 84, 84, 0.12); color: var(--red); }
+
+.detail-body {
+  padding: 20px;
+  font-size: 0.88rem;
+  line-height: 1.75;
+  border-top: 1px solid var(--border);
+}
+
+.detail-body p { font-size: 0.88rem; }
+
+.detail-body ul {
+  margin: 10px 0 16px 20px;
+  color: var(--text-muted);
+}
+
+.detail-body li { margin-bottom: 6px; }
+.detail-body li strong { color: var(--text); }
+
+code {
+  font-family: var(--mono);
+  font-size: 0.82em;
+  background: var(--surface);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--accent);
+}
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 12px 0 16px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.82rem;
+}
+
+th {
+  text-align: left;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(42,42,54,0.5);
+  color: var(--text-muted);
+}
+
+td:first-child { color: var(--text); font-weight: 500; }
+
+tr:hover td { background: rgba(28,28,36,0.5); }
+
+/* Diagram */
+.diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 24px;
+  margin: 20px 0;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.diagram .highlight { color: var(--accent); }
+.diagram .green { color: var(--green); }
+.diagram .dim { color: var(--text-dim); }
+
+/* Stats bar */
+.stats {
+  display: flex;
+  gap: 1px;
+  margin: 30px 0;
+  background: var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.stat {
+  flex: 1;
+  padding: 20px;
+  background: var(--surface);
+  text-align: center;
+}
+
+.stat .num { font-family: var(--serif); font-size: 2rem; color: var(--accent); display: block; }
+.stat .label { font-family: var(--mono); font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+/* Flow steps */
+.flow {
+  display: flex;
+  gap: 0;
+  margin: 24px 0;
+  align-items: stretch;
+}
+
+.flow-step {
+  flex: 1;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: center;
+  position: relative;
+}
+
+.flow-step:first-child { border-radius: 6px 0 0 6px; }
+.flow-step:last-child { border-radius: 0 6px 6px 0; }
+.flow-step:not(:last-child) { border-right: none; }
+
+.flow-step:not(:last-child)::after {
+  content: '\2192';
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 1rem;
+  z-index: 1;
+}
+
+.flow-step .flow-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.flow-step .flow-name {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 6px;
+}
+
+.flow-step .flow-cmd {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+footer {
+  padding: 40px 0;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+}
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <h1>Cat <em>Herding</em></h1>
+  <div class="tagline">Automated Feature Planning & Implementation for Claude Code</div>
+  <div class="version">v26 &middot; plan-roadmap v11 &middot; implement-step-agent v11 &middot; 370+ tests</div>
+</header>
+
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#lifecycle">Lifecycle</a>
+  <a href="#coordinator">Coordinator</a>
+  <a href="#state">State Machine</a>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#cli">CLI</a>
+  <a href="#files">File Layout</a>
+  <a href="#skills">Skills</a>
+  <a href="#tests">Tests</a>
+  <a href="#api">API</a>
+</nav>
+
+<div class="container">
+
+<!-- Overview -->
+<section id="overview">
+  <h2><span class="num">01</span>System Overview</h2>
+  <p class="lead">Cat Herding turns a feature conversation into shipped code through structured planning, deterministic step execution, and real-time progress tracking. The LLM handles individual tasks; a Python coordinator decides what to do next.</p>
+
+  <div class="stats">
+    <div class="stat"><span class="num">11</span><span class="label">Skills</span></div>
+    <div class="stat"><span class="num">1</span><span class="label">Worker Agent</span></div>
+    <div class="stat"><span class="num">28</span><span class="label">API Endpoints</span></div>
+    <div class="stat"><span class="num">370+</span><span class="label">Tests</span></div>
+  </div>
+
+  <details>
+    <summary>Core Principles <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>Deterministic step selection</strong> &mdash; A Python script picks the next step via regex parsing. The LLM never decides what to do next.</li>
+        <li><strong>File-based records as source of truth</strong> &mdash; YAML frontmatter Markdown files in <code>~/.roadmaps/</code> track all state. No database required for the core workflow.</li>
+        <li><strong>Decoupled dashboard</strong> &mdash; The Flask dashboard service knows nothing about git, files, or Claude Code. Agents push data to it via REST.</li>
+        <li><strong>Worktree isolation</strong> &mdash; Code goes in the git worktree. Roadmap files stay in <code>~/.roadmaps/</code>. Never mix them.</li>
+        <li><strong>Draft PR first</strong> &mdash; A draft PR is created at the start. Each step pushes and comments on the PR. The final step marks it ready, waits for CI, and merges.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Technology Stack <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Technology</th><th>Role</th></tr>
+        <tr><td>Python 3</td><td>Core language &mdash; roadmap_lib, coordinator, dashboard, CLI, tests</td></tr>
+        <tr><td>Flask</td><td>Dashboard REST API</td></tr>
+        <tr><td>SQLite (WAL)</td><td>Dashboard database</td></tr>
+        <tr><td>Playwright</td><td>Browser-based UI testing</td></tr>
+        <tr><td>GitHub CLI</td><td>Issue and PR automation</td></tr>
+        <tr><td>Git worktrees</td><td>Isolated implementation branches</td></tr>
+        <tr><td>pytest</td><td>Test suite (370+ tests)</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
+
+<!-- Lifecycle -->
+<section id="lifecycle">
+  <h2><span class="num">02</span>The Lifecycle</h2>
+  <p class="lead">A feature goes through three phases: planning, implementation, and completion. Each phase has its own skill, file layout, and state tracking.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-label">Phase 1</div>
+      <div class="flow-name">Plan</div>
+      <div class="flow-cmd">/plan-roadmap</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-label">Phase 2</div>
+      <div class="flow-name">Implement</div>
+      <div class="flow-cmd">/implement-roadmap</div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-label">Phase 3</div>
+      <div class="flow-name">Monitor</div>
+      <div class="flow-cmd">Dashboard</div>
+    </div>
+  </div>
+
+  <details>
+    <summary>Planning Phase &mdash; /plan-roadmap v11 <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p><strong>Two sub-phases:</strong> Discussion (conversational, no files) and Planning (structured, produces Roadmap.md).</p>
+      <h3>Discussion (Steps 0-3)</h3>
+      <ul>
+        <li>Validate git repo, create drafts directory, initialize planning log</li>
+        <li>Ask the user what they want to build</li>
+        <li>Natural conversation &mdash; understand scope, clarify unknowns</li>
+        <li>Summarize, propose a PascalCase feature name, request transition permission</li>
+      </ul>
+      <h3>Planning (Steps 4-6)</h3>
+      <ul>
+        <li>Enter plan mode with deep thinking</li>
+        <li>Draft Roadmap.md from template &mdash; feature definition sections at top, implementation steps below</li>
+        <li><strong>CLI readiness checks</strong>: before marking any step Manual, test if the tool is installed and authenticated. Ask user to install/auth or confirm Manual.</li>
+        <li>Present full draft, iterate until approved</li>
+        <li>Write to <code>~/.roadmaps/&lt;project&gt;/YYYY-MM-DD-&lt;Name&gt;/</code></li>
+        <li>Create state files: Created, Planning, Ready</li>
+      </ul>
+      <h3>Frontmatter Fields</h3>
+      <pre><code>id: "uuid"
+project: "repo-name"
+github-user: "username"
+plan-version: "11"
+created: "YYYY-MM-DD"
+description: "one-line summary"</code></pre>
+      <h3>Planning Log</h3>
+      <p>Every decision, action, user interaction, and tool check is logged to <code>planning.log</code> inside the roadmap directory.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Implementation Phase &mdash; /implement-roadmap v26 <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <h3>Startup Sequence</h3>
+      <ul>
+        <li><strong>Step 1</strong>: Resolve roadmap (coordinator scans <code>~/.roadmaps/</code> + <code>Roadmaps/</code>, filters by project field)</li>
+        <li><strong>Step 1a</strong>: Check for stale artifacts (worktree, branch, PR, Implementing state) &mdash; <strong>prompt user immediately</strong></li>
+        <li><strong>Step 1b</strong>: Initialize implementation log</li>
+        <li><strong>Step 1c</strong>: Mark as Implementing (only after cleanup)</li>
+        <li><strong>Step 2</strong>: Start dashboard (auto-starts if not running)</li>
+        <li><strong>Step 2b</strong>: Create feature branch and worktree (code only, no roadmap files)</li>
+      </ul>
+      <h3>Implementation Loop</h3>
+      <ul>
+        <li><strong>3a</strong>: Coordinator picks next step (deterministic, regex-based)</li>
+        <li><strong>3b</strong>: Print step info</li>
+        <li><strong>3c</strong>: Update dashboard (begin-step)</li>
+        <li><strong>3d</strong>: Launch worker agent via Agent tool</li>
+        <li><strong>3e</strong>: Verify completion, log commit, update dashboard (finish-step)</li>
+        <li>Repeat until done</li>
+      </ul>
+      <h3>Step 1: Create Draft PR</h3>
+      <p>The first step pushes the branch and creates a draft PR titled <code>Roadmap: &lt;Name&gt;</code>. The PR stays draft throughout implementation.</p>
+      <h3>Standard Steps: Implement, Build, Test, Push, Comment</h3>
+      <p>Each step: implement code, build, test, update roadmap status in <code>~/.roadmaps/</code> (no git commit), push to branch, comment on the draft PR.</p>
+      <h3>Final Step: Finalize &amp; Merge PR</h3>
+      <p>Populates Change History (commits table + PR link), copies <code>&lt;Name&gt;-Roadmap.md</code> flat file into repo, marks PR ready, waits for CI, reviews, merges, cleans up worktree.</p>
+      <h3>Critical Invariant</h3>
+      <p><strong>The worktree is for CODE ONLY.</strong> Roadmap files stay in <code>~/.roadmaps/</code>. The only roadmap artifact that enters the repo is the final flat file copy.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Worker Agent &mdash; implement-step-agent v11 <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Implements exactly one step. Receives step number, description, complexity, roadmap path, worktree path, dashboard info, and log path in its prompt.</p>
+      <h3>Three Flows</h3>
+      <ul>
+        <li><strong>"Create Draft PR"</strong>: Push branch, create draft PR, register PR on dashboard via <code>pr-created</code></li>
+        <li><strong>"Finalize &amp; Merge PR"</strong>: Populate Change History, copy flat roadmap file, mark PR ready, wait for CI, review, merge, cleanup</li>
+        <li><strong>Standard</strong>: Read codebase, implement, build, test, update roadmap in <code>~/.roadmaps/</code>, push, comment on PR</li>
+      </ul>
+      <h3>Rules</h3>
+      <ul>
+        <li>Implement ONLY the specified step</li>
+        <li>Never skip a step</li>
+        <li>Use <code>git -C &lt;path&gt;</code> instead of <code>cd &amp;&amp; git</code></li>
+        <li>Roadmap files live in <code>~/.roadmaps/</code>, NOT in the worktree</li>
+        <li>On failure, log the error and return (don't retry silently)</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- Coordinator -->
+<section id="coordinator">
+  <h2><span class="num">03</span>Coordinator Algorithm</h2>
+  <p class="lead">The coordinator is a deterministic Python script. It reads roadmap files with regex, decides the next step, and outputs JSON. No LLM involved in step selection.</p>
+
+  <details>
+    <summary>next-step &mdash; Find the next implementable step <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Iterates all <code>### Step N:</code> sections in order. For each:</p>
+      <ul>
+        <li>If status is <code>Complete</code> &mdash; skip</li>
+        <li>If type is <code>Manual</code> &mdash; add to <code>manual_skipped</code>, skip</li>
+        <li>Otherwise &mdash; this is the next step. Return it with the skipped manual steps.</li>
+      </ul>
+      <p>If no implementable step remains, return <code>{"action": "done"}</code>.</p>
+      <pre><code>for step in steps:
+    if step.status == "Complete": continue
+    if step.type == "Manual":
+        manual_skipped.append(step)
+        continue
+    return {"action": "implement", "step": step, "manual_skipped": manual_skipped}
+return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
+      <p><strong>Key design decision:</strong> Manual steps are skipped, not blocked. The coordinator reports them so the skill can create GitHub issues and mark them on the dashboard.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>resolve &mdash; Find and select a roadmap <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Scans two locations:</p>
+      <ul>
+        <li><code>~/.roadmaps/&lt;project&gt;/</code> &mdash; working directory (drafts + in-progress)</li>
+        <li><code>Roadmaps/</code> in the repo &mdash; committed roadmaps</li>
+      </ul>
+      <p><strong>Project filtering:</strong> reads the <code>project</code> frontmatter field from each Roadmap.md. If it doesn't match the current git repo name, the roadmap is excluded.</p>
+      <p><strong>Implementable check:</strong> only roadmaps in <code>Ready</code> or <code>Implementing</code> state are offered. Implementing is included so failed runs can be retried.</p>
+      <p>Returns single match as <code>{"path": ...}</code>, multiple as <code>{"choose": [...]}</code>, or <code>{"error": ...}</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>summary &mdash; Progress report <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Parses all steps and returns counts:</p>
+      <pre><code>{"feature": "AuthMiddleware", "total": 8, "complete": 5,
+ "steps": [{"step": 1, "description": "...", "status": "Complete"}, ...]}</code></pre>
+    </div>
+  </details>
+</section>
+
+<!-- State Machine -->
+<section id="state">
+  <h2><span class="num">04</span>State Machine</h2>
+  <p class="lead">State is tracked via dated files in <code>State/</code>. The newest file (by date, then lifecycle order) determines the current state.</p>
+
+  <div class="diagram"><span class="highlight">Created</span> <span class="dim">&rarr;</span> <span class="highlight">Planning</span> <span class="dim">&rarr;</span> <span class="highlight">Ready</span> <span class="dim">&rarr;</span> <span class="highlight">Implementing</span> <span class="dim">&rarr;</span> <span class="green">Complete</span>
+                                    <span class="dim">&darr;</span>                <span class="dim">&darr;</span>
+                              <span class="dim">Declined</span>           <span class="dim">Paused &rarr; Archived</span></div>
+
+  <details>
+    <summary>Lifecycle ordering &mdash; Why not alphabetical? <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>State files are named <code>YYYY-MM-DD-StateName.md</code>. Sorting alphabetically puts <code>Complete</code> before <code>Ready</code> (C &lt; R), which caused a bug where completed roadmaps showed as Ready.</p>
+      <p>Fix: sort by date first, then by lifecycle order:</p>
+      <pre><code>_STATE_ORDER = {
+    "Created": 0, "Planning": 1, "Ready": 2,
+    "Implementing": 3, "Paused": 4,
+    "Complete": 5, "Declined": 6, "Archived": 7,
+}</code></pre>
+      <p><strong>Regression test:</strong> <code>test_complete_beats_ready_on_same_date</code> ensures Complete wins over Ready when both share the same date.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>State predicates <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li><code>is_active()</code> &mdash; True for Created, Planning, Ready, Implementing, Paused</li>
+        <li><code>is_implementable()</code> &mdash; True for Ready or Implementing (Implementing allows retrying failed runs)</li>
+        <li><code>current_state()</code> &mdash; Returns the state name from the newest State/ file</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- Dashboard -->
+<section id="dashboard">
+  <h2><span class="num">05</span>Dashboard Service</h2>
+  <p class="lead">Flask-based REST API and web UI. Generic progress tracker &mdash; knows nothing about git, files, or Claude Code. Agents push data to it.</p>
+
+  <details>
+    <summary>Architecture <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Component</th><th>File</th><th>Purpose</th></tr>
+        <tr><td>App factory</td><td>app.py</td><td>Flask app, health check, static serving</td></tr>
+        <tr><td>Database</td><td>db.py</td><td>SQLite with WAL mode, migrations, FK enforcement</td></tr>
+        <tr><td>Models</td><td>models.py</td><td>Data access layer (CRUD)</td></tr>
+        <tr><td>Server</td><td>server.sh</td><td>Lifecycle management (start/stop/status)</td></tr>
+        <tr><td>Overview</td><td>overview.html v24</td><td>All roadmaps with progress bars, filters, cancel button</td></tr>
+        <tr><td>Detail</td><td>dashboard.html v15</td><td>Steps, status badges, PR links, pause/resume/stop</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Polling &amp; SSE <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <p><strong>Overview page</strong>: polls <code>/api/v1/roadmaps?detail=true</code> every 10s (configurable via <code>?poll=&lt;ms&gt;</code>).</p>
+      <p><strong>Detail page</strong>: uses Server-Sent Events for real-time updates. Falls back to polling when <code>?poll=&lt;ms&gt;</code> is set (used by tests).</p>
+      <p>The <code>?poll=</code> parameter was added specifically for Playwright testing &mdash; tests use 1s polling instead of SSE to avoid flaky browser connections.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Playwright UI Testing <span class="tag tag-test">testing</span></summary>
+    <div class="detail-body">
+      <p>End-to-end browser test that drives the dashboard through a full roadmap lifecycle via the REST API and verifies both pages render correctly.</p>
+      <h3>Two-Tab Test</h3>
+      <p>Opens overview and detail pages in separate browser tabs. Both stay open throughout. The test verifies:</p>
+      <ul>
+        <li>Overview: card appears, progress bar increments, badge changes to Complete</li>
+        <li>Detail: steps render, spinner appears for active step, checkmark for complete, PR link on step 1</li>
+        <li>Overview updates mid-flow (checked after step 1 and step 4)</li>
+      </ul>
+      <h3>Test Naming</h3>
+      <p>Roadmap named <code>Dashboard Lifecycle Test #N</code> with a persisted counter file that increments each run.</p>
+      <h3>Demo Mode</h3>
+      <p><code>python3 tests/integration/dashboard_ui/demo.py</code> &mdash; runs the same flow in a headed browser with realistic timing (2s pauses) on port 9888.</p>
+    </div>
+  </details>
+</section>
+
+<!-- CLI -->
+<section id="cli">
+  <h2><span class="num">06</span>CLI Tool</h2>
+  <p class="lead">The <code>roadmaps</code> command scans all repos for roadmaps, displays progress, and manages the system.</p>
+
+  <details>
+    <summary>All Commands (15) <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Command</th><th>Purpose</th></tr>
+        <tr><td><code>--list</code></td><td>List roadmaps (default: running + active). Combine with <code>--all</code>, <code>--complete</code>, <code>--archived</code></td></tr>
+        <tr><td><code>--json</code></td><td>JSON output (combinable with <code>--list</code> filters)</td></tr>
+        <tr><td><code>--show &lt;name&gt;</code></td><td>Detailed view: steps, status, PR link</td></tr>
+        <tr><td><code>--status &lt;name&gt;</code></td><td>Full diagnostic: frontmatter, state files, git artifacts, dashboard, workdir</td></tr>
+        <tr><td><code>--logs &lt;name&gt;</code></td><td>Show planning/implementation/repair logs</td></tr>
+        <tr><td><code>--cancel &lt;name&gt;</code></td><td>Clean up stuck roadmap (state, worktree, branch, PR)</td></tr>
+        <tr><td><code>--stale [hours]</code></td><td>Find roadmaps stuck in Implementing (default: 24h)</td></tr>
+        <tr><td><code>--diagnose</code></td><td>Scan for orphans, stale state, missing fields, dangling worktrees</td></tr>
+        <tr><td><code>--dashboard</code></td><td>Dashboard server status + roadmap list</td></tr>
+        <tr><td><code>--dashboard-sync</code></td><td>Sync filesystem roadmaps to dashboard API</td></tr>
+        <tr><td><code>--monitor [sec]</code></td><td>Live terminal dashboard (default: 30s refresh)</td></tr>
+        <tr><td><code>--archive-completed</code></td><td>Transition all Complete roadmaps to Archived</td></tr>
+        <tr><td><code>--decline</code></td><td>Interactively decline roadmaps</td></tr>
+        <tr><td><code>--list-dashboards</code></td><td>List all progress dashboard URLs</td></tr>
+        <tr><td><code>--open-dashboards</code></td><td>Open all dashboard URLs in browser</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Three-Source Scanning <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>The CLI scans three locations for each repo, deduplicating by roadmap ID:</p>
+      <ul>
+        <li><strong>Flat files first</strong>: <code>Roadmaps/&lt;Name&gt;-Roadmap.md</code> &mdash; finished roadmaps. Scanned first so completed versions win dedup.</li>
+        <li><strong>Directories</strong>: <code>Roadmaps/YYYY-MM-DD-&lt;Name&gt;/Roadmap.md</code> &mdash; legacy layout. Skipped if flat file with same ID exists.</li>
+        <li><strong>Working directory</strong>: <code>~/.roadmaps/&lt;project&gt;/</code> &mdash; drafts and in-progress roadmaps.</li>
+      </ul>
+      <p><strong>Regression test:</strong> <code>test_flat_file_wins_over_implementing_directory_with_same_id</code> &mdash; a completed flat file must beat a stale directory showing Implementing state.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Diagnose &mdash; Health Checks <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p><code>roadmaps --diagnose</code> checks for:</p>
+      <ul>
+        <li><strong>Orphaned directories</strong>: flat file exists with same ID (leftover from old Step 2c bug)</li>
+        <li><strong>Stale Implementing</strong>: state file older than 24h (likely timed out)</li>
+        <li><strong>Dangling worktrees</strong>: registered in git but directory missing</li>
+        <li><strong>Missing project field</strong>: no project association in frontmatter</li>
+        <li><strong>Missing ID</strong>: no dedup possible</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- File Layout -->
+<section id="files">
+  <h2><span class="num">07</span>File Layout</h2>
+  <p class="lead">During work, files live in <code>~/.roadmaps/</code>. After completion, a single flat file is committed to the repo.</p>
+
+  <details>
+    <summary>Working Directory (during planning &amp; implementation) <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <pre><code>~/.roadmaps/temporal/2026-03-25-AuthMiddleware/
+  Roadmap.md            # Feature definition + implementation steps
+  State/
+    2026-03-25-Created.md
+    2026-03-25-Planning.md
+    2026-03-25-Ready.md
+    2026-03-25-Implementing.md
+  History/
+    2026-03-25-120000-Repaired.md
+  planning.log          # Every decision during planning
+  implementation.log    # Every action during implementation</code></pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Committed to Repo (after PR merges) <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <pre><code>Roadmaps/
+  AuthMiddleware-Roadmap.md     # Flat file, no subdirectory
+  DashboardBugfixes-Roadmap.md
+  UserSettings-Roadmap.md</code></pre>
+      <p>The flat file contains the full Roadmap.md content including the Change History section with commit table, PR link, and Deviations from Plan.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Roadmap.md Template <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <pre><code>---
+id: "uuid"
+project: "repo-name"
+github-user: "username"
+plan-version: "11"
+created: "YYYY-MM-DD"
+modified: "YYYY-MM-DD"
+author: "Name"
+description: "One-line summary"
+change-history:
+  - date: "YYYY-MM-DD"
+    description: "Initial draft"
+---
+
+# Feature Roadmap: FeatureName
+
+## Goal and Purpose
+## Platform / Component
+## Tools and Technologies
+## Extended Description
+## Acceptance Criteria
+## Verification Strategy
+
+## Implementation Steps
+
+### Step 1: Create Draft PR
+### Step 2: ...
+### Step N: Finalize &amp; Merge PR
+
+## Deviations from Plan
+## Change History</code></pre>
+    </div>
+  </details>
+</section>
+
+<!-- Skills -->
+<section id="skills">
+  <h2><span class="num">08</span>Skills &amp; Agents</h2>
+  <p class="lead">Skills are Claude Code slash commands. Each has a versioned SKILL.md with instructions and a references/ directory.</p>
+
+  <details>
+    <summary>All Skills (11) <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Skill</th><th>Version</th><th>Purpose</th></tr>
+        <tr><td>/plan-roadmap</td><td>v11</td><td>Two-phase feature planning with CLI readiness checks</td></tr>
+        <tr><td>/plan-bugfix-roadmap</td><td>v4</td><td>Lightweight planning for existing GitHub issues</td></tr>
+        <tr><td>/implement-roadmap</td><td>v26</td><td>Automated implementation with draft PR flow</td></tr>
+        <tr><td>/implement-roadmap-interactively</td><td>v10</td><td>Step-by-step with per-step PRs and reviews</td></tr>
+        <tr><td>/repair-roadmap</td><td>v1</td><td>Re-plan existing incomplete roadmaps</td></tr>
+        <tr><td>/import-shared-project</td><td>v1</td><td>Add shared project references to CLAUDE.md</td></tr>
+        <tr><td>/list-roadmaps</td><td>v5</td><td>Quick progress scan</td></tr>
+        <tr><td>/describe-roadmap</td><td>v4</td><td>Detailed single roadmap view</td></tr>
+        <tr><td>/progress-dashboard</td><td>v17</td><td>Self-contained progress display</td></tr>
+        <tr><td>/generate-test-roadmap</td><td>v3</td><td>Test roadmap generator (20 cat-herding steps)</td></tr>
+        <tr><td>/review-claude-extension</td><td>v2</td><td>Skill/agent validator</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
+
+<!-- Tests -->
+<section id="tests">
+  <h2><span class="num">09</span>Test Suite</h2>
+  <p class="lead">370+ tests covering the full stack. Every code change requires tests. Every bug fix requires a regression test.</p>
+
+  <details>
+    <summary>Unit Tests by Module <span class="tag tag-test">testing</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Module</th><th>Tests</th><th>Coverage</th></tr>
+        <tr><td>test_roadmaps_cli.py</td><td>70</td><td>CLI scanning, filtering, show, logs, cancel, json, stale, diagnose, dashboard</td></tr>
+        <tr><td>test_models.py</td><td>55</td><td>Database CRUD, cascading deletes, sync, deterministic IDs</td></tr>
+        <tr><td>test_roadmap_lib.py</td><td>54</td><td>Discovery, parsing, state predicates, frontmatter, lifecycle ordering</td></tr>
+        <tr><td>test_coordinator.py</td><td>32</td><td>Step selection, resolve, project filtering, workdir scanning</td></tr>
+        <tr><td>test_roadmap_lib_draft.py</td><td>27</td><td>Copy, cleanup, validation, flat files</td></tr>
+        <tr><td>test_roadmap_lib_planning.py</td><td>25</td><td>Dir creation, state files, issue body, placeholder replacement</td></tr>
+        <tr><td>test_dashboard_client.py</td><td>25</td><td>REST client round-trips</td></tr>
+        <tr><td>test_api_roadmaps.py</td><td>13</td><td>Roadmap CRUD endpoints</td></tr>
+        <tr><td>test_api_steps.py</td><td>10</td><td>Step lifecycle endpoints</td></tr>
+        <tr><td>test_api_sync.py</td><td>9</td><td>Bulk sync endpoint</td></tr>
+        <tr><td>test_sse.py</td><td>8</td><td>SSE broadcasting</td></tr>
+        <tr><td>test_db.py</td><td>7</td><td>Schema, WAL mode, FK enforcement</td></tr>
+        <tr><td>test_api_history.py</td><td>7</td><td>History events</td></tr>
+        <tr><td>test_api_controls.py</td><td>6</td><td>Pause/resume/stop</td></tr>
+        <tr><td>test_api_state.py</td><td>6</td><td>State transitions</td></tr>
+        <tr><td>test_api_archive.py</td><td>5</td><td>Archive/unarchive</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Integration Tests <span class="tag tag-test">testing</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Scenario</th><th>Tests</th><th>What It Tests</th></tr>
+        <tr><td>dashboard_sync/</td><td>6</td><td>Step status transitions, state lifecycle, real Flask server</td></tr>
+        <tr><td>draft_workflow/</td><td>5</td><td>Working directory lifecycle, validation, copy, placeholders</td></tr>
+        <tr><td>git_workflow/</td><td>5</td><td>Single branch, worktree, PR merge strategy</td></tr>
+        <tr><td>error_conditions/</td><td>4</td><td>Worker failure, dashboard error reporting</td></tr>
+        <tr><td>planning/</td><td>4</td><td>Planning workflows, validation</td></tr>
+        <tr><td>happy_path/</td><td>3</td><td>All-auto, mixed auto/manual, single step</td></tr>
+        <tr><td>step_ordering/</td><td>3</td><td>Numerical order, skip completed, dependencies</td></tr>
+        <tr><td>cleanup/</td><td>2</td><td>Already-complete returns done, partial resumes</td></tr>
+        <tr><td>dashboard_ui/</td><td>1</td><td>Playwright: two-tab browser test of full lifecycle</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Key Regression Tests <span class="tag tag-test">testing</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li><code>test_complete_beats_ready_on_same_date</code> &mdash; lifecycle ordering beats alphabetical</li>
+        <li><code>test_flat_file_wins_over_implementing_directory_with_same_id</code> &mdash; completed flat file beats stale directory</li>
+        <li><code>test_implementing_is_implementable</code> &mdash; failed runs can be retried</li>
+        <li><code>test_filters_out_wrong_project</code> &mdash; project field prevents cross-repo execution</li>
+        <li><code>test_finds_roadmap_in_workdir</code> &mdash; coordinator scans <code>~/.roadmaps/</code></li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<!-- API -->
+<section id="api">
+  <h2><span class="num">10</span>Dashboard API</h2>
+  <p class="lead">28 REST endpoints. Flask on port 8888. SQLite with WAL mode for concurrent reads.</p>
+
+  <details>
+    <summary>Roadmap Endpoints <span class="tag tag-api">api</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+        <tr><td>GET</td><td>/roadmaps</td><td>List (params: state, status, archived, detail)</td></tr>
+        <tr><td>POST</td><td>/roadmaps</td><td>Create</td></tr>
+        <tr><td>GET</td><td>/roadmaps/&lt;id&gt;</td><td>Get with nested steps, issues, PRs</td></tr>
+        <tr><td>PUT</td><td>/roadmaps/&lt;id&gt;</td><td>Update fields</td></tr>
+        <tr><td>DELETE</td><td>/roadmaps/&lt;id&gt;</td><td>Delete (cascades)</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/complete</td><td>Mark complete</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/error</td><td>Mark error</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/shutdown</td><td>Mark idle</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/archive</td><td>Archive</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/unarchive</td><td>Unarchive</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/sync</td><td>Bulk state reconciliation</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step Endpoints <span class="tag tag-api">api</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+        <tr><td>GET</td><td>/roadmaps/&lt;id&gt;/steps</td><td>List all steps</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/steps</td><td>Bulk create (JSON array)</td></tr>
+        <tr><td>GET</td><td>/roadmaps/&lt;id&gt;/steps/&lt;n&gt;</td><td>Get single step</td></tr>
+        <tr><td>PUT</td><td>/roadmaps/&lt;id&gt;/steps/&lt;n&gt;</td><td>Update</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/steps/&lt;n&gt;/begin</td><td>Mark in_progress</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/steps/&lt;n&gt;/finish</td><td>Mark complete</td></tr>
+        <tr><td>POST</td><td>/roadmaps/&lt;id&gt;/steps/&lt;n&gt;/error</td><td>Mark error</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Control, State, Events, SSE <span class="tag tag-api">api</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+        <tr><td>GET/POST/DELETE</td><td>/roadmaps/&lt;id&gt;/control</td><td>Pause/resume/stop signals</td></tr>
+        <tr><td>GET/POST</td><td>/roadmaps/&lt;id&gt;/state</td><td>State transitions with history</td></tr>
+        <tr><td>GET/POST</td><td>/roadmaps/&lt;id&gt;/history</td><td>Lifecycle history events</td></tr>
+        <tr><td>GET/POST</td><td>/roadmaps/&lt;id&gt;/events</td><td>Runtime log events</td></tr>
+        <tr><td>GET</td><td>/events/stream</td><td>Global SSE stream</td></tr>
+        <tr><td>GET</td><td>/roadmaps/&lt;id&gt;/events/stream</td><td>Per-roadmap SSE stream</td></tr>
+        <tr><td>GET</td><td>/api/v1/health</td><td>Health check</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
+
+</div>
+
+<footer>
+  Cat Herding &middot; Automated Feature Planning &amp; Implementation for Claude Code
+</footer>
+
+</body>
+</html>
