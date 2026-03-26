@@ -3,8 +3,10 @@
 Drives state changes via the REST API and confirms both the overview page
 and detail page update visually through the polling mechanism.
 
-Screenshots are saved to /tmp/dashboard-screenshots/test/ at each key state
-for comparison with the demo script's screenshots.
+Opens TWO browser tabs — overview and detail — so both are visible
+simultaneously during headed runs.
+
+Screenshots are saved to /tmp/dashboard-screenshots/test/ at each key state.
 """
 
 import json
@@ -54,14 +56,14 @@ def screenshot(page, name):
 
 
 class TestImplementRoadmapDashboardLifecycle:
-    """End-to-end: overview card → detail page → step progression → completion.
+    """End-to-end: overview + detail pages open simultaneously, step progression → completion.
 
     Fixes #28: overview progress increments during test
-    Fixes #29: card click navigates with ?poll= param to avoid SSE error
+    Fixes #29: detail page uses ?poll= to avoid SSE error
     Fixes #30: descriptive name with persisted test number
     """
 
-    def test_full_lifecycle(self, dashboard_server, page):
+    def test_full_lifecycle(self, dashboard_server, context):
         ds = dashboard_server
         rid = str(uuid.uuid4())
         poll = f"?poll={POLL_MS}"
@@ -73,30 +75,29 @@ class TestImplementRoadmapDashboardLifecycle:
         ds.cli.create_roadmap(roadmap_name, id=rid, status="running")
         ds.cli.set_steps(rid, STEPS)
 
-        # --- 2. Overview: verify card appears ---
-        page.goto(f"{ds.url}/{poll}")
-        card = page.locator(".roadmap-card").first
+        # --- 2. Open overview page in tab 1 ---
+        overview = context.new_page()
+        overview.goto(f"{ds.url}/{poll}")
+        card = overview.locator(".roadmap-card").first
         expect(card).to_be_visible(timeout=POLL_TIMEOUT)
         expect(card.locator(".card-name")).to_have_text(roadmap_name)
         expect(card.locator(".progress-text")).to_contain_text(f"0/{n}")
-        screenshot(page, "01-overview-initial")
+        screenshot(overview, "01-overview-initial")
 
-        # --- 3. Click card — navigate WITH poll param to avoid SSE error (#29) ---
-        card.click()
-        # The click navigates to /roadmap/{rid} without poll param.
-        # Immediately navigate with poll param before SSE tries to connect.
-        page.goto(f"{ds.url}/roadmap/{rid}{poll}")
-        expect(page.locator("#title")).to_contain_text(roadmap_name, timeout=POLL_TIMEOUT)
-        steps = page.locator("#steps .step")
+        # --- 3. Open detail page in tab 2 (with poll param) ---
+        detail = context.new_page()
+        detail.goto(f"{ds.url}/roadmap/{rid}{poll}")
+        expect(detail.locator("#title")).to_contain_text(roadmap_name, timeout=POLL_TIMEOUT)
+        steps = detail.locator("#steps .step")
         expect(steps).to_have_count(n, timeout=POLL_TIMEOUT)
-        expect(page.locator("#progress-label")).to_contain_text(f"0 / {n}")
+        expect(detail.locator("#progress-label")).to_contain_text(f"0 / {n}")
 
         # Verify each step description is visible
         for i, name in enumerate(STEP_NAMES):
             expect(steps.nth(i)).to_contain_text(name, timeout=POLL_TIMEOUT)
-        screenshot(page, "02-detail-initial")
+        screenshot(detail, "02-detail-initial")
 
-        # --- 4. Step 1: Create Draft PR — begin + register PR + finish ---
+        # --- 4. Step 1: Create Draft PR ---
         ds.cli.begin_step(rid, 1)
         step1 = steps.nth(0)
         expect(step1).to_have_class(re.compile(r"step-active"), timeout=POLL_TIMEOUT)
@@ -106,21 +107,12 @@ class TestImplementRoadmapDashboardLifecycle:
         ds.cli.finish_step(rid, 1)
 
         expect(step1.locator(".step-icon")).to_have_text("\u2713", timeout=POLL_TIMEOUT)
-
-        # Verify PR link appears on step 1
         expect(step1).to_contain_text("PR #42", timeout=POLL_TIMEOUT)
-        screenshot(page, "03-step1-pr-link")
+        screenshot(detail, "03-step1-pr-link")
 
-        # --- Check overview mid-flow: should show 1/N (#28) ---
-        page.goto(f"{ds.url}/{poll}")
-        card = page.locator(".roadmap-card").first
+        # Verify overview updates (#28)
         expect(card.locator(".progress-text")).to_contain_text(f"1/{n}", timeout=POLL_TIMEOUT)
-        screenshot(page, "04-overview-mid-1")
-
-        # Go back to detail
-        page.goto(f"{ds.url}/roadmap/{rid}{poll}")
-        steps = page.locator("#steps .step")
-        expect(steps).to_have_count(n, timeout=POLL_TIMEOUT)
+        screenshot(overview, "04-overview-after-step1")
 
         # --- 5-7. Steps 2-4: standard implementation ---
         for step_num in range(2, n):
@@ -130,47 +122,41 @@ class TestImplementRoadmapDashboardLifecycle:
             expect(step_el).to_have_class(
                 re.compile(r"step-active"), timeout=POLL_TIMEOUT
             )
-            screenshot(page, f"05-step{step_num}-active")
+            screenshot(detail, f"05-step{step_num}-active")
 
             ds.cli.finish_step(rid, step_num)
             expect(step_el.locator(".step-icon")).to_have_text(
                 "\u2713", timeout=POLL_TIMEOUT
             )
-            expect(page.locator("#progress-label")).to_contain_text(
+            expect(detail.locator("#progress-label")).to_contain_text(
                 f"{step_num} / {n}", timeout=POLL_TIMEOUT
             )
-            screenshot(page, f"06-step{step_num}-complete")
+            screenshot(detail, f"06-step{step_num}-complete")
 
-        # --- Check overview mid-flow again: should show 4/N (#28) ---
-        page.goto(f"{ds.url}/{poll}")
-        card = page.locator(".roadmap-card").first
+        # Verify overview shows 4/5 (#28)
         expect(card.locator(".progress-text")).to_contain_text(f"{n-1}/{n}", timeout=POLL_TIMEOUT)
-        screenshot(page, "07-overview-mid-4")
-
-        # Go back to detail for final step
-        page.goto(f"{ds.url}/roadmap/{rid}{poll}")
-        steps = page.locator("#steps .step")
+        screenshot(overview, "07-overview-after-step4")
 
         # --- 8. Step 5: Finalize & Merge PR ---
         ds.cli.begin_step(rid, n)
         ds.cli.finish_step(rid, n)
-        expect(page.locator("#progress-label")).to_contain_text(
+        expect(detail.locator("#progress-label")).to_contain_text(
             f"{n} / {n}", timeout=POLL_TIMEOUT
         )
-        screenshot(page, f"08-step{n}-complete")
+        screenshot(detail, f"08-step{n}-complete")
 
         # --- 9. Complete roadmap ---
         ds.cli.complete(rid)
 
         # --- 10. Detail: status badge shows COMPLETE ---
-        expect(page.locator("#status-badge")).to_contain_text("COMPLETE", timeout=POLL_TIMEOUT)
-        screenshot(page, "09-detail-complete")
+        expect(detail.locator("#status-badge")).to_contain_text("COMPLETE", timeout=POLL_TIMEOUT)
+        screenshot(detail, "09-detail-complete")
 
-        # --- 11. Navigate back to overview ---
-        page.goto(f"{ds.url}/{poll}")
-
-        # --- 12. Overview: card shows Complete with full progress (#28) ---
-        card = page.locator(".roadmap-card").first
+        # --- 11. Overview: card shows Complete (#28) ---
         expect(card.locator(".progress-text")).to_contain_text(f"{n}/{n}", timeout=POLL_TIMEOUT)
         expect(card.locator(".card-badges")).to_contain_text("Complete", timeout=POLL_TIMEOUT)
-        screenshot(page, "10-overview-complete")
+        screenshot(overview, "10-overview-complete")
+
+        # Clean up pages
+        detail.close()
+        overview.close()
