@@ -2,7 +2,7 @@
 
 Platform-specific guidance for Windows desktop development with WinUI 3 and the Windows App SDK.
 
-## References
+## §8.1. References
 
 1. [WinUI 3 / Windows App SDK](https://learn.microsoft.com/en-us/windows/apps/winui/winui3/) — the primary UI framework for Windows desktop apps.
 2. [Fluent 2 Design System](https://fluent2.microsoft.design/) — Microsoft's cross-platform design system.
@@ -10,7 +10,7 @@ Platform-specific guidance for Windows desktop development with WinUI 3 and the 
 4. [WinUI Gallery (GitHub)](https://github.com/microsoft/WinUI-Gallery) — interactive reference for all WinUI 3 controls.
 5. [Windows App SDK (GitHub)](https://github.com/microsoft/WindowsAppSDK) — releases, issues, and roadmap.
 
-## Architecture
+## §8.2. Architecture
 
 Use MVVM with [CommunityToolkit.Mvvm](https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/) — source-generated `ObservableObject`, `RelayCommand`, and messaging.
 
@@ -35,7 +35,7 @@ public partial class MainViewModel
 }
 ```
 
-## Fluent Design
+## §8.3. Fluent Design
 
 Use built-in WinUI 3 controls — they implement Fluent 2 natively. Never custom-draw what a standard control can do.
 
@@ -43,7 +43,7 @@ Use built-in WinUI 3 controls — they implement Fluent 2 natively. Never custom
 - Icons: Segoe Fluent Icons
 - Follow [Windows design guidance](https://learn.microsoft.com/en-us/windows/apps/design/) for layout, spacing, and navigation patterns
 
-## Theming
+## §8.4. Theming
 
 WinUI 3 supports tri-state theming: Light, Dark, and High Contrast.
 
@@ -60,7 +60,7 @@ WinUI 3 supports tri-state theming: Light, Dark, and High Contrast.
 <TextBlock Foreground="#FFFFFF" />
 ```
 
-## Accessibility
+## §8.5. Accessibility
 
 WinUI 3 controls expose [UI Automation](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-uiautomationoverview) patterns automatically. Set `AutomationProperties.Name` on interactive elements that lack visible text labels.
 
@@ -83,7 +83,7 @@ Components MUST respond to these Windows accessibility settings:
 | Dark Theme | `Application.RequestedTheme` | Full dark theme support via ThemeResource |
 | Caret Browsing | System setting | Non-interactive text should be navigable |
 
-## Localization
+## §8.6. Localization
 
 Use MRT Core with `.resw` resource files. The `x:Uid` directive in XAML binds control properties to resource keys.
 
@@ -97,7 +97,7 @@ Use MRT Core with `.resw` resource files. The `x:Uid` directive in XAML binds co
 <Button x:Uid="SaveButton" />
 ```
 
-## Deep Linking / Protocol Activation
+## §8.7. Deep Linking / Protocol Activation
 
 Declare protocol handlers in `Package.appxmanifest` and handle activation through the Windows App SDK lifecycle APIs.
 
@@ -106,7 +106,7 @@ Declare protocol handlers in `Package.appxmanifest` and handle activation throug
 - Parse URI to determine target page/state, navigate accordingly
 - Use `AppInstance.FindOrRegisterForKey()` for single-instancing (recommended for deep links)
 
-## App Notifications
+## §8.8. App Notifications
 
 Use `AppNotificationManager` + `AppNotificationBuilder` fluent API for local notifications.
 
@@ -114,7 +114,7 @@ Use `AppNotificationManager` + `AppNotificationBuilder` fluent API for local not
 - Handle notification activation alongside protocol activation
 - MSIX-packaged apps get notification identity automatically
 
-## High DPI / Display Scaling
+## §8.9. High DPI / Display Scaling
 
 XAML layout uses effective pixels (epx) — scaling is automatic for all XAML-rendered content.
 
@@ -122,16 +122,16 @@ XAML layout uses effective pixels (epx) — scaling is automatic for all XAML-re
 - For custom rendering (Win2D, Direct3D interop), query `XamlRoot.RasterizationScale` and listen for `RasterizationScaleChanged`
 - Never hard-code pixel sizes in code-behind — rely on XAML layout and the scaling system
 
-## MSIX Packaging
+## §8.10. MSIX Packaging
 
 - Use the single-project MSIX packaging model
 - Declare capabilities minimally in `Package.appxmanifest`
 - Sign packages with a trusted certificate for sideloading
 - Version numbering: `Major.Minor.Build.Revision`, monotonically increasing
 
-## Concurrency
+## §8.11. Concurrency
 
-See `csharp.md` for general async/await conventions. For WinUI 3 specifically:
+See §7.5 for general async/await conventions. For WinUI 3 specifically:
 
 - Use `DispatcherQueue.TryEnqueue` to marshal work back to the UI thread from background tasks
 - Never access UI elements from non-UI threads
@@ -143,7 +143,7 @@ DispatcherQueue.TryEnqueue(() =>
 });
 ```
 
-## RTL Layout Support
+## §8.12. RTL Layout Support
 
 - Set `FlowDirection="RightToLeft"` on the root element for RTL locales
 - WinUI 3 XAML layout handles leading/trailing automatically when FlowDirection is set
@@ -151,7 +151,7 @@ DispatcherQueue.TryEnqueue(() =>
 - Do NOT mirror non-directional icons (checkmarks, clocks)
 - Test with RTL language packs installed
 
-## Logging
+## §8.13. Logging
 
 `ILogger<T>` (same conventions as `csharp.md`). Additionally:
 
@@ -159,7 +159,7 @@ DispatcherQueue.TryEnqueue(() =>
 - Use XAML Live Visual Tree in Visual Studio for debugging visual tree issues
 - Use [Visual Studio Performance Profiler](https://learn.microsoft.com/en-us/visualstudio/profiling/) for CPU, memory, and UI responsiveness analysis
 
-## Debug Mode
+## §8.14. Debug Mode
 
 Dev-only settings page guarded by `#if DEBUG`:
 
@@ -168,7 +168,7 @@ Dev-only settings page guarded by `#if DEBUG`:
 - Environment info (app version, OS version, device)
 - Access via navigation menu item visible only in debug builds
 
-## Design-Time Data
+## §8.15. Design-Time Data
 
 - Use `d:DataContext` and `d:DesignInstance` for XAML designer preview data
 - Use XAML Hot Reload for live iteration during development
