@@ -459,6 +459,7 @@ footer {
 <nav>
   <a href="#repo">Repository</a>
   <a href="#overview">Overview</a>
+  <a href="#guidelines">Guidelines</a>
   <a href="#lifecycle">Lifecycle</a>
   <a href="#coordinator">Coordinator</a>
   <a href="#state">State Machine</a>
@@ -592,9 +593,91 @@ footer {
   </details>
 </section>
 
+<!-- Code Generation Guidelines -->
+<section id="guidelines">
+  <h2><span class="num">02</span>Code Generation Guidelines <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="repo-header-link">View on GitHub &rarr;</a></h2>
+  <p class="lead">Shared coding guidelines installed globally at <code>~/.claude/guidelines/</code>. Every Claude Code session reads these. Consolidated from the <a href="https://github.com/mikefullerton/litterbox" class="gh">litterbox</a> and <a href="https://github.com/mikefullerton/temporal-platform" class="gh">temporal-platform</a> repos.</p>
+
+  <div class="repo-cards">
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/general.md">general.md</a></h4>
+      <p>21 universal rules: native controls, no blocking main thread, progress indicators, testing, atomic commits, verification, logging, accessibility, privacy, feature flags, analytics.</p>
+      <span class="card-tag tag-arch">all projects</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/engineering-principles.md">engineering-principles.md</a></h4>
+      <p>15 core principles: simplicity, composition over inheritance, dependency injection, immutability, fail fast, idempotency, design for deletion, YAGNI.</p>
+      <span class="card-tag tag-arch">all projects</span>
+    </div>
+  </div>
+
+  <details>
+    <summary>Platform-Specific Guidelines <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>File</th><th>Platform</th><th>Key Topics</th></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/swift.md" class="gh">swift.md</a></td><td>Swift / SwiftUI / AppKit</td><td>os.log, Keychain, SwiftLint, AppIntents, Dynamic Type, #Preview</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/kotlin.md" class="gh">kotlin.md</a></td><td>Kotlin / Compose / Ktor</td><td>Coroutines, Timber, ktlint, Material Design 3, @Preview, fontScale</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/typescript.md" class="gh">typescript.md</a></td><td>TypeScript / React / Web</td><td>ESLint + Prettier, WCAG, CSS logical properties, Playwright, CSP</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/python.md" class="gh">python.md</a></td><td>Python (cat-herding)</td><td>pytest, pathlib, no external deps in core, deterministic IDs, WAL mode</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>Spec &amp; Reference Guidelines <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>File</th><th>Purpose</th></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/specs.md" class="gh">specs.md</a></td><td>Spec writing format: frontmatter, RFC 2119 requirements (REQ-NNN), test vectors, standard sections</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/best-practices-references.md" class="gh">best-practices-references.md</a></td><td>External links: Apple HIG, Material Design, WCAG, OWASP, Nielsen Norman</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>How Guidelines Are Installed <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p><code>install.sh</code> symlinks all <code>guidelines/*.md</code> files to <code>~/.claude/guidelines/</code>. The global <code>~/.claude/CLAUDE.md</code> references them by path:</p>
+      <pre><code>## Coding Guidelines
+
+- ~/.claude/guidelines/general.md — Universal rules (all projects)
+- ~/.claude/guidelines/engineering-principles.md — Core principles
+- ~/.claude/guidelines/swift.md — Swift/SwiftUI/AppKit
+- ~/.claude/guidelines/kotlin.md — Kotlin/Compose/Ktor
+- ~/.claude/guidelines/typescript.md — TypeScript/React/Web
+- ~/.claude/guidelines/python.md — Python
+- ~/.claude/guidelines/specs.md — Spec writing format
+- ~/.claude/guidelines/best-practices-references.md — External references</code></pre>
+      <p>Every Claude Code session inherits the global CLAUDE.md. The agent reads <code>general.md</code> + the platform-specific file for the current project.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Key Rules (from general.md) <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>1. Prefer native controls</strong> &mdash; Always use platform built-in frameworks first</li>
+        <li><strong>2. Surface all design decisions</strong> &mdash; LLM choices affecting behavior must be noted and approved</li>
+        <li><strong>3. No blocking the main thread</strong> &mdash; Use platform async primitives (Swift Concurrency, Coroutines, async/await)</li>
+        <li><strong>4. Always show progress</strong> &mdash; Determinate when total known, indeterminate otherwise</li>
+        <li><strong>5. Comprehensive unit testing</strong> &mdash; Every component, every edge case</li>
+        <li><strong>6. Small atomic commits</strong> &mdash; One logical change per commit</li>
+        <li><strong>7. Post-generation verification</strong> &mdash; Build, test, lint, accessibility audit, log verification</li>
+        <li><strong>8. Instrumented logging</strong> &mdash; Structured debug logging via platform logger</li>
+        <li><strong>9. Deep linking</strong> &mdash; All views reachable via URL</li>
+        <li><strong>10. Accessibility from day one</strong> &mdash; Semantic roles, keyboard nav, WCAG AA contrast</li>
+        <li><strong>11. Privacy by default</strong> &mdash; Data minimization, consent, secure storage, TLS</li>
+        <li><strong>12. Feature flags</strong> &mdash; All features gated from initial implementation</li>
+        <li><strong>13. Linting from day one</strong> &mdash; SwiftLint / ktlint / ESLint+Prettier configured at project creation</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
 <!-- Lifecycle -->
 <section id="lifecycle">
-  <h2><span class="num">02</span>The Lifecycle</h2>
+  <h2><span class="num">03</span>The Lifecycle</h2>
   <p class="lead">A feature goes through three phases: planning, implementation, and completion. Each phase has its own skill, file layout, and state tracking.</p>
 
   <div class="flow">
@@ -703,7 +786,7 @@ description: "one-line summary"</code></pre>
 
 <!-- Coordinator -->
 <section id="coordinator">
-  <h2><span class="num">03</span>Coordinator Algorithm</h2>
+  <h2><span class="num">04</span>Coordinator Algorithm</h2>
   <p class="lead">The coordinator is a deterministic Python script. It reads roadmap files with regex, decides the next step, and outputs JSON. No LLM involved in step selection. <a href="https://github.com/mikefullerton/cat-herding/blob/main/skills/implement-roadmap/references/coordinator" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -753,7 +836,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- State Machine -->
 <section id="state">
-  <h2><span class="num">04</span>State Machine</h2>
+  <h2><span class="num">05</span>State Machine</h2>
   <p class="lead">State is tracked via dated files in <code>State/</code>. The newest file (by date, then lifecycle order) determines the current state. <a href="https://github.com/mikefullerton/cat-herding/blob/main/scripts/roadmap_lib.py" class="gh-icon" title="View source">[source]</a></p>
 
   <div class="diagram"><span class="highlight">Created</span> <span class="dim">&rarr;</span> <span class="highlight">Planning</span> <span class="dim">&rarr;</span> <span class="highlight">Ready</span> <span class="dim">&rarr;</span> <span class="highlight">Implementing</span> <span class="dim">&rarr;</span> <span class="green">Complete</span>
@@ -788,7 +871,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- Dashboard -->
 <section id="dashboard">
-  <h2><span class="num">05</span>Dashboard Service</h2>
+  <h2><span class="num">06</span>Dashboard Service</h2>
   <p class="lead">Flask-based REST API and web UI. Generic progress tracker &mdash; knows nothing about git, files, or Claude Code. Agents push data to it. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -836,7 +919,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- CLI -->
 <section id="cli">
-  <h2><span class="num">06</span>CLI Tool</h2>
+  <h2><span class="num">07</span>CLI Tool</h2>
   <p class="lead">The <code>roadmaps</code> command scans all repos for roadmaps, displays progress, and manages the system. <a href="https://github.com/mikefullerton/cat-herding/blob/main/scripts/roadmaps.py" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -893,7 +976,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- File Layout -->
 <section id="files">
-  <h2><span class="num">07</span>File Layout</h2>
+  <h2><span class="num">08</span>File Layout</h2>
   <p class="lead">During work, files live in <code>~/.roadmaps/</code>. After completion, a single flat file is committed to the repo.</p>
 
   <details>
@@ -964,7 +1047,7 @@ change-history:
 
 <!-- Skills -->
 <section id="skills">
-  <h2><span class="num">08</span>Skills &amp; Agents</h2>
+  <h2><span class="num">09</span>Skills &amp; Agents</h2>
   <p class="lead">Skills are Claude Code slash commands. Each has a versioned SKILL.md with instructions and a references/ directory.</p>
 
   <details>
@@ -990,7 +1073,7 @@ change-history:
 
 <!-- Tests -->
 <section id="tests">
-  <h2><span class="num">09</span>Test Suite</h2>
+  <h2><span class="num">10</span>Test Suite</h2>
   <p class="lead">370+ tests covering the full stack. Every code change requires tests. Every bug fix requires a regression test. <a href="https://github.com/mikefullerton/cat-herding/tree/main/tests" class="gh-icon" title="View tests">[tests]</a></p>
 
   <details>
@@ -1052,7 +1135,7 @@ change-history:
 
 <!-- API -->
 <section id="api">
-  <h2><span class="num">10</span>Dashboard API</h2>
+  <h2><span class="num">11</span>Dashboard API</h2>
   <p class="lead">28 REST endpoints. Flask on port 8888. SQLite with WAL mode for concurrent reads. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard/api" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
