@@ -1089,6 +1089,77 @@ description: "one-line summary"</code></pre>
       </ul>
     </div>
   </details>
+
+  <details>
+    <summary>Code Review &mdash; Multi-Agent with Configurable Agents <a href="https://github.com/mikefullerton/cat-herding/blob/main/skills/implement-roadmap/references/review-guide.md" class="gh-icon">[review guide]</a> <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Code review runs at two points in the implementation flow, using agents from the installed <a href="https://github.com/mikefullerton/cat-herding/blob/main/CLAUDE.md" class="gh">pr-review-toolkit</a> and <a href="https://github.com/mikefullerton/cat-herding/blob/main/CLAUDE.md" class="gh">feature-dev</a> plugins.</p>
+
+      <h3>Per-Step Review (Step 4.5)</h3>
+      <p>After build and test pass, before pushing. Quick review to catch issues early.</p>
+      <ul>
+        <li>Default agent: <code>code-reviewer</code> (fast, catches obvious issues)</li>
+        <li>Gets the diff via <code>git diff HEAD~1</code></li>
+        <li>Receives coding guidelines as context (<code>general.md</code> + platform-specific guideline)</li>
+        <li>High/critical findings &rarr; fix, re-run build+test+review (max 3 iterations)</li>
+        <li>Medium/low &rarr; continue (logged for follow-up)</li>
+      </ul>
+
+      <h3>Final Review (Finalize &amp; Merge PR step)</h3>
+      <p>Full multi-agent review on the complete PR diff. All configured agents run <strong>in parallel</strong>.</p>
+      <ul>
+        <li>Default agents: <code>code-reviewer</code> + <code>silent-failure-hunter</code></li>
+        <li>Gets the diff via <code>gh pr diff</code></li>
+        <li>Receives <code>general.md</code> + <code>engineering-principles.md</code> + platform guideline</li>
+        <li>Findings aggregated across all agents</li>
+        <li>High/critical &rarr; fix, re-run only the failing reviewers (max 3 iterations)</li>
+        <li>Medium &rarr; fix if quick, otherwise log as follow-up</li>
+        <li>Low/info &rarr; ignore unless trivial</li>
+      </ul>
+
+      <h3>Available Review Agents</h3>
+      <table>
+        <tr><th>Agent</th><th>Plugin</th><th>What It Reviews</th></tr>
+        <tr><td><code>code-reviewer</code></td><td>pr-review-toolkit</td><td>Bugs, logic errors, code quality, project conventions</td></tr>
+        <tr><td><code>silent-failure-hunter</code></td><td>pr-review-toolkit</td><td>Swallowed exceptions, bad error handling, inappropriate fallbacks</td></tr>
+        <tr><td><code>pr-test-analyzer</code></td><td>pr-review-toolkit</td><td>Test coverage gaps, missing edge cases</td></tr>
+        <tr><td><code>type-design-analyzer</code></td><td>pr-review-toolkit</td><td>Type design quality, encapsulation, invariant expression</td></tr>
+        <tr><td><code>comment-analyzer</code></td><td>pr-review-toolkit</td><td>Comment accuracy, staleness, maintainability</td></tr>
+        <tr><td><code>code-simplifier</code></td><td>pr-review-toolkit</td><td>Code clarity, unnecessary complexity, refactoring opportunities</td></tr>
+      </table>
+
+      <h3>Configuration</h3>
+      <p>Review agents are configurable at two levels. Per-roadmap overrides global.</p>
+
+      <p><strong>Global default</strong> (in project <a href="https://github.com/mikefullerton/cat-herding/blob/main/CLAUDE.md" class="gh">CLAUDE.md</a>):</p>
+      <pre><code>reviews:
+  per-step: [code-reviewer]
+  final: [code-reviewer, silent-failure-hunter, pr-test-analyzer]</code></pre>
+
+      <p><strong>Per-roadmap override</strong> (in Roadmap.md frontmatter):</p>
+      <pre><code>reviews:
+  per-step: [code-reviewer, silent-failure-hunter]
+  final: [code-reviewer, silent-failure-hunter, pr-test-analyzer, type-design-analyzer]</code></pre>
+
+      <p>If neither is set, falls back to: per-step <code>[code-reviewer]</code>, final <code>[code-reviewer, silent-failure-hunter]</code>.</p>
+
+      <h3>Guideline Compliance</h3>
+      <p>Every review agent receives the relevant <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="gh">coding guidelines</a> as context:</p>
+      <ul>
+        <li><code>general.md</code> &mdash; 21 universal rules (always included)</li>
+        <li><code>engineering-principles.md</code> &mdash; 15 core principles (final review only)</li>
+        <li>Platform-specific guideline &mdash; <code>swift.md</code>, <code>kotlin.md</code>, <code>typescript.md</code>, or <code>python.md</code> (auto-detected from project)</li>
+      </ul>
+      <p>Reviewers check compliance and flag violations with severity. Example: <em>"Rule 4: this blocks the main thread"</em> or <em>"Rule 12: missing accessibility labels."</em></p>
+
+      <h3>Review Logging</h3>
+      <p>All findings logged to the dashboard event log and <code>implementation.log</code>:</p>
+      <pre><code>[10:30:01] REVIEW_START: code-reviewer on Step 3
+[10:30:15] REVIEW_FINDING: [high] Potential SQL injection in user input
+[10:30:15] REVIEW_FINDING: [medium] Missing error handling on network call
+[10:30:16] REVIEW_RESULT: code-reviewer — FAIL (1 high, 1 medium, 0 low)</code></pre>
+    </div>
+  </details>
 </section>
 
 <!-- Coordinator -->
