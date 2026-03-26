@@ -130,6 +130,29 @@ class TestSinglePROnOverview:
         assert roadmap["prs"][0]["number"] == 42
 
 
+class TestPRLinkOnStepCard:
+    """Regression #34: PR link must appear on step card after update_step with pr_number."""
+
+    def test_pr_number_on_step_via_update(self, dashboard_server):
+        ds = dashboard_server
+        rid = str(uuid.uuid4())
+
+        ds.cli.create_roadmap("PRStepTest", id=rid, status="running")
+        ds.cli.set_steps(rid, [
+            {"number": 1, "description": "Create Draft PR",
+             "status": "not_started", "step_type": "Auto", "complexity": "S"},
+        ])
+
+        # Simulate what the agent should do: update_step with pr fields
+        ds.cli.update_step(rid, 1, pr_number=98, pr_url="https://github.com/test/repo/pull/98")
+
+        # Verify the API returns pr_number on the step
+        data = ds.api_get(f"/api/v1/roadmaps/{rid}")
+        step = data["steps"][0]
+        assert step["pr_number"] == 98, f"Expected pr_number=98, got {step.get('pr_number')}"
+        assert step["pr_url"] == "https://github.com/test/repo/pull/98"
+
+
 def _find_free_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))

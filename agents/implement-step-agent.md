@@ -117,7 +117,13 @@ If the step description is **"Create Draft PR"**, perform the following instead 
 3. **Register the PR on the dashboard** (so the PR link appears on the step card):
    ```bash
    python3 "<dash_cli>" pr-created <step_number> <pr_number> "<pr_url>"
-   python3 "<dash_cli>" log "Draft PR created: #<number> — feat: <feature_name>"
+   python3 "<dash_cli>" log "Draft PR created: #<number> — Roadmap: <feature_name>"
+   ```
+   Also update the dashboard REST API directly (the dash CLI only writes to progress.json, not the API):
+   ```bash
+   curl -s -X PUT "<dashboard_url>/api/v1/roadmaps/<roadmap_id>/steps/<step_number>" \
+     -H "Content-Type: application/json" \
+     -d '{"pr_number": <pr_number>, "pr_url": "<pr_url>"}'
    ```
 
 4. **Mark this step as Complete** in the Roadmap.md and commit:
