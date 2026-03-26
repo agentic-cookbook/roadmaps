@@ -18,7 +18,7 @@ POLL_TIMEOUT = 8000  # max wait for polled UI update
 SCREENSHOT_DIR = "/tmp/dashboard-screenshots/test"
 
 STEPS = [
-    {"number": 1, "description": "Create GitHub Issues",
+    {"number": 1, "description": "Create Draft PR",
      "status": "not_started", "step_type": "Auto", "complexity": "S"},
     {"number": 2, "description": "Add authentication middleware",
      "status": "not_started", "step_type": "Auto", "complexity": "M"},
@@ -26,7 +26,7 @@ STEPS = [
      "status": "not_started", "step_type": "Auto", "complexity": "L"},
     {"number": 4, "description": "Write integration tests",
      "status": "not_started", "step_type": "Auto", "complexity": "M"},
-    {"number": 5, "description": "Create & Review Feature PR",
+    {"number": 5, "description": "Finalize & Merge PR",
      "status": "not_started", "step_type": "Auto", "complexity": "M"},
 ]
 
@@ -76,18 +76,31 @@ class TestImplementRoadmapDashboardLifecycle:
             expect(steps.nth(i)).to_contain_text(name, timeout=POLL_TIMEOUT)
         screenshot(page, "02-detail-initial")
 
-        # --- 5-12. Step-by-step progression ---
-        for step_num in range(1, n + 1):
+        # --- 5. Step 1: Create Draft PR — begin + register PR + finish ---
+        ds.cli.begin_step(rid, 1)
+        step1 = steps.nth(0)
+        expect(step1).to_have_class(re.compile(r"step-active"), timeout=POLL_TIMEOUT)
+
+        # Simulate: PR created, registered on step 1 (update_step sets pr fields)
+        ds.cli.update_step(rid, 1, pr_number=42, pr_url="https://github.com/test/repo/pull/42")
+        ds.cli.finish_step(rid, 1)
+
+        expect(step1.locator(".step-icon")).to_have_text("\u2713", timeout=POLL_TIMEOUT)
+
+        # Verify PR link appears on step 1
+        expect(step1).to_contain_text("PR #42", timeout=POLL_TIMEOUT)
+        screenshot(page, "03-step1-pr-link")
+
+        # --- 6-8. Steps 2-4: standard implementation ---
+        for step_num in range(2, n):
             step_el = steps.nth(step_num - 1)
 
-            # Begin step
             ds.cli.begin_step(rid, step_num)
             expect(step_el).to_have_class(
                 re.compile(r"step-active"), timeout=POLL_TIMEOUT
             )
             screenshot(page, f"03-step{step_num}-active")
 
-            # Finish step
             ds.cli.finish_step(rid, step_num)
             expect(step_el.locator(".step-icon")).to_have_text(
                 "\u2713", timeout=POLL_TIMEOUT
@@ -97,17 +110,25 @@ class TestImplementRoadmapDashboardLifecycle:
             )
             screenshot(page, f"04-step{step_num}-complete")
 
-        # --- 13. API: complete roadmap ---
+        # --- 9. Step 5: Finalize & Merge PR ---
+        ds.cli.begin_step(rid, n)
+        ds.cli.finish_step(rid, n)
+        expect(page.locator("#progress-label")).to_contain_text(
+            f"{n} / {n}", timeout=POLL_TIMEOUT
+        )
+        screenshot(page, f"04-step{n}-complete")
+
+        # --- 10. Complete roadmap ---
         ds.cli.complete(rid)
 
-        # --- 14. Detail: status badge shows COMPLETE ---
+        # --- 11. Detail: status badge shows COMPLETE ---
         expect(page.locator("#status-badge")).to_contain_text("COMPLETE", timeout=POLL_TIMEOUT)
         screenshot(page, "05-detail-complete")
 
-        # --- 15. Navigate back to overview ---
+        # --- 12. Navigate back to overview ---
         page.goto(f"{ds.url}/{poll}")
 
-        # --- 16. Overview: card shows Complete ---
+        # --- 13. Overview: card shows Complete with PR link ---
         card = page.locator(".roadmap-card").first
         expect(card.locator(".progress-text")).to_contain_text(f"{n}/{n}", timeout=POLL_TIMEOUT)
         expect(card.locator(".card-badges")).to_contain_text("Complete", timeout=POLL_TIMEOUT)

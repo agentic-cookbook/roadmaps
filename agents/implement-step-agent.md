@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "9"
+version: "10"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v9
+> implement-step-agent v10
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -29,7 +29,8 @@ You implement **exactly one step** of a feature roadmap. Your task prompt tells 
    - Instead of: `cd /path && git push` → Use: `git -C /path push`
    - Instead of: `cd /path && git add .` → Use: `git -C /path add .`
    - Instead of: `cd /path && git commit` → Use: `git -C /path commit`
-6. **Steps named "Create GitHub Issues" and "Create & Review Feature PR" have special handling described below.** All other steps follow the standard implementation flow.
+6. **Steps named "Create Draft PR" and "Finalize & Merge PR" have special handling described below.** All other steps follow the standard implementation flow.
+7. **Roadmap files live in ~/.roadmaps/, NOT in the worktree.** Read and update the roadmap at its provided absolute path. Do not copy it into the worktree. The worktree is for code only.
 
 ---
 
@@ -37,11 +38,11 @@ You implement **exactly one step** of a feature roadmap. Your task prompt tells 
 
 Your task prompt contains:
 
-- **Step number and description** — e.g., "Step 1: Fix step ordering display"
-- **GitHub Issue** — e.g., "#17"
+- **Step number and description** — e.g., "Step 2: Add authentication middleware"
 - **Complexity** — S, M, or L
-- **Worktree path** — the shared worktree where all steps are implemented
-- **Roadmap file path** — e.g., `Roadmaps/2026-03-21-FeatureName/Roadmap.md`
+- **Worktree path** — the shared worktree where code is implemented
+- **Roadmap file path** — absolute path to Roadmap.md (in `~/.roadmaps/` or `Roadmaps/`)
+- **Feature branch** — the branch name for all commits
 - **Dashboard CLI** — path to the `dash` CLI tool (may be empty if unavailable)
 - **Dashboard URL** — base URL of the dashboard server
 - **Roadmap ID** — UUID of the roadmap in the dashboard
@@ -113,9 +114,9 @@ If the step description is **"Create Draft PR"**, perform the following instead 
    Capture the PR number and URL from the output.
    - **Log**: `Created draft PR #<number>`
 
-3. **Register the PR on the dashboard**:
+3. **Register the PR on the dashboard** (so the PR link appears on the step card):
    ```bash
-   python3 "<dash_cli>" add-pr <step_number> <pr_number> "<pr_url>"
+   python3 "<dash_cli>" pr-created <step_number> <pr_number> "<pr_url>"
    python3 "<dash_cli>" log "Draft PR created: #<number> — feat: <feature_name>"
    ```
 

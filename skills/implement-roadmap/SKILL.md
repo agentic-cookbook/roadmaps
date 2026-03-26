@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "25"
+version: "26"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v25
+   > implement-roadmap v26
 
 2. Print the worker agent version by running:
    ```bash
@@ -28,6 +28,13 @@ Then stop. Do not continue with the rest of the skill.
 Uses a deterministic Python script for step selection (no LLM judgment) and the Agent tool to launch a worker agent for each step.
 
 **Do NOT modify the coordinator script, the worker agent, or any skill files.** If something fails, report the error.
+
+## CRITICAL INVARIANT
+
+The worktree is for CODE ONLY. Roadmap files (Roadmap.md, State/, History/)
+stay in `~/.roadmaps/<project>/` throughout implementation. NEVER copy roadmap
+files into the worktree. The only roadmap artifact that enters the repo is
+the final `<Name>-Roadmap.md` flat file copy during the Finalize PR step.
 
 ## Preflight: Dashboard Server Check
 
@@ -63,51 +70,12 @@ This outputs JSON. Parse it:
 - If it has `"choose"` — present the list to the user and ask them to pick. Then use the chosen path.
 - If it has `"error"` — print the error and **STOP**.
 
-Note whether the resolved roadmap path is under `~/.roadmaps/` or `Roadmaps/`. Store as `ROADMAP_SOURCE=workdir` or `ROADMAP_SOURCE=repo`. The PR step needs this.
+Store the resolved path as `ROADMAP_PATH` (this is an absolute path when source is `~/.roadmaps/`).
+Store `ROADMAP_DIR` as the parent directory of `ROADMAP_PATH`.
 
-## Step 1a: Initialize Implementation Log
+## Step 1a: Check for Previous Implementation Artifacts
 
-Create the implementation log in the roadmap's working directory:
-
-```bash
-ROADMAP_DIR="$(dirname "<roadmap_path>")"
-IMPL_LOG="$ROADMAP_DIR/implementation.log"
-```
-
-Write the initial entry:
-```
-[YYYY-MM-DD HH:MM:SS] IMPLEMENTATION_START: <feature_name>
-[YYYY-MM-DD HH:MM:SS] PROJECT: $PROJECT
-[YYYY-MM-DD HH:MM:SS] ROADMAP: <roadmap_path>
-[YYYY-MM-DD HH:MM:SS] SOURCE: $ROADMAP_SOURCE
-```
-
-**Throughout this skill, append to `$IMPL_LOG` before every significant action** using the format:
-- `[timestamp] DASHBOARD: server at <url>`
-- `[timestamp] WORKTREE: created at <path>`
-- `[timestamp] ROADMAP_COPIED: from <source> to <dest>`
-- `[timestamp] STEP_BEGIN: Step <N> — <description>`
-- `[timestamp] STEP_SKIP_MANUAL: Step <N> — <description>`
-- `[timestamp] STEP_COMPLETE: Step <N>`
-- `[timestamp] STEP_FAILED: Step <N> — <reason>`
-- `[timestamp] PR_CREATED: #<number> (draft)`
-- `[timestamp] PR_READY: #<number>`
-- `[timestamp] PR_MERGED: #<number>`
-- `[timestamp] IMPLEMENTATION_COMPLETE: <feature_name>`
-
-## Step 2: Start Dashboard
-
-```bash
-DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash"
-export DASH_FEATURE="<feature_name>"
-test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<feature_name>" && python3 "$DASH_CLI" load-roadmap "<roadmap_path>" || echo "Dashboard not available"
-```
-
-**IMPORTANT**: Always set `export DASH_FEATURE="<feature_name>"` before ANY `dash` command. This ensures concurrent sessions don't interfere with each other. The `DASH_FEATURE` must be set in the shell so all subsequent `python3 "$DASH_CLI" ...` calls inherit it.
-
-## Step 2a: Check for Previous Implementation Artifacts
-
-Before creating a new branch, check if a previous implementation left behind artifacts:
+**This must happen immediately after resolve — before anything else.**
 
 ```bash
 FEATURE_BRANCH="feature/<feature_name>"
@@ -171,7 +139,24 @@ gh pr close <number> -c "Superseded by fresh implementation run" 2>/dev/null || 
 
 If no artifacts exist, continue silently.
 
-## Step 2b: Mark as Implementing and Create Worktree
+## Step 1b: Initialize Implementation Log
+
+Create the implementation log in the roadmap directory:
+
+```bash
+IMPL_LOG="$ROADMAP_DIR/implementation.log"
+```
+
+Write the initial entry:
+```
+[YYYY-MM-DD HH:MM:SS] IMPLEMENTATION_START: <feature_name>
+[YYYY-MM-DD HH:MM:SS] PROJECT: $PROJECT
+[YYYY-MM-DD HH:MM:SS] ROADMAP: $ROADMAP_PATH
+```
+
+**Throughout this skill, append to `$IMPL_LOG` before every significant action.**
+
+## Step 1c: Mark as Implementing
 
 Write the Implementing state file (after cleanup, so it won't conflict):
 
@@ -180,7 +165,19 @@ TODAY="$(date +%Y-%m-%d)"
 printf -- '---\nevent: implementing\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$TODAY-Implementing.md"
 ```
 
-Create a single feature branch and worktree for all steps:
+## Step 2: Start Dashboard
+
+```bash
+DASH_CLI="$HOME/.claude/skills/progress-dashboard/references/dash"
+export DASH_FEATURE="<feature_name>"
+test -f "$DASH_CLI" && python3 "$DASH_CLI" init "<feature_name>" && python3 "$DASH_CLI" load-roadmap "$ROADMAP_PATH" || echo "Dashboard not available"
+```
+
+**IMPORTANT**: Always set `export DASH_FEATURE="<feature_name>"` before ANY `dash` command. This ensures concurrent sessions don't interfere with each other.
+
+## Step 2b: Create Feature Branch and Worktree
+
+Create a single feature branch and worktree for CODE ONLY:
 
 ```bash
 git worktree add "$WORKTREE_PATH" -b "$FEATURE_BRANCH"
@@ -190,44 +187,18 @@ Print: `Working on branch: $FEATURE_BRANCH`
 
 All steps will commit to this single branch. One PR will be created at the end.
 
-## Step 2c: Copy Roadmap to Worktree
-
-The roadmap must be inside the worktree so the coordinator and worker agent can read and update it.
-
-**If `ROADMAP_SOURCE=workdir`** (roadmap is in `~/.roadmaps/`):
-
-```bash
-ROADMAP_DIR_NAME="$(basename "$(dirname "<roadmap_path>")")"
-mkdir -p "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/State" "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/History"
-cp "$ROADMAP_DIR/Roadmap.md" "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/Roadmap.md"
-cp "$ROADMAP_DIR"/State/*.md "$WORKTREE_PATH/Roadmaps/$ROADMAP_DIR_NAME/State/" 2>/dev/null || true
-git -C "$WORKTREE_PATH" add Roadmaps/
-git -C "$WORKTREE_PATH" commit -m "docs: add roadmap for <feature_name>"
-```
-
-Set the relative roadmap path for all subsequent steps:
-```bash
-ROADMAP_PATH="Roadmaps/$ROADMAP_DIR_NAME/Roadmap.md"
-```
-
-**If `ROADMAP_SOURCE=repo`**: The roadmap is already in the repo. Set `ROADMAP_PATH` to the relative path from Step 1. No copy needed.
+**Do NOT copy roadmap files into the worktree.** The roadmap stays at `$ROADMAP_PATH`.
 
 ## Step 3: Implementation Loop
-
-Derive the worktree roadmap path from the **relative** `ROADMAP_PATH` set in Step 2c:
-
-```bash
-WT_ROADMAP_PATH="$WORKTREE_PATH/$ROADMAP_PATH"
-```
 
 This is a loop. Repeat until done:
 
 ### 3a: Get Next Step
 
-Run the coordinator against the **worktree copy** of the roadmap so it sees status updates from previous steps:
+Run the coordinator against the roadmap at its original location:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "$WT_ROADMAP_PATH"
+python3 "${CLAUDE_SKILL_DIR}/references/coordinator" next-step "$ROADMAP_PATH"
 ```
 
 This outputs JSON. Parse it:
@@ -239,7 +210,7 @@ This outputs JSON. Parse it:
      GITHUB_USER=$(python3 -c "
      import sys; sys.path.insert(0, '$(dirname ${CLAUDE_SKILL_DIR})/../../scripts')
      import roadmap_lib as lib
-     meta, _ = lib.parse_frontmatter('$WT_ROADMAP_PATH')
+     meta, _ = lib.parse_frontmatter('$ROADMAP_PATH')
      print(meta.get('github-user', ''))
      ")
      gh issue create --title "[<feature_name>] Step <N>: <description>" --body "<acceptance criteria from step>" --assignee "$GITHUB_USER"
@@ -262,14 +233,14 @@ This outputs JSON. Parse it:
 
   2. Print: `All steps complete for <feature_name>.` Then **STOP**.
 
-  Note: The final "Create & Review Feature PR" step (handled by the worker agent) populates the Change History, copies the roadmap to the repo, creates the PR, and cleans up.
+  Note: The final "Finalize & Merge PR" step (handled by the worker agent) populates the Change History, copies the roadmap to the repo, creates the PR, and cleans up.
 
 ### 3b: Print Step Info
 
 Print:
 ```
 Step <N>: <description>
-  Issue: <issue>  |  Complexity: <complexity>
+  Complexity: <complexity>
 ```
 
 ### 3c: Update Dashboard
@@ -290,10 +261,10 @@ Use the **Agent tool** (NOT subprocess, NOT `claude --agent`):
 Implement step <N> of the <feature_name> feature.
 
 Step <N>: <description>
-GitHub Issue: <issue>
 Complexity: <complexity>
-Roadmap file: <wt_roadmap_path>
-Worktree path: <worktree_path>
+Roadmap file: <ROADMAP_PATH>
+Worktree path: <WORKTREE_PATH>
+Feature branch: <FEATURE_BRANCH>
 Dashboard CLI: <$DASH_CLI>
 Dashboard URL: <$DASH_URL>
 Roadmap ID: <roadmap_id>
@@ -341,4 +312,3 @@ python3 "$DASH_CLI" finish-step <N>
 Print: `Step <N> complete.`
 
 Then **go back to 3a** to get the next step.
-
