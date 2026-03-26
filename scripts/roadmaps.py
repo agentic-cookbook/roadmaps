@@ -41,34 +41,107 @@ import roadmap_lib as lib
 
 # --- Roadmap scanning ---
 
-def find_all_roadmaps(projects_dir):
-    """Scan all repos for roadmaps. Returns flat list with repo_name on each entry."""
+def find_all_roadmaps(projects_dir, workdir_root=None):
+    """Scan all repos for roadmaps. Returns flat list with repo_name on each entry.
+
+    Scans three locations:
+    1. Per-directory layout: <repo>/Roadmaps/YYYY-MM-DD-Name/Roadmap.md
+    2. Flat file layout: <repo>/Roadmaps/<Name>-Roadmap.md
+    3. Working directory: ~/.roadmaps/<project>/YYYY-MM-DD-Name/Roadmap.md
+    """
     results = []
     projects_path = Path(projects_dir).expanduser()
     if not projects_path.exists():
         return results
 
+    if workdir_root is None:
+        workdir_root = Path.home() / ".roadmaps"
+
+    # Track what we've seen to avoid duplicates
+    seen_ids = set()
+
     for repo_dir in sorted(projects_path.iterdir()):
         if not repo_dir.is_dir():
             continue
 
-        # New per-directory layout: Roadmaps/YYYY-MM-DD-Name/
+        # 1. Per-directory layout: Roadmaps/YYYY-MM-DD-Name/
         roadmap_dirs = lib.find_roadmap_dirs(repo_dir)
-        if roadmap_dirs:
-            for rd in roadmap_dirs:
-                state = lib.current_state(rd)
-                active = lib.is_active(rd)
-                rm_file = lib.roadmap_path(rd)
-                name = lib.get_feature_name(rd)
+        for rd in roadmap_dirs:
+            state = lib.current_state(rd)
+            active = lib.is_active(rd)
+            rm_file = lib.roadmap_path(rd)
+            name = lib.get_feature_name(rd)
+            total, complete = lib.count_steps(rm_file)
+            meta, _ = lib.parse_frontmatter(rm_file)
+            rid = meta.get("id", "")
+            if rid:
+                seen_ids.add(rid)
+            results.append({
+                "name": name,
+                "repo": repo_dir.name,
+                "path": str(rm_file),
+                "dir": rd.name,
+                "roadmap_dir": str(rd),
+                "state": state,
+                "total": total,
+                "complete": complete,
+                "is_complete": state == "Complete",
+                "is_active": active and state != "Complete",
+                "is_running": state == "Implementing",
+                "is_archived": state in ("Archived", "Declined"),
+                "source": "repo",
+            })
+
+        # 2. Flat file layout: Roadmaps/<Name>-Roadmap.md
+        flat_files = lib.find_roadmap_files(repo_dir)
+        for rf in flat_files:
+            meta, _ = lib.parse_frontmatter(rf)
+            rid = meta.get("id", "")
+            if rid and rid in seen_ids:
+                continue  # already found as directory
+            if rid:
+                seen_ids.add(rid)
+            name = lib.parse_roadmap_heading(rf) or rf.stem.replace("-Roadmap", "")
+            total, complete = lib.count_steps(rf)
+            state = meta.get("state", "Complete")  # flat files are finished
+            results.append({
+                "name": name,
+                "repo": repo_dir.name,
+                "path": str(rf),
+                "dir": rf.name,
+                "state": state,
+                "total": total,
+                "complete": complete,
+                "is_complete": True,
+                "is_active": False,
+                "is_running": False,
+                "is_archived": True,
+                "source": "repo-flat",
+            })
+
+        # 3. Working directory: ~/.roadmaps/<project>/
+        work_project_dir = workdir_root / repo_dir.name
+        if work_project_dir.exists():
+            for wd in sorted(work_project_dir.iterdir()):
+                if not wd.is_dir() or not (wd / "Roadmap.md").exists():
+                    continue
+                meta, _ = lib.parse_frontmatter(wd / "Roadmap.md")
+                rid = meta.get("id", "")
+                if rid and rid in seen_ids:
+                    continue
+                if rid:
+                    seen_ids.add(rid)
+                state = lib.current_state(wd)
+                active = lib.is_active(wd)
+                rm_file = wd / "Roadmap.md"
+                name = lib.get_feature_name(wd)
                 total, complete = lib.count_steps(rm_file)
-                # Extract number from dir name for sorting
-                dirname = rd.name
                 results.append({
                     "name": name,
                     "repo": repo_dir.name,
                     "path": str(rm_file),
-                    "dir": dirname,
-                    "roadmap_dir": str(rd),
+                    "dir": wd.name,
+                    "roadmap_dir": str(wd),
                     "state": state,
                     "total": total,
                     "complete": complete,
@@ -76,29 +149,7 @@ def find_all_roadmaps(projects_dir):
                     "is_active": active and state != "Complete",
                     "is_running": state == "Implementing",
                     "is_archived": state in ("Archived", "Declined"),
-                })
-        else:
-            # Old flat layout fallback
-            old = lib.find_roadmaps_old_layout(repo_dir)
-            for entry in old:
-                if not entry.get("roadmap_path"):
-                    continue
-                rm_path = entry["roadmap_path"]
-                is_completed = entry["location"] == "completed"
-                name = lib.parse_roadmap_heading(rm_path) or entry["name"]
-                total, complete = lib.count_steps(rm_path)
-                results.append({
-                    "name": name,
-                    "repo": repo_dir.name,
-                    "path": str(rm_path),
-                    "dir": rm_path.parent.name,
-                    "state": "Complete" if is_completed else "Ready",
-                    "total": total,
-                    "complete": complete,
-                    "is_complete": is_completed,
-                    "is_active": not is_completed,
-                    "is_running": False,
-                    "is_archived": is_completed,
+                    "source": "workdir",
                 })
 
     return results
