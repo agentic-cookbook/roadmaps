@@ -2,7 +2,7 @@
 
 Format and structure rules for behavioral specifications, derived from the litterbox and temporal-platform repos.
 
-## Frontmatter
+## §12.1. Frontmatter
 
 Every spec starts with a YAML frontmatter block:
 
@@ -31,7 +31,7 @@ Field definitions:
 - **platforms**: Which platforms this spec targets.
 - **dependencies**: Other specs this one references, with version pins. Omit if none.
 
-## RFC 2119 Keywords
+## §12.2. RFC 2119 Keywords
 
 Use RFC 2119 keywords for all behavioral requirements:
 
@@ -39,11 +39,11 @@ Use RFC 2119 keywords for all behavioral requirements:
 - **SHOULD** / **SHOULD NOT**: Recommendations.
 - **MAY**: Optional behavior.
 
-## Requirement Numbering
+## §12.3. Requirement Numbering
 
 Number requirements sequentially: `REQ-001`, `REQ-002`, etc. Never reuse numbers, even if a requirement is removed. This makes requirements unambiguous, testable, and referenceable from test vectors.
 
-## Template Variables
+## §12.4. Template Variables
 
 Specs use `{{placeholder}}` tokens for consumer-specific values:
 
@@ -57,7 +57,7 @@ Specs use `{{placeholder}}` tokens for consumer-specific values:
 | `{{db_name}}` | `temporal.db` | Local database filename |
 | `{{bundle_id}}` | `com.company.app` | Bundle/package identifier |
 
-## Standard Sections
+## §12.5. Standard Sections
 
 Include these sections in order (omit those that do not apply):
 
@@ -80,7 +80,7 @@ Include these sections in order (omit those that do not apply):
 17. **Design Decisions** — LLM-made choices needing user approval
 18. **Changelog** — version history
 
-## Test Vector Formats
+## §12.6. Test Vector Formats
 
 Two formats, use whichever fits:
 
@@ -113,7 +113,7 @@ For serialization, algorithms, and wire formats:
 
 For complex components, test vectors may also be published as separate JSON files in a `vectors/` directory.
 
-## Logging Section
+## §12.7. Logging Section
 
 Every behavioral spec MUST include a Logging section with exact log messages. This enables verification by grepping output rather than visual inspection.
 
@@ -132,14 +132,14 @@ Subsystem: `{{bundle_id}}` | Category: `ComponentName`
 | State change | debug | `ComponentName: state changed to {state}` |
 ```
 
-## Privacy Section
+## §12.8. Privacy Section
 
 Document what data is collected, why it is needed, how it is stored, and how PII is handled. This section is required for any spec that involves data collection.
 
-## Feature Flags Section
+## §12.9. Feature Flags Section
 
 List the feature flag keys that gate this feature. Use the `FeatureFlagProvider` interface pattern described in the general guidelines.
 
-## Analytics Section
+## §12.10. Analytics Section
 
 Define event names and property schemas for all significant user actions instrumented by this feature.
