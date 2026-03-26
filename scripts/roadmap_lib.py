@@ -288,9 +288,11 @@ def is_active(roadmap_dir):
 def is_implementable(roadmap_dir):
     """Check if a roadmap is ready for implementation.
 
-    Replaces the old Phase=Ready AND Status!=Complete check.
+    Returns True for Ready or Implementing state — Implementing means
+    a previous run started but may have failed, and the skill's
+    artifact cleanup step (Step 2a) handles that case.
     """
-    return current_state(roadmap_dir) == "Ready"
+    return current_state(roadmap_dir) in ("Ready", "Implementing")
 
 
 # ---------------------------------------------------------------------------

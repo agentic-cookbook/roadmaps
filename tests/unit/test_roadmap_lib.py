@@ -165,7 +165,15 @@ class TestIsImplementable:
         rd = tmp_roadmap_dir / "Roadmaps" / "2026-03-22-FeatureBeta"
         assert lib.is_implementable(rd) is False
 
-    @pytest.mark.parametrize("state_name", ["Created", "Planning", "Implementing", "Paused"])
+    def test_implementing_is_implementable(self, tmp_path):
+        """Implementing is implementable (previous failed run, Step 2a handles cleanup)."""
+        rd = tmp_path / "2026-03-21-Test"
+        rd.mkdir()
+        (rd / "State").mkdir()
+        (rd / "State" / "2026-03-21-Implementing.md").write_text("# State: Implementing\n")
+        assert lib.is_implementable(rd) is True
+
+    @pytest.mark.parametrize("state_name", ["Created", "Planning", "Paused"])
     def test_non_ready_not_implementable(self, tmp_path, state_name):
         rd = tmp_path / "2026-03-21-Test"
         rd.mkdir()

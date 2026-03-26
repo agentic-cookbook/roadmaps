@@ -95,23 +95,6 @@ Write the initial entry:
 - `[timestamp] PR_MERGED: #<number>`
 - `[timestamp] IMPLEMENTATION_COMPLETE: <feature_name>`
 
-## Step 1b: Mark Roadmap as Implementing
-
-Write an Implementing state file so other sessions won't try to start this roadmap:
-
-```bash
-ROADMAP_DIR="$(dirname "<roadmap_path>")"
-TODAY="$(date +%Y-%m-%d)"
-printf -- '---\nevent: implementing\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$TODAY-Implementing.md"
-```
-
-If `ROADMAP_SOURCE=repo`, commit and push the state change:
-```bash
-git -C "$(dirname "$ROADMAP_DIR")" add -A Roadmaps/ && git -C "$(dirname "$ROADMAP_DIR")" commit -m "state: mark <feature_name> as Implementing" && git -C "$(dirname "$ROADMAP_DIR")" push
-```
-
-If `ROADMAP_SOURCE=workdir`, the state file is already in `~/.roadmaps/` — no git commit needed.
-
 ## Step 2: Start Dashboard
 
 ```bash
@@ -129,6 +112,11 @@ Before creating a new branch, check if a previous implementation left behind art
 ```bash
 FEATURE_BRANCH="feature/<feature_name>"
 WORKTREE_PATH="../$(basename $(pwd))-wt/<feature_name>"
+```
+
+**Check for stale Implementing state** (from a previous failed run):
+```bash
+ls "$ROADMAP_DIR/State/"*-Implementing.md 2>/dev/null && echo "STALE_IMPLEMENTING" || echo "NO_STALE"
 ```
 
 **Check for existing worktree:**
@@ -155,6 +143,7 @@ If ANY of these exist, present the findings and ask:
 
 ```
 Found artifacts from a previous implementation of <feature_name>:
+  - Implementing state file (if exists)
   - Worktree: <path> (if exists)
   - Local branch: <branch> (if exists)
   - Remote branch: <branch> (if exists)
@@ -170,6 +159,7 @@ This roadmap will start fresh. Clean up and continue?
 
 If yes, clean up:
 ```bash
+rm -f "$ROADMAP_DIR/State/"*-Implementing.md
 git worktree remove "$WORKTREE_PATH" --force 2>/dev/null || true
 git branch -D "$FEATURE_BRANCH" 2>/dev/null || true
 git push origin --delete "$FEATURE_BRANCH" 2>/dev/null || true
@@ -181,7 +171,14 @@ gh pr close <number> -c "Superseded by fresh implementation run" 2>/dev/null || 
 
 If no artifacts exist, continue silently.
 
-## Step 2b: Create Feature Branch and Worktree
+## Step 2b: Mark as Implementing and Create Worktree
+
+Write the Implementing state file (after cleanup, so it won't conflict):
+
+```bash
+TODAY="$(date +%Y-%m-%d)"
+printf -- '---\nevent: implementing\ndate: %s\n---\n' "$TODAY" > "$ROADMAP_DIR/State/$TODAY-Implementing.md"
+```
 
 Create a single feature branch and worktree for all steps:
 
