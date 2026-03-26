@@ -607,6 +607,7 @@ footer {
     <a href="#overview">Overview</a>
     <a href="#guidelines">Guidelines</a>
     <a href="#code-review">Code Review</a>
+    <a href="#data-integrity">Data Integrity</a>
     <a href="#lifecycle">Lifecycle</a>
     <a href="#coordinator">Coordinator</a>
     <a href="#state">State Machine</a>
@@ -1242,9 +1243,50 @@ footer {
   </details>
 </section>
 
+<!-- Data Integrity -->
+<section id="data-integrity">
+  <h2><span class="num">04</span>Data Integrity</h2>
+  <p class="lead">Guardrails that prevent data loss during planning, repair, and implementation. Born from an incident where a repair agent silently dropped 6 L-complexity steps.</p>
+
+  <details>
+    <summary>The Incident &mdash; Why These Rules Exist <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>A roadmap repair ran on CatnipIDEEnhancements (20 steps, 6 L-complexity). The repair agent inherited "reviewable in one sitting" guidance and dropped all L-complexity steps. Result: 14 steps, 6 features silently deleted.</p>
+      <p><strong>Root causes:</strong> no scope reduction rule, no step-count comparison, complexity treated as a filter.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>NO SCOPE REDUCTION Rule <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li>Do NOT drop steps because of complexity (L is valid)</li>
+        <li>Do NOT merge steps to "simplify" unless user explicitly asks</li>
+        <li>Do NOT filter by complexity, size, or effort</li>
+        <li>"Fix the large steps" means fix them IN PLACE</li>
+        <li>Complexity (S/M/L) is a <strong>descriptor</strong>, not a filter</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Step-Count Comparison <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Before approval, repair prints: Original N steps (S:x M:x L:x) vs Revised N steps. If any removed, prints WARNING with each removed step name and requires explicit confirmation.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Alignment Review (plan-roadmap v12) <span class="tag tag-algo">algorithm</span></summary>
+    <div class="detail-body">
+      <p>Six-point check comparing draft Roadmap against Discussion Summary: goal match, requirements coverage, no scope creep, constraints honored, user quotes, nothing skipped. Hard stop on failure &mdash; draft discarded, planning restarts.</p>
+    </div>
+  </details>
+</section>
+
 <!-- Lifecycle -->
 <section id="lifecycle">
-  <h2><span class="num">04</span>The Lifecycle</h2>
+  <h2><span class="num">05</span>The Lifecycle</h2>
   <p class="lead">A roadmap goes through three phases: planning, implementation, and completion. Each phase has its own skill, file layout, and state tracking.</p>
 
   <div class="flow">
@@ -1367,7 +1409,7 @@ description: "one-line summary"</code></pre>
 
 <!-- Coordinator -->
 <section id="coordinator">
-  <h2><span class="num">05</span>Coordinator Algorithm</h2>
+  <h2><span class="num">06</span>Coordinator Algorithm</h2>
   <p class="lead">The coordinator is a deterministic Python script. It reads roadmap files with regex, decides the next step, and outputs JSON. No LLM involved in step selection. <a href="https://github.com/mikefullerton/cat-herding/blob/main/skills/implement-roadmap/references/coordinator" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -1417,7 +1459,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- State Machine -->
 <section id="state">
-  <h2><span class="num">06</span>State Machine</h2>
+  <h2><span class="num">07</span>State Machine</h2>
   <p class="lead">State is tracked via dated files in <code>State/</code>. The newest file (by date, then lifecycle order) determines the current state. <a href="https://github.com/mikefullerton/cat-herding/blob/main/scripts/roadmap_lib.py" class="gh-icon" title="View source">[source]</a></p>
 
   <div class="diagram"><span class="highlight">Created</span> <span class="dim">&rarr;</span> <span class="highlight">Planning</span> <span class="dim">&rarr;</span> <span class="highlight">Ready</span> <span class="dim">&rarr;</span> <span class="highlight">Implementing</span> <span class="dim">&rarr;</span> <span class="green">Complete</span>
@@ -1452,7 +1494,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- Dashboard -->
 <section id="dashboard">
-  <h2><span class="num">07</span>Dashboard Service</h2>
+  <h2><span class="num">08</span>Dashboard Service</h2>
   <p class="lead">Flask-based REST API and web UI. Generic progress tracker &mdash; knows nothing about git, files, or Claude Code. Agents push data to it. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -1500,7 +1542,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- CLI -->
 <section id="cli">
-  <h2><span class="num">08</span>CLI Tool</h2>
+  <h2><span class="num">09</span>CLI Tool</h2>
   <p class="lead">The <code>roadmaps</code> command scans all repos for roadmaps, displays progress, and manages the system. <a href="https://github.com/mikefullerton/cat-herding/blob/main/scripts/roadmaps.py" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -1557,7 +1599,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 
 <!-- File Layout -->
 <section id="files">
-  <h2><span class="num">09</span>File Layout</h2>
+  <h2><span class="num">10</span>File Layout</h2>
   <p class="lead">During work, files live in <code>~/.roadmaps/</code>. After completion, a single flat file is committed to the repo.</p>
 
   <div class="diagram">  During Implementation          After PR Merges
@@ -1640,7 +1682,7 @@ change-history:
 
 <!-- Skills -->
 <section id="skills">
-  <h2><span class="num">10</span>Skills &amp; Agents</h2>
+  <h2><span class="num">11</span>Skills &amp; Agents</h2>
   <p class="lead">Skills are Claude Code slash commands. Each has a versioned SKILL.md with instructions and a references/ directory.</p>
 
   <details>
@@ -1666,7 +1708,7 @@ change-history:
 
 <!-- Tests -->
 <section id="tests">
-  <h2><span class="num">11</span>Test Suite</h2>
+  <h2><span class="num">12</span>Test Suite</h2>
   <p class="lead">370+ tests covering the full stack. Every code change requires tests. Every bug fix requires a regression test. <a href="https://github.com/mikefullerton/cat-herding/tree/main/tests" class="gh-icon" title="View tests">[tests]</a></p>
 
   <details>
@@ -1728,7 +1770,7 @@ change-history:
 
 <!-- API -->
 <section id="api">
-  <h2><span class="num">12</span>Dashboard API</h2>
+  <h2><span class="num">13</span>Dashboard API</h2>
   <p class="lead">28 REST endpoints. Flask on port 8888. SQLite with WAL mode for concurrent reads. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard/api" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
@@ -1786,7 +1828,7 @@ change-history:
 
 <!-- General Skills -->
 <section id="general-skills">
-  <h2><span class="num">13</span>General Skills</h2>
+  <h2><span class="num">14</span>General Skills</h2>
   <p class="lead">General-purpose Claude Code skills that are not specific to the roadmap system.</p>
 
   <div class="repo-cards">

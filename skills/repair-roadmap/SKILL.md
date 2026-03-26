@@ -112,6 +112,21 @@ What needs to be repaired?
 
 ---
 
+## ABSOLUTE RULE: NO SCOPE REDUCTION
+
+The repair skill NEVER removes steps, features, or acceptance criteria unless the user explicitly names a specific step to remove by number or name.
+
+- Do NOT drop steps because of complexity (L is valid and expected for significant features)
+- Do NOT merge steps to "simplify" unless the user explicitly asks to merge specific steps
+- Do NOT filter by complexity, size, or estimated effort
+- Do NOT reduce scope to make the roadmap "more manageable"
+- "Fix the large steps" means fix them IN PLACE, not delete them
+- "Replan all remaining steps" means replan them, not reduce them
+
+**Complexity (S/M/L) is a DESCRIPTOR, not a FILTER.** The roadmap contains exactly the steps the user approved during planning. Removing any of them without explicit per-step user consent is data destruction.
+
+---
+
 ## Step 3: Enter Plan Mode and Revise
 
 Activate plan mode with deep thinking enabled.
@@ -119,11 +134,22 @@ Activate plan mode with deep thinking enabled.
 Read the plan-roadmap template:
 - `${CLAUDE_SKILL_DIR}/../plan-roadmap/references/feature-roadmap-template.md`
 
+**Before making any changes, record the original step inventory:**
+
+```
+ORIGINAL STEPS:
+  Step 1: <name> (S/M/L)
+  Step 2: <name> (S/M/L)
+  ...
+  Step N: <name> (S/M/L)
+  Total: N steps (S:x M:x L:x)
+```
+
 Using the existing roadmap as context and the user's repair instructions:
 
-1. **Preserve** from the original: `id`, `project`, `github-user`, `created`
+1. **Preserve** from the original: `id`, `project`, `github-user`, `created`, **and ALL steps not explicitly marked for change by the user**
 2. **Update**: `modified` to today, append to `change-history`, set `plan-version` to current plan-roadmap version
-3. **For each step that may be Manual**, run the CLI readiness check from plan-roadmap v11:
+3. **For each step that may be Manual**, run the CLI readiness check:
    - Check if the tool is installed: `which <tool>`
    - Check if authenticated: `<tool> auth status` or equivalent
    - Report to user and let them decide Auto vs Manual
@@ -131,17 +157,42 @@ Using the existing roadmap as context and the user's repair instructions:
    - **Log**: `STEP_TYPE: Step N "<name>" — Auto/Manual (reason)`
 4. **Ensure bookend steps**: Step 1 = "Create Draft PR", Step N = "Finalize & Merge PR"
 5. **Renumber steps** sequentially starting from 1
+6. **Verify no steps were lost**: compare the revised step list against the original inventory. Every original step MUST appear in the revised version (possibly renumbered or modified, but present). If any step is missing, add it back.
 
 ---
 
 ## Step 4: Present Revised Roadmap
 
-Print the **complete revised Roadmap** to the terminal. Not a summary — the full document.
+**BEFORE presenting the revised roadmap**, print a step-count comparison:
+
+```
+=== STEP COUNT COMPARISON ===
+
+Original: <N> steps (S:<n> M:<n> L:<n>)
+Revised:  <N> steps (S:<n> M:<n> L:<n>)
+
+Steps added:    <list or "none">
+Steps removed:  <list or "none">
+Steps modified: <list or "none">
+```
+
+**If ANY steps were removed**, print a prominent warning:
+
+```
+⚠ WARNING: <N> steps were REMOVED from the roadmap:
+  - Step <X>: <name> (<complexity>)
+  - Step <Y>: <name> (<complexity>)
+
+This requires your explicit confirmation. Steps should only be
+removed if you specifically asked for them to be removed.
+```
+
+Then print the **complete revised Roadmap** to the terminal. Not a summary — the full document.
 
 Then ask:
 
 ```
-Above is the revised Roadmap (<N> steps, <changes summary>).
+Above is the revised Roadmap (<N> steps).
 
 Changes from original:
   - <list what changed>
