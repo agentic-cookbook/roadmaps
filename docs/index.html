@@ -223,6 +223,7 @@ footer { margin-left: 200px; }
     top: 0;
     height: 100vh;
     z-index: 300;
+    padding-top: 56px;
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }
@@ -2009,6 +2010,17 @@ function setHeaderHeight() {
 setHeaderHeight();
 window.addEventListener('resize', setHeaderHeight);
 window.addEventListener('load', setHeaderHeight);
+
+// Close mobile nav when a link is clicked or user taps outside
+var toggle = document.getElementById('hamburger-toggle');
+document.querySelectorAll('nav a').forEach(function(a) {
+  a.addEventListener('click', function() { toggle.checked = false; });
+});
+document.addEventListener('click', function(e) {
+  if (toggle.checked && !e.target.closest('nav') && !e.target.closest('.hamburger-btn')) {
+    toggle.checked = false;
+  }
+});
 </script>
 </body>
 </html>
