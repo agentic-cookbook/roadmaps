@@ -4,7 +4,7 @@ Cross-platform UI principles for building consistent, usable interfaces. These g
 provide defaults when no project design system exists — always defer to the platform's
 native design language first.
 
-## Platform Design Languages
+## §9.1. Platform Design Languages
 
 Defer to these canonical sources before applying the defaults in this file:
 
@@ -17,7 +17,7 @@ When the platform HIG prescribes a specific value (spacing, type size, target si
 use the platform value. Use the defaults below to fill gaps or establish a cross-platform
 baseline.
 
-## Visual Hierarchy
+## §9.2. Visual Hierarchy
 
 Establish clear importance through size, weight, color, and spacing. Every screen should
 have one obvious focal point — the primary action or content the user came for.
@@ -28,7 +28,7 @@ have one obvious focal point — the primary action or content the user came for
 - Interactive elements must be visually distinguishable from static content
 - Disabled elements should be visually muted but still discoverable
 
-See general.md rule 12 for accessibility requirements (contrast, labels, focus order).
+See §1.12 for accessibility requirements (contrast, labels, focus order).
 
 References:
 - [NNGroup: Visual Hierarchy](https://www.nngroup.com/articles/visual-hierarchy-ux-definition/)
@@ -36,7 +36,7 @@ References:
 - [Material Design: Applying Layout](https://m3.material.io/foundations/layout/applying-layout/overview)
 - [Fluent Design: Layout](https://learn.microsoft.com/en-us/windows/apps/design/layout/)
 
-## Spacing
+## §9.3. Spacing
 
 Use a consistent spatial scale based on a **4px base unit** (8px primary grid). All spacing,
 padding, and margin values should be multiples of 4. This aligns with Apple HIG, Material
@@ -58,7 +58,7 @@ References:
 - [Material Design: Layout](https://m3.material.io/foundations/layout/overview)
 - [Fluent Design: Layout](https://learn.microsoft.com/en-us/windows/apps/design/layout/)
 
-## Typography
+## §9.4. Typography
 
 Use the platform's system font. Establish a type scale with clear roles — don't invent
 sizes ad-hoc.
@@ -80,7 +80,7 @@ General principles:
 - Limit to 2-3 font weights per screen (regular, medium/semibold, bold)
 - Avoid all-caps for more than a few words — harms readability and screen reader experience
 - Paragraph width: 45-75 characters for comfortable reading
-- See general.md rule 12 for Dynamic Type / font scaling requirements
+- See §1.12 for Dynamic Type / font scaling requirements
 
 References:
 - [Apple HIG: Typography](https://developer.apple.com/design/human-interface-guidelines/typography)
@@ -88,7 +88,7 @@ References:
 - [Fluent Design: Typography](https://learn.microsoft.com/en-us/windows/apps/design/style/typography)
 - [WCAG 1.4.12: Text Spacing](https://www.w3.org/WAI/WCAG21/Understanding/text-spacing.html)
 
-## Color
+## §9.5. Color
 
 Use color with intention — never as the sole means of conveying information.
 
@@ -99,7 +99,7 @@ Use color with intention — never as the sole means of conveying information.
   success/warning/error. Avoid rainbow UIs.
 - **Not color alone** — always pair color with a secondary indicator (icon, shape, text, pattern)
   for state changes, errors, and status.
-- **Contrast minimums** (WCAG AA, per general.md rule 12 item 5):
+- **Contrast minimums** (WCAG AA, per §1.12):
 
 | Element | AA Minimum | AAA Enhanced |
 |---------|-----------|-------------|
@@ -116,7 +116,7 @@ References:
 - [Material Design: Color System](https://m3.material.io/styles/color/system/how-the-system-works)
 - [Fluent Design: Color](https://learn.microsoft.com/en-us/windows/apps/design/style/color)
 
-## Layout
+## §9.6. Layout
 
 Design for the content, not a fixed screen size. Layouts should adapt gracefully from
 compact to expanded contexts.
@@ -140,14 +140,14 @@ References:
 - [Fluent Design: Responsive Design](https://learn.microsoft.com/en-us/windows/apps/design/layout/responsive-design)
 - [NNGroup: Mobile-First Is Not Mobile-Only](https://www.nngroup.com/articles/mobile-first-not-mobile-only/)
 
-## State Design
+## §9.7. State Design
 
 Every view that loads data or can be empty must handle all four states explicitly. Never
 show a blank screen with no explanation.
 
 **The four states:**
 
-1. **Loading** — show progress (see general.md rule 5). Use skeleton screens for content-heavy
+1. **Loading** — show progress (see §1.5). Use skeleton screens for content-heavy
    views, spinners for actions. Never block the entire screen for a partial load.
 2. **Empty** — explain what belongs here, why it's empty, and provide a single clear action to
    populate it. Use an icon or illustration, a brief message, and a CTA button.
@@ -164,30 +164,30 @@ References:
 - [NNGroup: Error Message Guidelines](https://www.nngroup.com/articles/error-message-guidelines/)
 - [Material Design: Empty States (M2 reference)](https://material.io/design/communication/empty-states.html)
 
-## Form Design
+## §9.8. Form Design
 
 Forms are where users do real work. Reduce friction at every step.
 
-**Layout:**
+### §9.8.1. Layout
 - Single-column layout — outperforms multi-column for completion rate
 - Top-aligned or floating labels — fastest to scan and complete
 - Group related fields visually with spacing or section headers
 - Place primary action (Submit/Save) at the bottom, aligned with the form fields
 
-**Validation:**
+### §9.8.2. Validation
 - Validate on **blur** (when user leaves the field), not on every keystroke
 - Validate the **full form on submit** as a final safety net
 - Never validate while the user is still actively typing in a field
 - Success indicators (checkmarks) only for fields where the user genuinely wonders if
   input was accepted (e.g., username availability)
 
-**Error messages:**
+### §9.8.3. Error messages
 - Show errors **inline, directly below the field** — not only at the top of the form
 - Use color + icon + text (never color alone)
 - Be specific and actionable: "Password must be at least 8 characters" not "Invalid input"
 - Don't blame the user
 
-**Other principles:**
+### §9.8.4. Other principles
 - Use placeholder text for format hints, not as label replacement — placeholders disappear on focus
 - Pre-fill and default where possible to reduce effort
 - Mark optional fields, not required ones (most fields should be required; if they're not,
@@ -199,7 +199,7 @@ References:
 - [Apple HIG: Text Fields](https://developer.apple.com/design/human-interface-guidelines/text-fields)
 - [Material Design: Text Fields](https://m3.material.io/components/text-fields/guidelines)
 
-## Feedback Patterns
+## §9.9. Feedback Patterns
 
 Every user action should have visible feedback. The weight of the feedback should match
 the weight of the action.
@@ -223,7 +223,7 @@ References:
 - [NNGroup: Confirmation Dialogs](https://www.nngroup.com/articles/confirmation-dialog/)
 - [NNGroup: Ten Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/) (Heuristic #1: Visibility of system status)
 
-## Touch & Click Targets
+## §9.10. Touch & Click Targets
 
 Interactive elements must be large enough to tap or click accurately. Defer to the platform
 HIG first — each prescribes its own minimum:
@@ -242,7 +242,7 @@ HIG first — each prescribes its own minimum:
 - Inline text links in paragraphs are exempt from size minimums but should have sufficient
   line height for comfortable tapping
 
-See general.md rule 12 for full accessibility requirements.
+See §1.12 for full accessibility requirements.
 
 References:
 - [Apple HIG: Accessibility — User Interaction](https://developer.apple.com/design/human-interface-guidelines/accessibility#User-interaction)
@@ -250,7 +250,7 @@ References:
 - [Fluent Design: Targeting Guidelines](https://learn.microsoft.com/en-us/windows/apps/design/input/guidelines-for-targeting)
 - [WCAG 2.5.8: Target Size Minimum](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html)
 
-## Animation & Motion
+## §9.11. Animation & Motion
 
 Motion should be purposeful — guide attention, show spatial relationships, and provide
 feedback. Never animate for decoration.
@@ -267,7 +267,7 @@ feedback. Never animate for decoration.
 
 - Under 100ms feels instant. Over 500ms feels sluggish.
 - Prefer platform-native spring/easing curves over linear or custom beziers
-- **Always respect reduced-motion preferences** — see general.md rule 15 and each platform
+- **Always respect reduced-motion preferences** — see §1.15 and each platform
   file's accessibility settings table. When reduced motion is enabled, replace animations
   with instant state changes or simple cross-fades.
 - Avoid motion that covers large distances, loops continuously, or flashes
@@ -277,7 +277,7 @@ References:
 - [Material Design: Motion](https://m3.material.io/styles/motion/overview)
 - [Fluent Design: Timing and Easing](https://learn.microsoft.com/en-us/windows/apps/design/motion/timing-and-easing)
 
-## Iconography
+## §9.12. Iconography
 
 Icons supplement text — they do not replace it (except for universally understood symbols
 like play, pause, close, and search).
@@ -296,7 +296,7 @@ References:
 - [Material Design: Icons](https://m3.material.io/styles/icons/overview)
 - [Fluent Design: Icons](https://learn.microsoft.com/en-us/windows/apps/design/style/icons)
 
-## Data Display
+## §9.13. Data Display
 
 Choose the right pattern for the content type and user task.
 
