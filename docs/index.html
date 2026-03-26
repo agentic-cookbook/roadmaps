@@ -883,6 +883,22 @@ footer {
         <li><a href="https://www.nngroup.com/articles/empty-state-interface-design/" class="gh">NNGroup: Empty State Design</a></li>
         <li><a href="https://www.nngroup.com/articles/ten-usability-heuristics/" class="gh">NNGroup: Ten Usability Heuristics</a></li>
       </ul>
+      <h3>Networking</h3>
+      <ul>
+        <li><a href="https://github.com/microsoft/api-guidelines" class="gh">Microsoft REST API Guidelines</a></li>
+        <li><a href="https://cloud.google.com/apis/design" class="gh">Google API Design Guide</a></li>
+        <li><a href="https://opensource.zalando.com/restful-api-guidelines/" class="gh">Zalando RESTful API Guidelines</a></li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc9457" class="gh">RFC 9457: Problem Details</a></li>
+        <li><a href="https://www.rfc-editor.org/rfc/rfc9111" class="gh">RFC 9111: HTTP Caching</a></li>
+      </ul>
+      <h3>Security</h3>
+      <ul>
+        <li><a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10 (2021)</a></li>
+        <li><a href="https://owasp.org/www-project-mobile-top-10/" class="gh">OWASP Mobile Top 10 (2024)</a></li>
+        <li><a href="https://cheatsheetseries.owasp.org/" class="gh">OWASP Cheat Sheet Series</a></li>
+        <li><a href="https://wiki.mozilla.org/Security/Server_Side_TLS" class="gh">Mozilla Server Side TLS</a></li>
+        <li><a href="https://slsa.dev/" class="gh">SLSA Framework</a></li>
+      </ul>
       <h3>Cross-Platform</h3>
       <ul>
         <li><a href="https://www.nngroup.com/articles/ten-usability-heuristics/" class="gh">Nielsen Norman Usability Heuristics</a></li>
@@ -1031,6 +1047,45 @@ footer {
     </div>
   </details>
 
+  <h3>Client-Server</h3>
+
+  <details>
+    <summary>Networking Guidelines &mdash; 9 topics <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/networking.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <div class="detail-body">
+      <p>References: <a href="https://github.com/microsoft/api-guidelines" class="gh">Microsoft REST Guidelines</a>, <a href="https://cloud.google.com/apis/design" class="gh">Google API Design</a>, <a href="https://opensource.zalando.com/restful-api-guidelines/" class="gh">Zalando Guidelines</a>, <a href="https://www.rfc-editor.org/rfc/rfc9457" class="gh">RFC 9457</a>.</p>
+      <ul>
+        <li><strong>API design</strong> &mdash; REST with lowercase-hyphen URLs, plural nouns, shallow nesting (max 2). HTTP methods as verbs. URL path versioning (<code>/v1/</code>). Consensus across Microsoft, Google, Zalando.</li>
+        <li><strong>Error responses</strong> &mdash; RFC 9457 Problem Details (<code>application/problem+json</code>): type, title, status, detail, instance. Extension fields for validation errors.</li>
+        <li><strong>Pagination</strong> &mdash; Cursor pagination preferred (stable under mutation, consistent perf). Offset for static data with page numbers. Response envelope with <code>data</code> + <code>pagination</code>.</li>
+        <li><strong>Retry &amp; resilience</strong> &mdash; Exponential backoff with full jitter. Base 1s, max 30s, 3-5 retries. Retryable: 408, 429, 502, 503, 504. Never retry 400/401/403/404. Circuit breaker for cascading failures.</li>
+        <li><strong>Timeouts</strong> &mdash; Connection: 10s. Read: 30s. Total: 60-120s. Never infinite. Use 202 Accepted + polling for long operations.</li>
+        <li><strong>Caching</strong> &mdash; HTTP headers (Cache-Control, ETag, If-None-Match). Immutable assets: 1 year. Dynamic: short max-age or no-cache. Sensitive: no-store. Invalidate after mutations.</li>
+        <li><strong>Offline</strong> &mdash; Optimistic updates + queue-based sync + server-wins as default pattern. ETags for conflict detection. Never silently discard user work.</li>
+        <li><strong>Rate limiting</strong> &mdash; Respect <code>Retry-After</code>. Track <code>RateLimit-Remaining</code> proactively. Queue and batch rather than fire-and-retry.</li>
+        <li><strong>Real-time</strong> &mdash; SSE for server-push (80% of cases). WebSocket only for bidirectional. Polling as low-frequency fallback.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Security Guidelines &mdash; 10 topics <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/security.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <div class="detail-body">
+      <p>Supplements general.md rule 16. References: <a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10</a>, <a href="https://cheatsheetseries.owasp.org/" class="gh">OWASP Cheat Sheets</a>, <a href="https://wiki.mozilla.org/Security/Server_Side_TLS" class="gh">Mozilla TLS</a>.</p>
+      <ul>
+        <li><strong>Authentication</strong> &mdash; OAuth 2.0 + PKCE for all public clients. System browser for native (never WebView). BFF pattern for SPAs. Short-lived access tokens (5-15 min), refresh token rotation.</li>
+        <li><strong>Token handling</strong> &mdash; Platform secure storage (Keychain, EncryptedSharedPreferences, DPAPI, HttpOnly cookies). Never localStorage. Never tokens in URLs. Proactive refresh at 75% TTL.</li>
+        <li><strong>Authorization</strong> &mdash; Server-side only. Deny by default. Least privilege. RBAC with fine-grained permissions. BOLA is #1 API risk &mdash; always verify resource ownership.</li>
+        <li><strong>Transport</strong> &mdash; TLS 1.2 minimum (prefer 1.3). HSTS with preload. Certificate pinning: intermediate CA only, mobile only, backup pins required. AEAD ciphers.</li>
+        <li><strong>CORS</strong> &mdash; Explicit origin allowlist (never reflect Origin). Never wildcard with credentials. Cache preflights. Common misconfigs: unanchored regex, null origin.</li>
+        <li><strong>CSP</strong> &mdash; <code>default-src 'none'</code> + nonce-based scripts + <code>strict-dynamic</code>. Never <code>unsafe-inline</code>/<code>unsafe-eval</code>. Report-only mode first. <code>frame-ancestors 'self'</code>.</li>
+        <li><strong>Input validation</strong> &mdash; Never trust client input. Allowlists over denylists. Validate &rarr; sanitize &rarr; escape. Parameterized queries only. Context-specific output encoding.</li>
+        <li><strong>Sensitive data</strong> &mdash; Data minimization in APIs. PII classification by tier. Field-level encryption via KMS. No PII in logs. No internals in error responses. <code>no-store</code> for sensitive responses.</li>
+        <li><strong>Dependency security</strong> &mdash; Lockfiles mandatory (committed). Automated scanning in CI. Pin versions. SRI for CDN assets. Watch for typosquatting and dependency confusion.</li>
+        <li><strong>Security headers</strong> &mdash; HSTS, CSP, <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code>.</li>
+      </ul>
+    </div>
+  </details>
+
   <details>
     <summary>How Guidelines Are Installed <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
@@ -1045,6 +1100,8 @@ footer {
   csharp.md               → cat-herding/guidelines/csharp.md
   windows.md              → cat-herding/guidelines/windows.md
   ui.md                   → cat-herding/guidelines/ui.md
+  networking.md           → cat-herding/guidelines/networking.md
+  security.md             → cat-herding/guidelines/security.md
   specs.md                → cat-herding/guidelines/specs.md
   best-practices-references.md → cat-herding/guidelines/best-practices-references.md</code></pre>
       <p>The agent reads <code>general.md</code> + <code>engineering-principles.md</code> for every project, plus the platform-specific file for the current language and <code>ui.md</code> for any UI work.</p>

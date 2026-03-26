@@ -43,6 +43,22 @@ Canonical external documentation for code review and implementation verification
 - [NNGroup: Empty State Design](https://www.nngroup.com/articles/empty-state-interface-design/)
 - [NNGroup: Ten Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)
 
+## Networking
+
+- [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines)
+- [Google API Design Guide](https://cloud.google.com/apis/design)
+- [Zalando RESTful API Guidelines](https://opensource.zalando.com/restful-api-guidelines/)
+- [RFC 9457: Problem Details](https://www.rfc-editor.org/rfc/rfc9457)
+- [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111)
+
+## Security
+
+- [OWASP Top 10 (2021)](https://owasp.org/www-project-top-ten/)
+- [OWASP Mobile Top 10 (2024)](https://owasp.org/www-project-mobile-top-10/)
+- [OWASP Cheat Sheet Series](https://cheatsheetseries.owasp.org/)
+- [Mozilla Server Side TLS](https://wiki.mozilla.org/Security/Server_Side_TLS)
+- [SLSA Framework](https://slsa.dev/)
+
 ## Cross-Platform
 
 - [Nielsen Norman Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)

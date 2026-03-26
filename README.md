@@ -471,5 +471,7 @@ Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. 
 | `csharp.md` | C# / .NET |
 | `windows.md` | Windows / WinUI 3 |
 | `ui.md` | Cross-platform UI design principles |
+| `networking.md` | Client-server networking |
+| `security.md` | Application security |
 | `specs.md` | Spec writing format |
 | `best-practices-references.md` | External reference links |
