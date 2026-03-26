@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "11"
+version: "12"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v11
+> implement-step-agent v12
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -213,19 +213,45 @@ If the step description contains **"Finalize & Merge PR"**, perform the followin
    ```
    If CI fails, attempt to fix (max 3 iterations). If unfixable, **STOP** and report the failure.
 
-5. **Run code review and security review** on the PR.
-   - **Log**: `Running code review`
-   Use `gh pr diff` and review the changes for:
-   - Code quality issues
-   - Security concerns
-   - Test coverage gaps
+5. **Final multi-agent review**:
+   - **Log**: `Starting final review with <N> agents`
 
-6. **If reviews find issues**, fix them, commit, push, and re-review (max 3 iterations):
-   ```bash
-   git -C <worktree_path> add -A
-   git -C <worktree_path> commit -m "fix: address review feedback (#<PR_NUMBER>)"
-   git -C <worktree_path> push
+   Read the review config from the task prompt (`Review config (final): [...]`). Default: `[code-reviewer, silent-failure-hunter]`.
+
+   For each agent in the final list, launch via the **Agent tool** (launch all in parallel when possible):
+   - **subagent_type**: `pr-review-toolkit:<agent-name>`
+   - **prompt**:
+     ```
+     Review PR #<PR_NUMBER> for <feature_name>.
+     Run: gh pr diff <PR_NUMBER>
+
+     Check compliance with these coding guidelines:
+     - ~/.claude/guidelines/general.md
+     - ~/.claude/guidelines/engineering-principles.md
+     - ~/.claude/guidelines/<platform>.md
+
+     Report findings with severity (high/medium/low).
+     ```
+
+   **Log** each agent's findings:
    ```
+   REVIEW_START: <agent-type> on PR #<PR_NUMBER>
+   REVIEW_FINDING: [<severity>] <description>
+   REVIEW_RESULT: <agent-type> — PASS|FAIL (<counts>)
+   ```
+
+6. **Fix high/critical findings** (max 3 iterations):
+   - Fix the issues
+   - Commit and push:
+     ```bash
+     git -C <worktree_path> add -A
+     git -C <worktree_path> commit -m "fix: address review feedback (#<PR_NUMBER>)"
+     git -C <worktree_path> push
+     ```
+   - Re-run only the review agents that found high/critical issues
+   - **Log**: `Fixing review finding: <description>`
+   - Medium findings: fix if quick, otherwise log as follow-up
+   - Low/info: ignore unless trivial
 
 7. **If reviews pass**, merge with `--merge` (NOT `--squash`):
    - **Log**: `Merging PR #<PR_NUMBER>`
@@ -289,6 +315,45 @@ Run the test suite from the Roadmap's Verification Strategy section:
 - Write new tests as appropriate for the step's acceptance criteria
 - Ensure existing tests still pass
 - **Log**: `Tests passed (<N> passed)` (or `Tests failed — fixing` if retrying)
+
+### 4.5. Per-Step Review
+
+Run a quick code review on the changes made in this step before pushing.
+
+Read the review config from the task prompt (`Review config (per-step): [...]`). For each agent in the per-step list (default: `code-reviewer`):
+
+1. Get the list of files changed:
+   ```bash
+   git -C <worktree_path> diff --name-only HEAD~1
+   ```
+
+2. Launch the review agent via the **Agent tool**:
+   - **subagent_type**: `pr-review-toolkit:<agent-name>` (e.g., `pr-review-toolkit:code-reviewer`)
+   - **prompt**:
+     ```
+     Review the changes for step <N> of <feature_name>.
+     Worktree: <worktree_path>
+     Files changed: <file list>
+
+     Run: git -C <worktree_path> diff HEAD~1
+
+     Also check compliance with these coding guidelines:
+     - ~/.claude/guidelines/general.md
+     - ~/.claude/guidelines/<platform>.md
+
+     Report findings with severity (high/medium/low).
+     Focus on bugs, logic errors, and guideline violations.
+     ```
+
+3. **Log** each finding:
+   ```
+   REVIEW_START: <agent-type> on Step <N>
+   REVIEW_FINDING: [<severity>] <description>
+   REVIEW_RESULT: <agent-type> — PASS|FAIL (<N> high, <N> medium, <N> low)
+   ```
+
+4. **If high/critical findings**: fix them, re-run build + test + review (max 3 iterations). **Log**: `Fixing review finding: <description>`
+5. **If only medium/low or no findings**: continue to Step 5.
 
 ### 5. Update Roadmap
 

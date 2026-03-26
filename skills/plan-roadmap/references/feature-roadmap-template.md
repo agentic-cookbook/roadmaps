@@ -7,6 +7,9 @@ created: "{{DATE}}"
 modified: "{{DATE}}"
 author: "{{AUTHOR}}"
 description: "{{DESCRIPTION}}"
+reviews:
+  per-step: [code-reviewer]
+  final: [code-reviewer, silent-failure-hunter, pr-test-analyzer]
 change-history:
   - date: "{{DATE}}"
     description: "Initial draft"

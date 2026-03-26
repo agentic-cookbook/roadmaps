@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "26"
+version: "27"
 description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
 disable-model-invocation: true
 ---
@@ -10,7 +10,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v26
+   > implement-roadmap v27
 
 2. Print the worker agent version by running:
    ```bash
@@ -72,6 +72,16 @@ This outputs JSON. Parse it:
 
 Store the resolved path as `ROADMAP_PATH` (this is an absolute path when source is `~/.roadmaps/`).
 Store `ROADMAP_DIR` as the parent directory of `ROADMAP_PATH`.
+
+**Read review configuration:**
+
+1. Check the Roadmap.md frontmatter for a `reviews` field
+2. If not present, check the project's `CLAUDE.md` for a `reviews:` section
+3. If neither exists, use defaults: `per-step: [code-reviewer]`, `final: [code-reviewer, silent-failure-hunter]`
+
+Store as `REVIEW_PER_STEP` and `REVIEW_FINAL`.
+
+**Detect platform** for guideline selection: check the project's primary language from file extensions or CLAUDE.md. Map to the guideline file: swift.md, kotlin.md, typescript.md, python.md, csharp.md, windows.md. Store as `GUIDELINE_PLATFORM`.
 
 ## Step 1a: Check for Previous Implementation Artifacts
 
@@ -269,6 +279,9 @@ Dashboard CLI: <$DASH_CLI>
 Dashboard URL: <$DASH_URL>
 Roadmap ID: <roadmap_id>
 Implementation log: <$IMPL_LOG>
+Review config (per-step): <$REVIEW_PER_STEP>
+Review config (final): <$REVIEW_FINAL>
+Guidelines platform: <$GUIDELINE_PLATFORM>
 
 Implement ONLY this step. Commit your changes to the existing branch.
 When done, update the roadmap to mark this step Complete, then return.

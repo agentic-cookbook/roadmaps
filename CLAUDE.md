@@ -60,6 +60,18 @@ claude plugin install document-skills@anthropic-agent-skills
 
 See `~/.claude/CLAUDE.md` for the global guidelines reference. Platform-specific guidelines are in `guidelines/`.
 
+## Review Configuration
+
+Default review agents for `/implement-roadmap`. Per-roadmap override via the `reviews` field in Roadmap.md frontmatter.
+
+```yaml
+reviews:
+  per-step: [code-reviewer]
+  final: [code-reviewer, silent-failure-hunter, pr-test-analyzer]
+```
+
+Available agents: `code-reviewer`, `silent-failure-hunter`, `pr-test-analyzer`, `type-design-analyzer`, `comment-analyzer`, `code-simplifier`.
+
 ## Project Conventions
 
 - Versions are single integers, bumped as the first action when making changes
