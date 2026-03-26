@@ -37,11 +37,11 @@ SCREENSHOT_DIR = "/tmp/dashboard-screenshots/demo"
 
 
 STEPS = [
-    "Create GitHub Issues",
+    "Create Draft PR",
     "Add authentication middleware",
     "Build user settings page",
     "Write integration tests",
-    "Create & Review Feature PR",
+    "Finalize & Merge PR",
 ]
 
 
