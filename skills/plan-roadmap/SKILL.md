@@ -337,9 +337,10 @@ Before presenting the draft to the user, review the Roadmap against the Discussi
 
 1. **Goal match** — Does the Roadmap's Goal and Purpose section match the Problem and Proposed Solution from the discussion summary? Flag if the goal has been reframed, expanded, or narrowed.
 2. **Requirements coverage** — Is every Key Requirement from the discussion summary addressed by at least one implementation step? Flag any missing requirements.
-3. **No scope creep** — Are there steps or requirements in the Roadmap that were NOT discussed? Flag anything added that the user didn't ask for.
-4. **Constraints honored** — Are the Out of Scope items and Constraints from the discussion summary respected? Flag any violations.
-5. **User quotes check** — Re-read the User's Exact Words section. Does the Roadmap honor the intent behind those quotes? Flag if something was "reinterpreted" away from what the user said.
+3. **Nothing skipped** — Walk through the discussion summary line by line. Is there anything the user mentioned — a requirement, a constraint, a preference, a specific technical choice — that does not appear anywhere in the Roadmap? Even minor items ("make sure it supports dark mode", "keep it simple") count. Flag anything omitted.
+4. **No scope creep** — Are there steps or requirements in the Roadmap that were NOT discussed? Flag anything added that the user didn't ask for.
+5. **Constraints honored** — Are the Out of Scope items and Constraints from the discussion summary respected? Flag any violations.
+6. **User quotes check** — Re-read the User's Exact Words section. Does the Roadmap honor the intent behind those quotes? Flag if something was "reinterpreted" away from what the user said.
 
 **If any divergence is found:**
 
