@@ -222,7 +222,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v23</span>
+  <span>Dashboard Service v24</span>
 </div>
 
 <script>
@@ -578,14 +578,14 @@ function renderRoadmaps(roadmaps) {
 
     if (r.prs && r.prs.length > 0) {
       var pr = r.prs[0];
-      var prText = pr.title ? 'PR #' + pr.number + ': ' + pr.title : 'PR #' + pr.number;
       var prLink = el('a', {
         href: pr.url || '#',
         className: 'card-pr-link',
-        title: prText,
         onclick: function(ev) { ev.stopPropagation(); }
-      }, prText);
-      footerRightItems.push(prLink);
+      }, 'PR #' + pr.number);
+      var prContainer = el('span', null, [prLink]);
+      if (pr.title) prContainer.appendChild(document.createTextNode(' — ' + pr.title));
+      footerRightItems.push(prContainer);
     }
 
     var footerRight = el('div', { className: 'footer-right' }, footerRightItems);

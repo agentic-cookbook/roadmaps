@@ -628,7 +628,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v13</span>
+    <span class="footer-version">Dashboard Service v14</span>
   </div>
 </div><!-- /main-wrap -->
 
@@ -817,10 +817,15 @@ function buildStepEl(step, index, isPaused, allStepEvents) {
 
   // PR link (from step data — set by pr-created command)
   if (step.pr_number) {
-    var prText = 'PR #' + step.pr_number;
-    if (step.pr_title) prText += ': ' + step.pr_title;
-    var prLink = el('a', { href: step.pr_url || '#', textContent: prText });
-    bodyChildren.push(el('div', { className: 'step-detail' }, [prLink]));
+    var prLinkEl = el('a', {
+      href: step.pr_url || '#',
+      textContent: 'PR #' + step.pr_number
+    });
+    var prChildren = [prLinkEl];
+    if (step.pr_title) {
+      prChildren.push(document.createTextNode(' — ' + step.pr_title));
+    }
+    bodyChildren.push(el('div', { className: 'step-detail' }, prChildren));
   }
 
   // Debug info

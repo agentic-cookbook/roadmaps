@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "10"
+version: "11"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v10
+> implement-step-agent v11
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -109,7 +109,7 @@ If the step description is **"Create Draft PR"**, perform the following instead 
 
 2. **Create a draft PR**:
    ```bash
-   gh pr create --head <feature_branch> --title "feat: <feature_name>" --body "Draft PR for <feature_name> roadmap implementation." --draft
+   gh pr create --head <feature_branch> --title "Roadmap: <feature_name>" --body "Draft PR for <feature_name> roadmap implementation." --draft
    ```
    Capture the PR number and URL from the output.
    - **Log**: `Created draft PR #<number>`
@@ -288,14 +288,11 @@ Run the test suite from the Roadmap's Verification Strategy section:
 
 - **Log**: `Marking step <N> complete`
 
-In the roadmap file:
+In the roadmap file (at its `~/.roadmaps/` location):
 - Mark this step's `**Status**:` as `Complete`
 - Update the progress table
-- Commit:
-  ```bash
-  git -C <worktree_path> add <roadmap_file>
-  git -C <worktree_path> commit -m "docs: mark step <N> complete"
-  ```
+
+**Do NOT git add or commit the roadmap file.** It lives in `~/.roadmaps/`, not in the worktree. Just write to it directly using the Edit tool.
 
 ### 6. Push and Comment on PR
 
