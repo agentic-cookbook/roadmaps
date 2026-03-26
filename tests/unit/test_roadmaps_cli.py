@@ -138,6 +138,26 @@ class TestFindAllRoadmapsFlatFiles:
         results = roadmaps.find_all_roadmaps(tmp_path)
         assert len(results) == 2
 
+    def test_flat_file_wins_over_implementing_directory_with_same_id(self, tmp_path):
+        """Regression: completed flat file must win over stale directory with Implementing state.
+
+        Bug: WindowsDesktopParity showed as 'running' because the directory
+        (with Implementing state) was scanned before the flat file (completed).
+        Both had the same ID but the directory won the dedup race.
+        """
+        fm = '---\nid: same-uuid\n---\n\n'
+        # Flat file (completed) — should win
+        _make_flat_roadmap(tmp_path, "repo", "Feature", STEPS_3, frontmatter=fm)
+        # Directory with Implementing state (stale) — should be skipped
+        _make_roadmap_dir(tmp_path, "repo", "2026-03-25-Feature", STEPS_3,
+                          state="Implementing", frontmatter=fm)
+        results = roadmaps.find_all_roadmaps(tmp_path)
+        # Should only have ONE entry (flat file wins)
+        assert len(results) == 1
+        assert results[0]["source"] == "repo-flat"
+        assert results[0]["is_running"] is False
+        assert results[0]["is_complete"] is True
+
 
 # ---------------------------------------------------------------------------
 # find_all_roadmaps — workdir (~/.roadmaps/) scanning

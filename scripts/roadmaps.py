@@ -52,9 +52,9 @@ import roadmap_lib as lib
 def find_all_roadmaps(projects_dir, workdir_root=None):
     """Scan all repos for roadmaps. Returns flat list with repo_name on each entry.
 
-    Scans three locations:
-    1. Per-directory layout: <repo>/Roadmaps/YYYY-MM-DD-Name/Roadmap.md
-    2. Flat file layout: <repo>/Roadmaps/<Name>-Roadmap.md
+    Scans three locations (flat files first so completed versions win dedup):
+    1. Flat file layout: <repo>/Roadmaps/<Name>-Roadmap.md (finished)
+    2. Per-directory layout: <repo>/Roadmaps/YYYY-MM-DD-Name/Roadmap.md
     3. Working directory: ~/.roadmaps/<project>/YYYY-MM-DD-Name/Roadmap.md
     """
     results = []
@@ -72,41 +72,13 @@ def find_all_roadmaps(projects_dir, workdir_root=None):
         if not repo_dir.is_dir():
             continue
 
-        # 1. Per-directory layout: Roadmaps/YYYY-MM-DD-Name/
-        roadmap_dirs = lib.find_roadmap_dirs(repo_dir)
-        for rd in roadmap_dirs:
-            state = lib.current_state(rd)
-            active = lib.is_active(rd)
-            rm_file = lib.roadmap_path(rd)
-            name = lib.get_feature_name(rd)
-            total, complete = lib.count_steps(rm_file)
-            meta, _ = lib.parse_frontmatter(rm_file)
-            rid = meta.get("id", "")
-            if rid:
-                seen_ids.add(rid)
-            results.append({
-                "name": name,
-                "repo": repo_dir.name,
-                "path": str(rm_file),
-                "dir": rd.name,
-                "roadmap_dir": str(rd),
-                "state": state,
-                "total": total,
-                "complete": complete,
-                "is_complete": state == "Complete",
-                "is_active": active and state != "Complete",
-                "is_running": state == "Implementing",
-                "is_archived": state in ("Archived", "Declined"),
-                "source": "repo",
-            })
-
-        # 2. Flat file layout: Roadmaps/<Name>-Roadmap.md
+        # 1. Flat file layout: Roadmaps/<Name>-Roadmap.md (finished — scan first so they win dedup)
         flat_files = lib.find_roadmap_files(repo_dir)
         for rf in flat_files:
             meta, _ = lib.parse_frontmatter(rf)
             rid = meta.get("id", "")
             if rid and rid in seen_ids:
-                continue  # already found as directory
+                continue
             if rid:
                 seen_ids.add(rid)
             name = lib.parse_roadmap_heading(rf) or rf.stem.replace("-Roadmap", "")
@@ -125,6 +97,36 @@ def find_all_roadmaps(projects_dir, workdir_root=None):
                 "is_running": False,
                 "is_archived": True,
                 "source": "repo-flat",
+            })
+
+        # 2. Per-directory layout: Roadmaps/YYYY-MM-DD-Name/ (skipped if flat file with same ID exists)
+        roadmap_dirs = lib.find_roadmap_dirs(repo_dir)
+        for rd in roadmap_dirs:
+            rm_file = lib.roadmap_path(rd)
+            meta, _ = lib.parse_frontmatter(rm_file)
+            rid = meta.get("id", "")
+            if rid and rid in seen_ids:
+                continue  # flat file already covers this roadmap
+            if rid:
+                seen_ids.add(rid)
+            state = lib.current_state(rd)
+            active = lib.is_active(rd)
+            name = lib.get_feature_name(rd)
+            total, complete = lib.count_steps(rm_file)
+            results.append({
+                "name": name,
+                "repo": repo_dir.name,
+                "path": str(rm_file),
+                "dir": rd.name,
+                "roadmap_dir": str(rd),
+                "state": state,
+                "total": total,
+                "complete": complete,
+                "is_complete": state == "Complete",
+                "is_active": active and state != "Complete",
+                "is_running": state == "Implementing",
+                "is_archived": state in ("Archived", "Declined"),
+                "source": "repo",
             })
 
         # 3. Working directory: ~/.roadmaps/<project>/
