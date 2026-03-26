@@ -2,13 +2,13 @@
 
 Platform-specific guidance for C# development targeting .NET 9+.
 
-## §7.1. References
+## CG-7.1. References
 
 1. Follow the [C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions) for all naming and style decisions.
 2. Follow the [.NET Framework Design Guidelines](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/) for public API surface design.
 3. Follow the [.NET Runtime Coding Style](https://github.com/dotnet/runtime/blob/main/docs/coding-guidelines/coding-style.md) as the canonical style reference.
 
-## §7.2. Naming
+## CG-7.2. Naming
 
 - `PascalCase` for types, methods, properties, public fields, constants, namespaces
 - `camelCase` for parameters and local variables
@@ -18,7 +18,7 @@ Platform-specific guidance for C# development targeting .NET 9+.
 - Constants use `PascalCase`, not `SCREAMING_SNAKE_CASE`
 - Use `var` when the type is apparent from the right side of the assignment
 
-## §7.3. Nullable Reference Types
+## CG-7.3. Nullable Reference Types
 
 Enable `<Nullable>enable</Nullable>` in all projects. Treat warnings as design signals — `string` means non-null, `string?` means nullable.
 
@@ -37,7 +37,7 @@ public void Process(string? input)
 }
 ```
 
-## §7.4. Immutability
+## CG-7.4. Immutability
 
 Use `readonly` fields and `readonly struct` by default. Introduce mutability only when required.
 
@@ -61,7 +61,7 @@ var updated = order with { Total = 99.99m };
 public readonly record struct Point(double X, double Y);
 ```
 
-## §7.5. Concurrency
+## CG-7.5. Concurrency
 
 Use `async`/`await` for all async work. Never block the main thread.
 
@@ -88,7 +88,7 @@ public async Task OnLoadAsync()
 }
 ```
 
-## §7.6. Dependency Injection
+## CG-7.6. Dependency Injection
 
 Constructor injection via `Microsoft.Extensions.DependencyInjection`. Use interface types for dependencies, not concrete types.
 
@@ -108,7 +108,7 @@ public static IServiceCollection AddMyFeature(this IServiceCollection services)
 }
 ```
 
-## §7.7. Logging
+## CG-7.7. Logging
 
 Inject `ILogger<T>` via constructor injection. The generic parameter sets the log category to the consuming class.
 
@@ -128,7 +128,7 @@ _logger.LogInformation("Processing order {OrderId} for {CustomerId}", orderId, c
 static partial void LogCacheHit(ILogger logger, string key);
 ```
 
-## §7.8. Linting and Formatting
+## CG-7.8. Linting and Formatting
 
 1. [`.editorconfig`](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/style-rules/) at repo root for all code style rules.
 2. Enable Roslyn analyzers in `.csproj`:
@@ -143,7 +143,7 @@ static partial void LogCacheHit(ILogger logger, string key);
 3. Use `dotnet format` CLI for auto-fixing.
 4. Supplement with [Roslynator](https://github.com/dotnet/roslynator) or [Meziantou.Analyzer](https://github.com/meziantou/Meziantou.Analyzer) for additional rules.
 
-## §7.9. Testing
+## CG-7.9. Testing
 
 1. [xUnit](https://xunit.net/) with `[Fact]` for single tests and `[Theory]`/`[InlineData]` for parameterized tests.
 2. [FluentAssertions](https://fluentassertions.com/) for readable assertions.
@@ -170,23 +170,23 @@ public void IsValidEmail_ReturnsExpected(string input, bool expected)
 }
 ```
 
-## §7.10. Secure Storage
+## CG-7.10. Secure Storage
 
 - Use [DPAPI](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.protecteddata) (`ProtectedData.Protect`/`Unprotect` with `DataProtectionScope.CurrentUser`) for Windows-only local secrets
 - Use [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) (`Microsoft.Extensions.Configuration.UserSecrets`) for development-time secrets only (plaintext JSON — not for production)
 - Never store tokens or credentials in plaintext config files or app settings
 
-## §7.11. Privacy
+## CG-7.11. Privacy
 
 - Declare only required capabilities in `Package.appxmanifest` — avoid `broadFileSystemAccess` unless essential
 - Use DPAPI for local secret storage (see Secure Storage above)
 - No PII in logs, even at debug level
 - Respect user consent: app must remain functional if optional data collection is denied
 
-## §7.12. Feature Flags
+## CG-7.12. Feature Flags
 
 `IFeatureManager` interface + local JSON config as the default. Use the `Microsoft.FeatureManagement` NuGet package. Swap in Azure App Configuration for server-side flag evaluation later.
 
-## §7.13. Analytics
+## CG-7.13. Analytics
 
 Interface + `ILogger`-backed implementation as the default. Same pattern as other platforms: no direct coupling to any analytics backend.

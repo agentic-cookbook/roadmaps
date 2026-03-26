@@ -3,10 +3,10 @@
 Cross-platform security conventions for client-server applications. Covers authentication,
 authorization, transport security, input validation, data protection, and dependency security.
 
-These guidelines supplement §1.16 (Privacy and Security by Default). See
+These guidelines supplement CG-1.16 (Privacy and Security by Default). See
 platform-specific files for secure storage implementation details per platform.
 
-## §11.1. References
+## CG-11.1. References
 
 1. [OWASP Top 10 (2021)](https://owasp.org/www-project-top-ten/)
 2. [OWASP Mobile Top 10 (2024)](https://owasp.org/www-project-mobile-top-10/)
@@ -14,7 +14,7 @@ platform-specific files for secure storage implementation details per platform.
 4. [OWASP MASVS](https://mas.owasp.org/MASVS/) / [MASTG](https://mas.owasp.org/MASTG/)
 5. [Mozilla Server Side TLS](https://wiki.mozilla.org/Security/Server_Side_TLS)
 
-## §11.2. Authentication
+## CG-11.2. Authentication
 
 Use OAuth 2.0 / OpenID Connect with PKCE for all public clients. The Implicit flow is
 deprecated — OAuth 2.1 removes it entirely.
@@ -38,34 +38,34 @@ References:
 - [RFC 8252: OAuth for Native Apps](https://datatracker.ietf.org/doc/html/rfc8252)
 - [OpenID Connect Core](https://openid.net/specs/openid-connect-core-1_0.html)
 
-## §11.3. Token Handling
+## CG-11.3. Token Handling
 
-### §11.3.1. Access tokens
+### CG-11.3.1. Access tokens
 
 Short-lived (5-15 min). Include only necessary claims — no PII in JWTs
 that transit untrusted parties.
 
-### §11.3.2. Refresh tokens
+### CG-11.3.2. Refresh tokens
 
 Longer-lived but bound to client. Use rotation (see Authentication above).
 Store server-side when possible.
 
-### §11.3.3. Token refresh strategy
+### CG-11.3.3. Token refresh strategy
 
 - Proactive refresh before expiry (e.g., at 75% of TTL)
 - Queue concurrent requests during refresh to avoid race conditions
 - Retry with backoff on refresh failure
 
-### §11.3.4. Secure storage per platform
+### CG-11.3.4. Secure storage per platform
 
-See also §1.16.3.
+See also CG-1.16.3.
 
 - **Apple:** Keychain Services
 - **Android:** EncryptedSharedPreferences / Android Keystore
 - **Windows:** DPAPI (`ProtectedData`)
 - **Web:** HttpOnly Secure SameSite cookies (never localStorage)
 
-### §11.3.5. Never do these
+### CG-11.3.5. Never do these
 
 - Store tokens in `localStorage` or `sessionStorage` (XSS-accessible)
 - Put tokens in URL query parameters (logged in server logs, browser history, referrer headers)
@@ -77,7 +77,7 @@ References:
 - [RFC 7519: JSON Web Tokens](https://datatracker.ietf.org/doc/html/rfc7519)
 - [OWASP JWT Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
 
-## §11.4. Authorization
+## CG-11.4. Authorization
 
 **Server-side authorization is the only real authorization.** Client-side checks (hiding
 buttons, disabling fields) are UX conveniences — never security controls.
@@ -95,7 +95,7 @@ References:
 - [OWASP Authorization Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html)
 - [OWASP Access Control Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Access_Control_Cheat_Sheet.html)
 
-## §11.5. Transport Security
+## CG-11.5. Transport Security
 
 **TLS 1.2 minimum**, prefer TLS 1.3. Disable TLS 1.0 and 1.1 entirely.
 
@@ -119,7 +119,7 @@ References:
 - [Mozilla Server Side TLS](https://wiki.mozilla.org/Security/Server_Side_TLS)
 - [RFC 8446: TLS 1.3](https://datatracker.ietf.org/doc/html/rfc8446)
 
-## §11.6. CORS
+## CG-11.6. CORS
 
 Cross-Origin Resource Sharing — get it right or don't enable it.
 
@@ -140,7 +140,7 @@ References:
 - [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 - [OWASP: CORS Testing](https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/11-Client-side_Testing/07-Testing_Cross_Origin_Resource_Sharing)
 
-## §11.7. Content Security Policy
+## CG-11.7. Content Security Policy
 
 Prevent XSS and injection with a strict CSP. Web apps only.
 
@@ -157,7 +157,7 @@ References:
 - [OWASP CSP Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
 - [Google CSP Evaluator](https://csp-evaluator.withgoogle.com/)
 
-## §11.8. Input Validation
+## CG-11.8. Input Validation
 
 **Never trust client input.** Client-side validation is a UX feature, not a security control.
 All validation must be duplicated server-side.
@@ -178,7 +178,7 @@ References:
 - [OWASP SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [OWASP XSS Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
 
-## §11.9. Sensitive Data
+## CG-11.9. Sensitive Data
 
 Minimize what you collect, encrypt what you keep, never log what you shouldn't.
 
@@ -190,7 +190,7 @@ Minimize what you collect, encrypt what you keep, never log what you shouldn't.
   application level with a KMS (AWS KMS, Azure Key Vault, GCP KMS). Separate from database-level
   encryption.
 - **No PII in logs** — never log tokens, passwords, credit card numbers, or PII. Mask/redact
-  in all log outputs, including debug level. See §1.16.4.
+  in all log outputs, including debug level. See CG-1.16.4.
 - **No internals in API responses** — never expose internal IDs, stack traces, or database
   error messages in production. Return generic errors with correlation IDs.
 - **Cache-Control: no-store** on responses containing sensitive data.
@@ -199,7 +199,7 @@ References:
 - [OWASP Cryptographic Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html)
 - [NIST SP 800-122: PII Guide](https://csrc.nist.gov/publications/detail/sp/800-122/final)
 
-## §11.10. Dependency Security
+## CG-11.10. Dependency Security
 
 Your dependencies are your attack surface. Manage them actively.
 
@@ -219,7 +219,7 @@ References:
 - [SLSA Framework](https://slsa.dev/)
 - [Sigstore](https://www.sigstore.dev/)
 
-## §11.11. Security Headers Checklist
+## CG-11.11. Security Headers Checklist
 
 Every web application should set these response headers:
 

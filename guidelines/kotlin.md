@@ -2,13 +2,13 @@
 
 Platform-specific guidance for Android development with Kotlin.
 
-## §4.1. References
+## CG-4.1. References
 
 1. Follow the [Kotlin Coding Conventions](https://kotlinlang.org/docs/coding-conventions.html) for all naming and style decisions.
 2. Follow [Material Design 3](https://m3.material.io/) for UI components and theming.
 3. Follow [Android Architecture Recommendations](https://developer.android.com/topic/architecture/recommendations) for app structure.
 
-## §4.2. Logging
+## CG-4.2. Logging
 
 Use [Timber](https://github.com/JakeWharton/timber) for structured logging:
 
@@ -19,7 +19,7 @@ Timber.d("PrimaryButton: async action completed (success, ${duration}ms)")
 
 If no dependency is desired, use `android.util.Log` with consistent tags.
 
-## §4.3. Concurrency
+## CG-4.3. Concurrency
 
 Use Kotlin Coroutines for all async work. Run I/O on `Dispatchers.IO`. Use `viewModelScope` for ViewModel-scoped coroutines. Never block the main thread.
 
@@ -30,31 +30,31 @@ viewModelScope.launch(Dispatchers.IO) {
 }
 ```
 
-## §4.4. Secure Storage
+## CG-4.4. Secure Storage
 
 Use `EncryptedSharedPreferences` or the Android Keystore for tokens, credentials, and sensitive data. Never store secrets in plain SharedPreferences.
 
-## §4.5. Localization
+## CG-4.5. Localization
 
 Use `strings.xml` resource files. Reference via `R.string.*` in code or `stringResource()` in Compose. No hardcoded user-facing strings.
 
-## §4.6. Linting and Formatting
+## CG-4.6. Linting and Formatting
 
 Use [ktlint](https://pinterest.github.io/ktlint/) for both linting and formatting. Configure via `.editorconfig` at project root. Add as a Gradle plugin (`org.jlleitschuh.gradle.ktlint`).
 
-## §4.7. Shortcuts and Automation
+## CG-4.7. Shortcuts and Automation
 
 Use `AppActions` for Google Assistant integration. Support `Intent`-based automation.
 
-## §4.8. Previews
+## CG-4.8. Previews
 
 All Compose components MUST include `@Preview` functions. Verification includes confirming preview functions compile.
 
-## §4.9. Font Scaling
+## CG-4.9. Font Scaling
 
 Layouts MUST NOT break at 2x font size. Check `Configuration.fontScale` and test with large font settings enabled.
 
-## §4.10. Accessibility Settings
+## CG-4.10. Accessibility Settings
 
 Components MUST respond to these Android accessibility settings:
 
@@ -69,22 +69,22 @@ Components MUST respond to these Android accessibility settings:
 | Dark Theme | `Configuration.uiMode` | Full dark theme support |
 | Display Size | `displayMetrics.density` | Layouts must not break at larger display sizes |
 
-## §4.11. Privacy
+## CG-4.11. Privacy
 
 Respect scoped storage, support per-app language preferences, and honor permission denials gracefully. Show rationale dialogs before runtime permission requests.
 
-## §4.12. Feature Flags
+## CG-4.12. Feature Flags
 
 Interface + `SharedPreferences`-backed implementation as the default.
 
-## §4.13. Analytics
+## CG-4.13. Analytics
 
 Interface + `Timber`-backed implementation as the default.
 
-## §4.14. RTL Support
+## CG-4.14. RTL Support
 
 Set `android:supportsRtl="true"` in the manifest. Use `start`/`end` instead of `left`/`right` in layouts. Force RTL in developer options for testing.
 
-## §4.15. Immutability
+## CG-4.15. Immutability
 
 Use `val` by default. Use `data class` for value types. Introduce `var` only when mutation is required, and contain mutable state behind `StateFlow`.
