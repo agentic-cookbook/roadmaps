@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cat Herding — System Architecture</title>
+<title>Cat Herding — Claude Code Skills & Agents</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -378,6 +378,66 @@ tr:hover td { background: rgba(28,28,36,0.5); }
   margin-top: 4px;
 }
 
+/* GitHub links */
+a.gh { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(196,163,90,0.3); }
+a.gh:hover { border-bottom-color: var(--accent); }
+a.gh-icon { text-decoration: none; color: var(--text-muted); font-size: 0.75rem; margin-left: 6px; opacity: 0.6; }
+a.gh-icon:hover { opacity: 1; color: var(--accent); }
+
+/* Repo cards */
+.repo-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.repo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  transition: border-color 0.2s;
+}
+
+.repo-card:hover { border-color: var(--border-accent); }
+
+.repo-card h4 {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.repo-card h4 a { color: var(--text); text-decoration: none; }
+.repo-card h4 a:hover { color: var(--accent); }
+
+.repo-card p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.repo-card .card-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-top: 10px;
+}
+
+.repo-header-link {
+  float: right;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  text-decoration: none;
+}
+.repo-header-link:hover { color: var(--accent); }
+
 footer {
   padding: 40px 0;
   text-align: center;
@@ -392,11 +452,12 @@ footer {
 
 <header>
   <h1>Cat <em>Herding</em></h1>
-  <div class="tagline">Automated Feature Planning & Implementation for Claude Code</div>
-  <div class="version">v26 &middot; plan-roadmap v11 &middot; implement-step-agent v11 &middot; 370+ tests</div>
+  <div class="tagline">Reusable Claude Code Skills & Agents</div>
+  <div class="version"><a href="https://github.com/mikefullerton/cat-herding" class="gh" style="border:none;color:var(--text-dim)">github.com/mikefullerton/cat-herding</a></div>
 </header>
 
 <nav>
+  <a href="#repo">Repository</a>
   <a href="#overview">Overview</a>
   <a href="#lifecycle">Lifecycle</a>
   <a href="#coordinator">Coordinator</a>
@@ -410,6 +471,84 @@ footer {
 </nav>
 
 <div class="container">
+
+<!-- Repository Contents -->
+<section id="repo">
+  <h2><span class="num">00</span>Repository Contents <a href="https://github.com/mikefullerton/cat-herding" class="repo-header-link">View on GitHub &rarr;</a></h2>
+  <p class="lead">This repo contains reusable Claude Code skills and agents organized into two groups: general-purpose skills and the roadmap automation system.</p>
+
+  <h3>General Skills</h3>
+  <div class="repo-cards">
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/import-shared-project">/import-shared-project</a></h4>
+      <p>Add a shared project reference to CLAUDE.md. Takes a project name or Git URL, clones if needed, builds a reference block.</p>
+      <span class="card-tag tag-arch">v1</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/review-claude-extension">/review-claude-extension</a></h4>
+      <p>Validate skills and agents against best practices. Produces structured PASS/WARN/FAIL report. Read-only.</p>
+      <span class="card-tag tag-arch">v2</span>
+    </div>
+  </div>
+
+  <h3>Roadmap System</h3>
+  <p>The roadmap tools automate the full feature lifecycle &mdash; from conversation to shipped code. <a href="#overview" class="gh">See full documentation below &darr;</a></p>
+  <div class="repo-cards">
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/plan-roadmap">/plan-roadmap</a></h4>
+      <p>Two-phase feature planning: discussion then structured roadmap with CLI readiness checks.</p>
+      <span class="card-tag tag-algo">v11</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/implement-roadmap">/implement-roadmap</a></h4>
+      <p>Automated implementation with deterministic step selection, draft PR flow, and dashboard.</p>
+      <span class="card-tag tag-algo">v26</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/repair-roadmap">/repair-roadmap</a></h4>
+      <p>Re-plan an existing incomplete roadmap. Archives the original, resets to Ready.</p>
+      <span class="card-tag tag-algo">v1</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/plan-bugfix-roadmap">/plan-bugfix-roadmap</a></h4>
+      <p>Lightweight planning for batches of existing GitHub issues. Skips discussion.</p>
+      <span class="card-tag tag-algo">v4</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/progress-dashboard">/progress-dashboard</a></h4>
+      <p>Live progress display with pause/resume/stop controls. Flask REST API + web UI.</p>
+      <span class="card-tag tag-arch">v17</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/agents">/implement-step-agent</a></h4>
+      <p>Worker agent: implements one step, builds, tests, commits, pushes, comments on PR.</p>
+      <span class="card-tag tag-algo">v11</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/scripts/roadmaps.py">roadmaps CLI</a></h4>
+      <p>Cross-repo scanner with 15 commands: list, show, status, diagnose, cancel, dashboard sync.</p>
+      <span class="card-tag tag-arch">70 tests</span>
+    </div>
+    <div class="repo-card">
+      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/scripts/roadmap_lib.py">roadmap_lib</a></h4>
+      <p>Core Python library: discovery, parsing, state management. No external dependencies.</p>
+      <span class="card-tag tag-test">54 tests</span>
+    </div>
+  </div>
+
+  <details>
+    <summary>Other Skills <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Skill</th><th>Purpose</th></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/list-roadmaps" class="gh">/list-roadmaps</a></td><td>Quick progress scan with bars (v5)</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/describe-roadmap" class="gh">/describe-roadmap</a></td><td>Detailed single roadmap view (v4)</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/implement-roadmap-interactively" class="gh">/implement-roadmap-interactively</a></td><td>Step-by-step with per-step PRs and review checkpoints (v10)</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/generate-test-roadmap" class="gh">/generate-test-roadmap</a></td><td>Test roadmap generator &mdash; 20 cat-herding themed steps (v3)</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
 
 <!-- Overview -->
 <section id="overview">
@@ -565,7 +704,7 @@ description: "one-line summary"</code></pre>
 <!-- Coordinator -->
 <section id="coordinator">
   <h2><span class="num">03</span>Coordinator Algorithm</h2>
-  <p class="lead">The coordinator is a deterministic Python script. It reads roadmap files with regex, decides the next step, and outputs JSON. No LLM involved in step selection.</p>
+  <p class="lead">The coordinator is a deterministic Python script. It reads roadmap files with regex, decides the next step, and outputs JSON. No LLM involved in step selection. <a href="https://github.com/mikefullerton/cat-herding/blob/main/skills/implement-roadmap/references/coordinator" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
     <summary>next-step &mdash; Find the next implementable step <span class="tag tag-algo">algorithm</span></summary>
@@ -615,7 +754,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 <!-- State Machine -->
 <section id="state">
   <h2><span class="num">04</span>State Machine</h2>
-  <p class="lead">State is tracked via dated files in <code>State/</code>. The newest file (by date, then lifecycle order) determines the current state.</p>
+  <p class="lead">State is tracked via dated files in <code>State/</code>. The newest file (by date, then lifecycle order) determines the current state. <a href="https://github.com/mikefullerton/cat-herding/blob/main/scripts/roadmap_lib.py" class="gh-icon" title="View source">[source]</a></p>
 
   <div class="diagram"><span class="highlight">Created</span> <span class="dim">&rarr;</span> <span class="highlight">Planning</span> <span class="dim">&rarr;</span> <span class="highlight">Ready</span> <span class="dim">&rarr;</span> <span class="highlight">Implementing</span> <span class="dim">&rarr;</span> <span class="green">Complete</span>
                                     <span class="dim">&darr;</span>                <span class="dim">&darr;</span>
@@ -650,7 +789,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 <!-- Dashboard -->
 <section id="dashboard">
   <h2><span class="num">05</span>Dashboard Service</h2>
-  <p class="lead">Flask-based REST API and web UI. Generic progress tracker &mdash; knows nothing about git, files, or Claude Code. Agents push data to it.</p>
+  <p class="lead">Flask-based REST API and web UI. Generic progress tracker &mdash; knows nothing about git, files, or Claude Code. Agents push data to it. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
     <summary>Architecture <span class="tag tag-arch">architecture</span></summary>
@@ -698,7 +837,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 <!-- CLI -->
 <section id="cli">
   <h2><span class="num">06</span>CLI Tool</h2>
-  <p class="lead">The <code>roadmaps</code> command scans all repos for roadmaps, displays progress, and manages the system.</p>
+  <p class="lead">The <code>roadmaps</code> command scans all repos for roadmaps, displays progress, and manages the system. <a href="https://github.com/mikefullerton/cat-herding/blob/main/scripts/roadmaps.py" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
     <summary>All Commands (15) <span class="tag tag-arch">architecture</span></summary>
@@ -852,7 +991,7 @@ change-history:
 <!-- Tests -->
 <section id="tests">
   <h2><span class="num">09</span>Test Suite</h2>
-  <p class="lead">370+ tests covering the full stack. Every code change requires tests. Every bug fix requires a regression test.</p>
+  <p class="lead">370+ tests covering the full stack. Every code change requires tests. Every bug fix requires a regression test. <a href="https://github.com/mikefullerton/cat-herding/tree/main/tests" class="gh-icon" title="View tests">[tests]</a></p>
 
   <details>
     <summary>Unit Tests by Module <span class="tag tag-test">testing</span></summary>
@@ -914,7 +1053,7 @@ change-history:
 <!-- API -->
 <section id="api">
   <h2><span class="num">10</span>Dashboard API</h2>
-  <p class="lead">28 REST endpoints. Flask on port 8888. SQLite with WAL mode for concurrent reads.</p>
+  <p class="lead">28 REST endpoints. Flask on port 8888. SQLite with WAL mode for concurrent reads. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard/api" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
     <summary>Roadmap Endpoints <span class="tag tag-api">api</span></summary>
@@ -972,7 +1111,7 @@ change-history:
 </div>
 
 <footer>
-  Cat Herding &middot; Automated Feature Planning &amp; Implementation for Claude Code
+  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Reusable Claude Code Skills &amp; Agents &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a>
 </footer>
 
 </body>
