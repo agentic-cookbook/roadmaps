@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "11"
+version: "12"
 description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v11
+> plan-roadmap v12
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -62,7 +62,7 @@ If this fails, **STOP**. Tell the user this skill must run inside a git reposito
 
 ### 0b: Create drafts directory
 
-Drafts are written to `~/.roadmaps/<project>/`. The feature subdirectory is created in Step 5e once the feature name is known.
+Drafts are written to `~/.roadmaps/<project>/`. The feature subdirectory is created in Step 5f once the feature name is known.
 
 ```bash
 PROJECT=$(basename $(git rev-parse --show-toplevel))
@@ -82,7 +82,7 @@ If this fails, **STOP**. Tell the user the directory is not writable.
 
 This skill writes a planning log that records every decision, action, command, and user interaction. The log lives inside the roadmap directory for debugging and analysis.
 
-The log file is created in Step 5e when the roadmap directory is created. Until then, accumulate log entries in memory. Once the directory exists:
+The log file is created in Step 5f when the roadmap directory is created. Until then, accumulate log entries in memory. Once the directory exists:
 
 ```bash
 PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
@@ -90,7 +90,7 @@ PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 
 Write the accumulated entries plus the header:
 ```
-[YYYY-MM-DD HH:MM:SS] plan-roadmap v11 started
+[YYYY-MM-DD HH:MM:SS] plan-roadmap v12 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
 [YYYY-MM-DD HH:MM:SS] repo: $(git rev-parse --show-toplevel)
 [YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
@@ -169,6 +169,59 @@ Issues are created later by /implement-roadmap.
 
 ---
 
+## Step 3b: Write Discussion Summary
+
+Once the user approves the transition to Planning, **immediately** write the approved summary to memory as a structured file. This captures the user's intent before any planning transformation occurs.
+
+Accumulate this in memory (it will be written to disk in Step 5e when the directory is created):
+
+**File: `discussion-summary.md`**
+
+```markdown
+---
+feature: <FeatureName>
+date: YYYY-MM-DD
+---
+
+# Discussion Summary
+
+## Problem
+<What problem the user described>
+
+## Proposed Solution
+<The solution approach discussed>
+
+## Key Requirements
+- <Requirement 1>
+- <Requirement 2>
+- ...
+
+## Decisions Made
+- <Decision 1 and rationale>
+- <Decision 2 and rationale>
+- ...
+
+## Constraints and Scope
+- **In scope**: <what's included>
+- **Out of scope**: <what's explicitly excluded>
+- **Constraints**: <technical, timeline, or other constraints mentioned>
+
+## User's Exact Words (Key Quotes)
+> <Direct quotes from the user that capture intent, priorities, or non-obvious requirements>
+> <Include anything the user emphasized or repeated>
+```
+
+**Rules for the Discussion Summary:**
+- Write it from the user's perspective — this is what THEY said, not your interpretation
+- Include direct quotes for anything that could be misinterpreted
+- Do not add requirements the user didn't mention
+- Do not reframe the user's problem statement
+- If the user said "simple" or "just X", capture that — it constrains scope
+
+Log: `[timestamp] ACTION: Discussion summary captured`
+
+---
+
 # PHASE 2: PLANNING
 
 > **Goal**: Transform the discussion into structured planning artifacts. Files are written to `~/.roadmaps/<project>/`.
@@ -191,7 +244,7 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`11`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`12`).
 
 Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
 
@@ -276,9 +329,42 @@ Every Roadmap must include these two bookend steps. Implementation steps go betw
 
 **Do NOT include `Implementing`, `Phase`, or `Status` fields in the Roadmap.** Lifecycle state is tracked solely via files in the `State/` directory.
 
-### 5c: Present draft and request approval
+### 5c: Alignment review — compare Roadmap against Discussion Summary
+
+Before presenting the draft to the user, review the Roadmap against the Discussion Summary (from Step 3b) to catch any divergence.
+
+**Check each of these:**
+
+1. **Goal match** — Does the Roadmap's Goal and Purpose section match the Problem and Proposed Solution from the discussion summary? Flag if the goal has been reframed, expanded, or narrowed.
+2. **Requirements coverage** — Is every Key Requirement from the discussion summary addressed by at least one implementation step? Flag any missing requirements.
+3. **No scope creep** — Are there steps or requirements in the Roadmap that were NOT discussed? Flag anything added that the user didn't ask for.
+4. **Constraints honored** — Are the Out of Scope items and Constraints from the discussion summary respected? Flag any violations.
+5. **User quotes check** — Re-read the User's Exact Words section. Does the Roadmap honor the intent behind those quotes? Flag if something was "reinterpreted" away from what the user said.
+
+**If any divergence is found:**
+
+Fix the Roadmap draft to align with the discussion summary BEFORE presenting it to the user. If a divergence seems intentional (e.g., you split a vague requirement into concrete steps), add a note in the Roadmap explaining why.
+
+**If the Roadmap needed changes, log them:**
+
+```
+[timestamp] ALIGNMENT_REVIEW: <N> divergences found and corrected
+[timestamp] ALIGNMENT_FIX: <description of what was changed and why>
+```
+
+If no divergence: `[timestamp] ALIGNMENT_REVIEW: Roadmap aligns with discussion summary`
+
+### 5d: Present draft and request approval
 
 Print the **complete Roadmap** to the terminal. Not a summary — the full document.
+
+If the alignment review found and corrected divergences, mention them briefly:
+
+```
+Note: The alignment review caught <N> divergence(s) between the discussion
+and the initial draft. These have been corrected:
+- <brief description of each fix>
+```
 
 Then ask:
 
@@ -293,12 +379,12 @@ Sections marked _NEEDS INPUT_ need your input.
 
 **STOP. Wait for the user's response. Do NOT proceed until they respond.**
 
-### 5d: Revise or write
+### 5e: Revise or write
 
-- If the user requests changes: incorporate them, re-present the document with the same prompt from 5c. Repeat until approved.
+- If the user requests changes: incorporate them, re-present the document with the same prompt from 5d. Repeat until approved.
 - If the user selects **approved**: proceed to write the file.
 
-### 5e: Create the draft directory and write the Roadmap
+### 5f: Create the draft directory and write the Roadmap
 
 Use today's date (YYYY-MM-DD) for the directory prefix. Write to the **draft directory**, not the repo:
 
@@ -313,7 +399,12 @@ Write the Feature Roadmap to:
 ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
 ```
 
-### 5f: Create initial state files
+Write the Discussion Summary (accumulated from Step 3b) to:
+```
+~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/discussion-summary.md
+```
+
+### 5g: Create initial state files
 
 After writing the Roadmap, create state marker files to record the lifecycle events. Use the **Write tool** (not Bash) for each file:
 
@@ -335,11 +426,12 @@ date: YYYY-MM-DD
 ---
 ```
 
-### 5g: Verify all files exist and have content
+### 5h: Verify all files exist and have content
 
-Use the **Read tool** to read the first few lines of the Roadmap. If the file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
+Use the **Read tool** to read the first few lines of the Roadmap and Discussion Summary. If either file does not exist or is empty, **STOP. Tell the user. Re-attempt the write.**
 
 Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md`
+Read: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/discussion-summary.md`
 
 Use the **Glob tool** to verify state files exist:
 
@@ -347,7 +439,7 @@ Glob: `~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/State/*.md`
 
 Expected: two files (Created.md and Planning.md).
 
-### 5h: Create Ready state file and validate draft
+### 5i: Create Ready state file and validate draft
 
 Create the Ready state file in the draft directory. Use the **Write tool**:
 
@@ -360,7 +452,7 @@ date: YYYY-MM-DD
 ---
 ```
 
-Validate the draft: verify all four files exist (Roadmap.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
+Validate the draft: verify all five files exist (Roadmap.md, discussion-summary.md, Created state, Planning state, Ready state) and none are empty. Placeholders like `{{REPO}}#{{ISSUE_NUMBER}}` are expected and acceptable.
 
 Print: **"Draft complete."**
 
@@ -400,7 +492,9 @@ Print the complete summary, then ask:
 
 Roadmap:
   File: ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/Roadmap.md
+  Discussion: ~/.roadmaps/<project>/YYYY-MM-DD-<FeatureName>/discussion-summary.md
   Steps: <N> total (<N-2> implementation + issue creation + PR)
+  Alignment: Verified (discussion summary matches roadmap)
   State: Ready
   Estimated scope: <S/M/L breakdown>
   Dependencies: <summary>

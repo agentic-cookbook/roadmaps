@@ -73,6 +73,7 @@ Done → run /implement-roadmap to build it
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v12 | 2026-03-26 | Alignment review: `discussion-summary.md` captures user intent at end of Phase 1; automated alignment check (Step 5c) compares Roadmap draft against discussion summary before presenting to user; divergences corrected before approval gate |
 | v11 | 2026-03-25 | CLI readiness checks for Manual steps (install/auth verification); planning log records all decisions and actions; `github-user` field in frontmatter; draft PR flow (no bulk GitHub issues) |
 | v9 | 2026-03-25 | Completion Checklist replaced with Change History section (commits, issues, PR link); finished roadmaps copied as flat `<Name>-Roadmap.md` files to `Roadmaps/` |
 | v8 | 2026-03-25 | Merged Definition.md into Roadmap.md — single file per roadmap; definition sections (goal, acceptance criteria, verification strategy) are now at the top of Roadmap.md |
