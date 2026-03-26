@@ -149,7 +149,6 @@ header .version a:hover {
 }
 
 /* Sidebar nav */
-.hamburger-toggle { display: none; }
 .hamburger-btn {
   display: none;
   position: fixed;
@@ -227,7 +226,7 @@ footer { margin-left: 200px; }
     transform: translateX(-100%);
     transition: transform 0.25s ease;
   }
-  .hamburger-toggle:checked ~ nav {
+  nav.nav-open {
     transform: translateX(0);
   }
   header { margin-left: 0; position: relative; }
@@ -638,8 +637,7 @@ footer {
   <div class="version"><a href="https://github.com/mikefullerton/cat-herding" class="gh" style="border:none;color:var(--text-dim)">github.com/mikefullerton/cat-herding</a></div>
 </header>
 
-<input type="checkbox" id="hamburger-toggle" class="hamburger-toggle">
-<label for="hamburger-toggle" class="hamburger-btn">&#9776;</label>
+<button class="hamburger-btn" aria-label="Toggle navigation">&#9776;</button>
 <nav>
   <div class="nav-links">
     <a href="#intro">Flummix your Greebles</a>
@@ -2011,14 +2009,19 @@ setHeaderHeight();
 window.addEventListener('resize', setHeaderHeight);
 window.addEventListener('load', setHeaderHeight);
 
-// Close mobile nav when a link is clicked or user taps outside
-var toggle = document.getElementById('hamburger-toggle');
+// Mobile nav toggle
+var navEl = document.querySelector('nav');
+var hamburger = document.querySelector('.hamburger-btn');
+hamburger.addEventListener('click', function(e) {
+  e.stopPropagation();
+  navEl.classList.toggle('nav-open');
+});
 document.querySelectorAll('nav a').forEach(function(a) {
-  a.addEventListener('click', function() { toggle.checked = false; });
+  a.addEventListener('click', function() { navEl.classList.remove('nav-open'); });
 });
 document.addEventListener('click', function(e) {
-  if (toggle.checked && !e.target.closest('nav') && !e.target.closest('.hamburger-btn')) {
-    toggle.checked = false;
+  if (navEl.classList.contains('nav-open') && !e.target.closest('nav') && !e.target.closest('.hamburger-btn')) {
+    navEl.classList.remove('nav-open');
   }
 });
 </script>
