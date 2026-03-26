@@ -776,24 +776,24 @@ footer {
         <li><strong>1. Prefer native controls</strong> &mdash; Always use platform built-in frameworks first (Swift Concurrency over raw threads, Room/SwiftData over raw SQLite). Explicitly note which native controls are used and why.</li>
         <li><strong>2. Prefer proven open-source</strong> &mdash; When no native solution exists, research battle-tested libraries and present options before building custom. Custom is a deliberate choice, not a default.</li>
         <li><strong>3. Surface all design decisions</strong> &mdash; Any LLM choice affecting behavior must be noted and approved. Record in a <strong>Design Decisions</strong> section so all platform implementations stay consistent.</li>
-        <li><strong>4. No blocking the main thread</strong> &mdash; Use platform async primitives: Swift Concurrency (<code>async/await</code>, actors), Kotlin Coroutines (<code>Dispatchers.IO</code>), <code>Promise/async</code> (Web), <code>asyncio</code> (Python).</li>
+        <li><strong>4. No blocking the main thread</strong> &mdash; Use platform async primitives: Swift Concurrency (<code>async/await</code>, actors), Kotlin Coroutines (<code>Dispatchers.IO</code>), <code>Promise/async</code> (Web), <code>asyncio</code> (Python), <code>async/await</code> + <code>DispatcherQueue</code> (.NET).</li>
         <li><strong>5. Always show progress</strong> &mdash; Determinate progress bar when total is known. Spinner/skeleton/shimmer when not. Never a frozen UI.</li>
         <li><strong>6. Comprehensive unit testing</strong> &mdash; Prioritize unit tests over integration. Test state transitions, edge cases, serialization. Every implementation needs a test file.</li>
         <li><strong>7. Small atomic commits</strong> &mdash; One logical change per commit. May touch multiple files if part of the same concept. Commit as work progresses.</li>
         <li><strong>8. Post-generation verification</strong> &mdash; Build for all targets, run tests, lint, verify log output, accessibility audit (tap targets, contrast), code review against best practices. Fix before considering done.</li>
-        <li><strong>9. Instrumented logging</strong> &mdash; Every component instrumented with structured debug logging via platform logger (<code>os.log</code>, <code>Timber</code>, <code>console</code>, <code>logging</code>). Log state transitions, async task lifecycle, branching logic.</li>
+        <li><strong>9. Instrumented logging</strong> &mdash; Every component instrumented with structured debug logging via platform logger (<code>os.log</code>, <code>Timber</code>, <code>console</code>, <code>logging</code>, <code>ILogger&lt;T&gt;</code>). Log state transitions, async task lifecycle, branching logic.</li>
         <li><strong>10. Deep linking</strong> &mdash; All views reachable via URL. Apple: Universal Links + <code>onOpenURL</code>. Android: App Links + intent filters. Web: URL routing.</li>
         <li><strong>11. Scriptable and automatable</strong> &mdash; Apple: <code>AppIntents</code> for Shortcuts. Android: <code>AppActions</code>. Web: API endpoints or query params.</li>
         <li><strong>12. Accessibility from day one</strong> &mdash; Semantic roles/labels, VoiceOver/TalkBack/screen reader support, keyboard nav, Dynamic Type, WCAG AA contrast (4.5:1 text, 3:1 large), meaningful focus order.</li>
         <li><strong>13. Localizability</strong> &mdash; No hardcoded strings. Apple: <code>String(localized:)</code>. Android: <code>strings.xml</code>. Web: <code>react-intl</code>/<code>i18next</code>.</li>
         <li><strong>14. RTL layout support</strong> &mdash; Leading/trailing not left/right. Mirror directional icons. Test with RTL locale.</li>
         <li><strong>15. Respect accessibility display options</strong> &mdash; Respond to reduced motion, high contrast, color inversion, bold text, grayscale. See platform files for full environment key lists.</li>
-        <li><strong>16. Privacy and security</strong> &mdash; Data minimization, opt-in consent, platform secure storage (Keychain/EncryptedSharedPreferences/HttpOnly cookies), no PII logging, TLS only, input sanitization.</li>
+        <li><strong>16. Privacy and security</strong> &mdash; Data minimization, opt-in consent, platform secure storage (Keychain/EncryptedSharedPreferences/DPAPI/HttpOnly cookies), no PII logging, TLS only, input sanitization.</li>
         <li><strong>17. Feature flags</strong> &mdash; All features gated from day one. <code>FeatureFlagProvider</code> interface with local default (UserDefaults/SharedPreferences/localStorage). Backend swap via DI.</li>
         <li><strong>18. Analytics</strong> &mdash; All user actions instrumented via <code>AnalyticsProvider</code> interface. Logging-only default. No direct backend coupling.</li>
         <li><strong>19. A/B testing</strong> &mdash; <code>ExperimentProvider</code> interface with local default and debug panel override.</li>
         <li><strong>20. Debug mode</strong> &mdash; Debug-only panel (not in release): flag overrides, analytics log, A/B picker, env info. Shake (iOS/Android), debug menu (macOS), <code>/debug</code> (web).</li>
-        <li><strong>21. Linting from day one</strong> &mdash; SwiftLint + swift-format, ktlint, ESLint + Prettier. Config committed. Runs in build or pre-commit. Auto-fixable.</li>
+        <li><strong>21. Linting from day one</strong> &mdash; SwiftLint + swift-format, ktlint, ESLint + Prettier, Roslyn Analyzers + dotnet format. Config committed. Runs in build or pre-commit. Auto-fixable.</li>
       </ul>
     </div>
   </details>
@@ -863,6 +863,24 @@ footer {
         <li><a href="https://www.w3.org/WAI/ARIA/apg/" class="gh">WAI-ARIA Authoring Practices</a></li>
         <li><a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10</a></li>
         <li><a href="https://developer.mozilla.org/en-US/" class="gh">MDN Web Docs</a></li>
+      </ul>
+      <h3>Windows / .NET</h3>
+      <ul>
+        <li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions" class="gh">C# Coding Conventions</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/" class="gh">.NET Framework Design Guidelines</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows/apps/winui/winui3/" class="gh">WinUI 3 / Windows App SDK</a></li>
+        <li><a href="https://fluent2.microsoft.design/" class="gh">Fluent 2 Design System</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows/apps/develop/accessibility" class="gh">Windows Accessibility</a></li>
+        <li><a href="https://learn.microsoft.com/en-us/windows/msix/" class="gh">MSIX Packaging</a></li>
+        <li><a href="https://github.com/microsoft/WinUI-Gallery" class="gh">WinUI Gallery</a></li>
+      </ul>
+      <h3>UI Design</h3>
+      <ul>
+        <li><a href="https://www.nngroup.com/articles/visual-hierarchy-ux-definition/" class="gh">NNGroup: Visual Hierarchy</a></li>
+        <li><a href="https://www.nngroup.com/articles/web-form-design/" class="gh">NNGroup: Form Design Guidelines</a></li>
+        <li><a href="https://www.nngroup.com/articles/error-message-guidelines/" class="gh">NNGroup: Error Message Guidelines</a></li>
+        <li><a href="https://www.nngroup.com/articles/empty-state-interface-design/" class="gh">NNGroup: Empty State Design</a></li>
+        <li><a href="https://www.nngroup.com/articles/ten-usability-heuristics/" class="gh">NNGroup: Ten Usability Heuristics</a></li>
       </ul>
       <h3>Cross-Platform</h3>
       <ul>
@@ -952,6 +970,67 @@ footer {
   </details>
 
   <details>
+    <summary>C# / .NET Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/csharp.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows/.NET</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>References</strong>: <a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions" class="gh">C# Coding Conventions</a>, <a href="https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/" class="gh">.NET Design Guidelines</a>, <a href="https://github.com/dotnet/runtime/blob/main/docs/coding-guidelines/coding-style.md" class="gh">.NET Runtime Coding Style</a></li>
+        <li><strong>Naming</strong> &mdash; <code>PascalCase</code> for types/methods/properties/constants, <code>camelCase</code> for parameters/locals, <code>_camelCase</code> for private fields, <code>I</code> prefix for interfaces, <code>Async</code> suffix for async methods.</li>
+        <li><strong>Nullable reference types</strong> &mdash; Enable <code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code> in all projects. Avoid <code>!</code> operator &mdash; prefer <code>?? throw</code> or guard clauses. Use <code>required</code> properties.</li>
+        <li><strong>Immutability</strong> &mdash; <code>readonly</code> fields and <code>readonly struct</code> by default. <code>record</code> for DTOs/value objects. <code>System.Collections.Immutable</code> for shared collections. <code>with</code> expressions for non-destructive mutation.</li>
+        <li><strong>Concurrency</strong> &mdash; <code>async/await</code> everywhere. <code>ConfigureAwait(false)</code> in library code. Never <code>.Result</code>/<code>.Wait()</code>. Never <code>async void</code> except event handlers. <code>CancellationToken</code> in all async APIs.</li>
+        <li><strong>DI</strong> &mdash; Constructor injection via <code>Microsoft.Extensions.DependencyInjection</code>. Interface types, not concrete. Never inject scoped into singleton.</li>
+        <li><strong>Logging</strong> &mdash; <code>ILogger&lt;T&gt;</code> with structured message templates. Never string interpolation in log calls. <code>[LoggerMessage]</code> source generator for hot paths.</li>
+        <li><strong>Linting</strong> &mdash; <code>.editorconfig</code> + Roslyn analyzers (<code>EnforceCodeStyleInBuild</code>). <code>dotnet format</code> for auto-fixing.</li>
+        <li><strong>Testing</strong> &mdash; <a href="https://xunit.net/" class="gh">xUnit</a> + <a href="https://fluentassertions.com/" class="gh">FluentAssertions</a> + <a href="https://nsubstitute.github.io/" class="gh">NSubstitute</a>.</li>
+        <li><strong>Secure storage</strong> &mdash; DPAPI (<code>ProtectedData</code>) for Windows-only secrets. User Secrets for dev-time only.</li>
+        <li><strong>Privacy</strong> &mdash; Minimal capabilities in manifest. No PII logging. Respect consent.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Windows / WinUI 3 Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/windows.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows</span></summary>
+    <div class="detail-body">
+      <ul>
+        <li><strong>References</strong>: <a href="https://learn.microsoft.com/en-us/windows/apps/winui/winui3/" class="gh">WinUI 3</a>, <a href="https://fluent2.microsoft.design/" class="gh">Fluent 2 Design System</a>, <a href="https://github.com/microsoft/WinUI-Gallery" class="gh">WinUI Gallery</a></li>
+        <li><strong>Architecture</strong> &mdash; MVVM with <a href="https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/" class="gh">CommunityToolkit.Mvvm</a> (source-generated <code>ObservableObject</code>, <code>RelayCommand</code>). NavigationView + Frame. Never manipulate Frame from code-behind.</li>
+        <li><strong>Fluent Design</strong> &mdash; Use built-in WinUI 3 controls (Fluent 2 natively). Segoe UI Variable, Segoe Fluent Icons. Never custom-draw what a standard control can do.</li>
+        <li><strong>Theming</strong> &mdash; Tri-state: Light, Dark, High Contrast. Always <code>ThemeResource</code> (not <code>StaticResource</code>). Semantic color resources, not hex values.</li>
+        <li><strong>Accessibility</strong> &mdash; UI Automation automatic for standard controls. <code>AutomationProperties.Name</code> on elements without labels. <a href="https://accessibilityinsights.io/" class="gh">Accessibility Insights</a> for testing. Settings: HighContrast, AnimationsEnabled, TextScaleFactor (225%), Narrator, keyboard nav.</li>
+        <li><strong>Localization</strong> &mdash; MRT Core with <code>.resw</code> files. <code>x:Uid</code> directive for multi-property binding. <code>ResourceLoader</code> in code-behind.</li>
+        <li><strong>Deep linking</strong> &mdash; <code>&lt;uap:Protocol&gt;</code> in manifest. <code>AppInstance.GetActivatedEventArgs()</code>. Single-instancing via <code>FindOrRegisterForKey()</code>.</li>
+        <li><strong>Notifications</strong> &mdash; <code>AppNotificationManager</code> + <code>AppNotificationBuilder</code> fluent API.</li>
+        <li><strong>High DPI</strong> &mdash; Effective pixels (automatic scaling). Multi-scale assets (<code>.scale-100</code> through <code>.scale-400</code>). <code>XamlRoot.RasterizationScale</code> for custom rendering.</li>
+        <li><strong>MSIX</strong> &mdash; Single-project packaging. Minimal capabilities. Monotonically increasing versions.</li>
+        <li><strong>Concurrency</strong> &mdash; <code>DispatcherQueue.TryEnqueue</code> for UI thread marshaling. See <code>csharp.md</code> for general async/await.</li>
+      </ul>
+    </div>
+  </details>
+
+  <h3>Design</h3>
+
+  <details>
+    <summary>UI Design Guidelines &mdash; 12 cross-platform principles <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/ui.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <div class="detail-body">
+      <p>Platform HIG always takes precedence. These defaults fill gaps or establish a cross-platform baseline. References: <a href="https://developer.apple.com/design/human-interface-guidelines/" class="gh">Apple HIG</a>, <a href="https://m3.material.io/" class="gh">Material Design 3</a>, <a href="https://fluent2.microsoft.design/" class="gh">Fluent 2</a>, <a href="https://www.w3.org/TR/WCAG21/" class="gh">WCAG 2.1</a>.</p>
+      <ul>
+        <li><strong>Visual hierarchy</strong> &mdash; One primary action per screen. Use size and weight (not just color) to establish importance. Group with proximity, separate with whitespace.</li>
+        <li><strong>Spacing</strong> &mdash; 4px base unit, 8px primary grid. Scale: 4, 8, 12, 16, 24, 32, 48, 64. No arbitrary values.</li>
+        <li><strong>Typography</strong> &mdash; Platform system font. Body: 14-17pt (16px cross-platform default). Line height: 1.4-1.5x. 2-3 weights max per screen. 45-75 char paragraph width.</li>
+        <li><strong>Color</strong> &mdash; Semantic tokens over hex. 1 accent + neutrals + semantic (success/warning/error). Never color alone for meaning. WCAG AA: 4.5:1 text, 3:1 large text &amp; UI components.</li>
+        <li><strong>Layout</strong> &mdash; Single-column by default. Content-first. Consistent alignment. Platform adaptive layout (Size Classes, CSS media queries, VisualStateManager). One scroll direction per view.</li>
+        <li><strong>State design</strong> &mdash; Every data view handles four states: Loading (skeleton/spinner), Empty (icon + message + CTA), Error (problem + reason + recovery action), Loaded. Design empty/error states with equal care.</li>
+        <li><strong>Form design</strong> &mdash; Single-column. Validate on blur, not keystroke. Errors inline below field with icon + color + text. Specific messages ("8+ characters" not "Invalid"). Mark optional fields, not required.</li>
+        <li><strong>Feedback</strong> &mdash; Inline for field-level, toast/snackbar for non-critical confirmations (3-5s auto-dismiss), dialog only for destructive actions. Never dialog for success. Default focus on Cancel for destructive confirms.</li>
+        <li><strong>Touch targets</strong> &mdash; Platform HIG first (44pt Apple, 48dp Material, 40epx Fluent, 24px WCAG AA). Cross-platform default: 44x44. 8px spacing between adjacent targets.</li>
+        <li><strong>Animation</strong> &mdash; Purposeful only. State changes: 100-200ms. Enter/exit: 200-350ms. Page transitions: 300-500ms. Platform easing curves. Always respect reduced-motion.</li>
+        <li><strong>Iconography</strong> &mdash; Platform icon set first (SF Symbols, Material Symbols, Segoe Fluent Icons). Icons supplement text, not replace it. Consistent size/weight. State icons need color AND shape.</li>
+        <li><strong>Data display</strong> &mdash; Lists for sequential, Tables for comparable multi-attribute (sortable), Cards for heterogeneous, Grids for uniform visual. Sort/filter at 10+ items, search at 50+.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
     <summary>How Guidelines Are Installed <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p><a href="https://github.com/mikefullerton/cat-herding/blob/main/install.sh" class="gh"><code>install.sh</code></a> symlinks all <code>guidelines/*.md</code> files to <code>~/.claude/guidelines/</code>. The global <code>~/.claude/CLAUDE.md</code> references them by path. Every Claude Code session inherits them automatically.</p>
@@ -962,9 +1041,12 @@ footer {
   kotlin.md               → cat-herding/guidelines/kotlin.md
   typescript.md           → cat-herding/guidelines/typescript.md
   python.md               → cat-herding/guidelines/python.md
+  csharp.md               → cat-herding/guidelines/csharp.md
+  windows.md              → cat-herding/guidelines/windows.md
+  ui.md                   → cat-herding/guidelines/ui.md
   specs.md                → cat-herding/guidelines/specs.md
   best-practices-references.md → cat-herding/guidelines/best-practices-references.md</code></pre>
-      <p>The agent reads <code>general.md</code> + <code>engineering-principles.md</code> for every project, plus the platform-specific file for the current language.</p>
+      <p>The agent reads <code>general.md</code> + <code>engineering-principles.md</code> for every project, plus the platform-specific file for the current language and <code>ui.md</code> for any UI work.</p>
     </div>
   </details>
 </section>
