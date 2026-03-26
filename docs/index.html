@@ -29,6 +29,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-padding-top: var(--header-h, 280px); }
 
 body {
   background: var(--bg);
@@ -54,7 +55,10 @@ header {
   padding: 80px 0 60px;
   text-align: center;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(196,163,90,0.04) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(196,163,90,0.04) 0%, var(--bg) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 210;
 }
 
 .dev-stamp {
@@ -125,111 +129,109 @@ header .tagline {
 header .version {
   margin-top: 20px;
   font-family: var(--mono);
-  font-size: 0.7rem;
-  color: var(--text-dim);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
 }
 
-/* Hamburger menu */
+header .version a {
+  color: var(--accent) !important;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+header .version a:hover {
+  opacity: 1;
+}
+
+/* Sidebar nav */
 .hamburger-toggle { display: none; }
 .hamburger-btn {
   display: none;
-  position: absolute;
+  position: fixed;
   left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
+  top: 12px;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text-muted);
   font-size: 1.3rem;
   padding: 4px 10px;
   cursor: pointer;
-  z-index: 102;
+  z-index: 201;
   line-height: 1;
 }
 .hamburger-btn:hover { color: var(--text); border-color: var(--accent); }
 
 nav {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: rgba(12, 12, 15, 0.92);
+  position: fixed;
+  top: var(--header-h, 280px);
+  left: 0;
+  z-index: 200;
+  width: 200px;
+  height: calc(100vh - var(--header-h, 280px));
+  background: rgba(12, 12, 15, 0.96);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 40px;
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  overflow-y: auto;
   display: flex;
-  gap: 0;
-  overflow-x: auto;
+  flex-direction: column;
+}
+
+nav .nav-bar-top { display: none; }
+
+nav .nav-links {
+  display: flex;
+  flex-direction: column;
 }
 
 nav a {
   display: block;
-  padding: 14px 20px;
+  padding: 8px 20px;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
   text-decoration: none;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  border-bottom: 2px solid transparent;
+  border-left: 2px solid transparent;
   white-space: nowrap;
   transition: all 0.2s;
 }
 
-nav a:hover { color: var(--text); border-bottom-color: var(--accent); }
+nav a:hover { color: var(--text); border-left-color: var(--accent); }
 
 .nav-divider {
-  display: inline-block;
-  width: 1px;
-  align-self: stretch;
-  margin: 8px 4px;
-  border-left: 1px solid var(--border-accent);
+  display: block;
+  height: 1px;
+  margin: 8px 20px;
+  border-top: 1px solid var(--border-accent);
 }
 
+/* Push page content right of sidebar */
+header { margin-left: 0; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 40px 0 240px; }
+footer { margin-left: 200px; }
+
+/* Mobile: sidebar hidden, hamburger toggles overlay */
 @media (max-width: 767px) {
   .hamburger-btn { display: block; }
   nav {
-    position: sticky;
-    flex-direction: column;
-    padding: 0;
-    overflow: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
   }
-  nav .nav-links {
-    display: none;
-    flex-direction: column;
+  .hamburger-toggle:checked ~ nav {
+    transform: translateX(0);
   }
-  .hamburger-toggle:checked ~ nav .nav-links {
-    display: flex;
-  }
-  nav a {
-    padding: 12px 20px;
-    border-bottom: none;
-    border-left: 2px solid transparent;
-  }
-  nav a:hover { border-left-color: var(--accent); border-bottom-color: transparent; }
-  .nav-divider { display: none; }
-  nav .nav-bar-top {
-    display: flex;
-    align-items: center;
-    height: 44px;
-    position: relative;
-  }
+  header { margin-left: 0; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+  footer { margin-left: 0; }
 }
-
-@media (min-width: 768px) {
-  nav .nav-links {
-    display: flex;
-    gap: 0;
-    align-items: center;
-  }
-  nav .nav-bar-top { display: none; }
-}
-
-.container { max-width: 960px; margin: 0 auto; padding: 0 40px; }
 
 section {
   padding: 60px 0;
   border-bottom: 1px solid var(--border);
+  scroll-margin-top: var(--header-h, 280px);
 }
 
 section:last-child { border-bottom: none; }
@@ -277,25 +279,33 @@ p strong { color: var(--text); font-weight: 500; }
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  line-height: 2;
+  font-family: var(--sans);
+  font-size: 1.1rem;
+  line-height: 1.85;
   color: var(--text-muted);
 }
 
 .story p {
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  line-height: 2;
-  margin-bottom: 20px;
+  font-family: var(--sans);
+  font-size: 1.1rem;
+  line-height: 1.85;
+  margin-bottom: 18px;
   color: var(--text-muted);
 }
 
-.story p:last-child {
-  margin-bottom: 0;
+.story p:nth-last-child(2) {
   color: var(--accent);
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.story .story-coda {
+  margin-bottom: 0;
+  padding-left: 2em;
+  color: var(--text-dim);
   font-style: italic;
-  font-size: 1.35rem;
+  font-size: 0.95rem;
+  line-height: 1.8;
 }
 
 /* Disclosure sections */
@@ -603,7 +613,6 @@ footer {
     <label for="hamburger-toggle" class="hamburger-btn">&#9776;</label>
   </div>
   <div class="nav-links">
-    <a href="#repo">Repository</a>
     <a href="#overview">Overview</a>
     <a href="#guidelines">Guidelines</a>
     <a href="#code-review">Code Review</a>
@@ -619,6 +628,8 @@ footer {
     <a href="#api">API</a>
     <span class="nav-divider"></span>
     <a href="#general-skills">General Skills</a>
+    <span class="nav-divider"></span>
+    <a href="#repo">Repository</a>
   </div>
 </nav>
 
@@ -627,74 +638,15 @@ footer {
 <!-- Story Introduction -->
 <section id="intro">
   <div class="story">
-    <p>You have a feature idea. You describe it to Claude. Claude asks questions, clarifies scope, and when you're ready, produces a structured roadmap &mdash; steps, acceptance criteria, complexity estimates, all of it.</p>
-    <p>Then you say &ldquo;go.&rdquo; A coordinator picks the first step, launches a worker agent, and implementation begins. Each step: code, build, test, push, comment on the draft PR. You watch it happen on a live dashboard.</p>
-    <p>When it's done, the PR is marked ready. CI runs. Code review passes. Merged. The finished roadmap &mdash; with a full commit history and PR link &mdash; is saved to your repo.</p>
-    <p>That's Cat Herding.</p>
+    <p>It&rsquo;s 2 AM and you&rsquo;re struck by an inspiring idea for an app. What if I could automate my flummixing! Kind of ambitious, honestly. It&rsquo;s the sort of thing that would normally take weeks of planning before anyone writes a line of code. But you open Claude Code, start the <code>/plan-roadmap</code> skill and just&hellip; start talking about it.</p>
+    <p>Claude asks the right questions. What&rsquo;s the core use case? What can we cut? Where are the tricky parts? You go back and forth for a bit, and before you know it there&rsquo;s a full roadmap. You look it over, tweak a couple of details, and then say &ldquo;yes&rdquo; when Claude asks you, &ldquo;Run it through <code>/implement-roadmap</code> now?&rdquo;</p>
+    <p>Yes. You watch for a bit - a draft pull request is opened, commits start getting added, with lots of context and explanation. Then you go to sleep. Or try to. You keep sneaking a look at the progress dashboard. One, two, three hours go by&hellip; You see the roadmap steps light up green one by one, done and committed to the PR. Features, subsystems, and user flows taking shape. The app is becoming a real thing. It&rsquo;s like watching someone build your house in fast-forward.</p>
+    <p>As you sleep, it&rsquo;s finalized - all code reviewed and double checked against best practices and standards, CI builds it just fine, and your pull request is merged automatically. It&rsquo;s waiting for you, sleepyhead.</p>
+    <p>Finally the garbage truck wakes you up and you stumble back to the dashboard - a big green checkbox! The pull request is merged. Forty-three commits&hellip; all the stuff you brainstormed. You read through the diffs with your coffee as it&rsquo;s building locally. Then you&rsquo;re running it and you&rsquo;re happily flummixing your widgets with a giggle, then you smile, and get on with your day.</p>
+    <p>"Well, that didn&rsquo;t suck", you say.</p>
+    <p>That&rsquo;s Cat Herding.</p>
+    <p class="story-coda">That&rsquo;s a good kitty. <b>Good Claude.</b></p>
   </div>
-</section>
-
-<!-- Repository Contents -->
-<section id="repo">
-  <h2><span class="num">00</span>Repository Contents <a href="https://github.com/mikefullerton/cat-herding" class="repo-header-link">View on GitHub &rarr;</a></h2>
-  <p class="lead">The roadmap tools automate the full roadmap lifecycle &mdash; from conversation to shipped code.</p>
-
-  <h3>Roadmap System</h3>
-  <div class="repo-cards">
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/plan-roadmap">/plan-roadmap</a></h4>
-      <p>Two-phase roadmap planning: discussion then structured roadmap with CLI readiness checks.</p>
-      <span class="card-tag tag-algo">v11</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/implement-roadmap">/implement-roadmap</a></h4>
-      <p>Automated implementation with deterministic step selection, draft PR flow, and dashboard.</p>
-      <span class="card-tag tag-algo">v26</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/repair-roadmap">/repair-roadmap</a></h4>
-      <p>Re-plan an existing incomplete roadmap. Archives the original, resets to Ready.</p>
-      <span class="card-tag tag-algo">v1</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/plan-bugfix-roadmap">/plan-bugfix-roadmap</a></h4>
-      <p>Lightweight planning for batches of existing GitHub issues. Skips discussion.</p>
-      <span class="card-tag tag-algo">v4</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/progress-dashboard">/progress-dashboard</a></h4>
-      <p>Live progress display with pause/resume/stop controls. Flask REST API + web UI.</p>
-      <span class="card-tag tag-arch">v17</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/agents">/implement-step-agent</a></h4>
-      <p>Worker agent: implements one step, builds, tests, commits, pushes, comments on PR.</p>
-      <span class="card-tag tag-algo">v11</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/scripts/roadmaps.py">roadmaps CLI</a></h4>
-      <p>Cross-repo scanner with 15 commands: list, show, status, diagnose, cancel, dashboard sync.</p>
-      <span class="card-tag tag-arch">70 tests</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/scripts/roadmap_lib.py">roadmap_lib</a></h4>
-      <p>Core Python library: discovery, parsing, state management. No external dependencies.</p>
-      <span class="card-tag tag-test">54 tests</span>
-    </div>
-  </div>
-
-  <details>
-    <summary>Other Skills <span class="tag tag-arch">architecture</span></summary>
-    <div class="detail-body">
-      <table>
-        <tr><th>Skill</th><th>Purpose</th></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/list-roadmaps" class="gh">/list-roadmaps</a></td><td>Quick progress scan with bars (v5)</td></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/describe-roadmap" class="gh">/describe-roadmap</a></td><td>Detailed single roadmap view (v4)</td></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/implement-roadmap-interactively" class="gh">/implement-roadmap-interactively</a></td><td>Step-by-step with per-step PRs and review checkpoints (v10)</td></tr>
-        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/generate-test-roadmap" class="gh">/generate-test-roadmap</a></td><td>Test roadmap generator &mdash; 20 cat-herding themed steps (v3)</td></tr>
-      </table>
-    </div>
-  </details>
 </section>
 
 <!-- Overview -->
@@ -713,11 +665,11 @@ footer {
     <summary>Core Principles <span class="tag tag-arch">architecture</span></summary>
     <div class="detail-body">
       <ul>
-        <li><strong>Deterministic step selection</strong> &mdash; A Python script picks the next step via regex parsing. The LLM never decides what to do next.</li>
-        <li><strong>File-based records as source of truth</strong> &mdash; YAML frontmatter Markdown files in <code>~/.roadmaps/</code> track all state. No database required for the core workflow.</li>
-        <li><strong>Decoupled dashboard</strong> &mdash; The Flask dashboard service knows nothing about git, files, or Claude Code. Agents push data to it via REST.</li>
-        <li><strong>Worktree isolation</strong> &mdash; Code goes in the git worktree. Roadmap files stay in <code>~/.roadmaps/</code>. Never mix them.</li>
-        <li><strong>Draft PR first</strong> &mdash; A draft PR is created at the start. Each step pushes and comments on the PR. The final step marks it ready, waits for CI, and merges.</li>
+        <li><strong>Deterministic step selection</strong> - A Python script picks the next step via regex parsing. The LLM never decides what to do next.</li>
+        <li><strong>File-based records as source of truth</strong> - YAML frontmatter Markdown files in <code>~/.roadmaps/</code> track all state. No database required for the core workflow.</li>
+        <li><strong>Decoupled dashboard</strong> - The Flask dashboard service knows nothing about git, files, or Claude Code. Agents push data to it via REST.</li>
+        <li><strong>Worktree isolation</strong> - Code goes in the git worktree. Roadmap files stay in <code>~/.roadmaps/</code>. Never mix them.</li>
+        <li><strong>Draft PR first</strong> - A draft PR is created at the start. Each step pushes and comments on the PR. The final step marks it ready, waits for CI, and merges.</li>
       </ul>
     </div>
   </details>
@@ -727,7 +679,7 @@ footer {
     <div class="detail-body">
       <table>
         <tr><th>Technology</th><th>Role</th></tr>
-        <tr><td>Python 3</td><td>Core language &mdash; roadmap_lib, coordinator, dashboard, CLI, tests</td></tr>
+        <tr><td>Python 3</td><td>Core language - roadmap_lib, coordinator, dashboard, CLI, tests</td></tr>
         <tr><td>Flask</td><td>Dashboard REST API</td></tr>
         <tr><td>SQLite (WAL)</td><td>Dashboard database</td></tr>
         <tr><td>Playwright</td><td>Browser-based UI testing</td></tr>
@@ -759,10 +711,10 @@ footer {
         <tr><td>claude-md-management</td><td>93K</td><td>CLAUDE.md file management</td></tr>
         <tr><td>hookify</td><td>30K</td><td>Custom hooks from natural language</td></tr>
         <tr><td>skill-creator</td><td>78K</td><td>Skill benchmarking and eval</td></tr>
-        <tr><td>document-skills</td><td>&mdash;</td><td>PDF, DOCX, PPTX, XLSX creation</td></tr>
+        <tr><td>document-skills</td><td>-</td><td>PDF, DOCX, PPTX, XLSX creation</td></tr>
       </table>
       <h3>Language Support (LSP plugins)</h3>
-      <p>swift-lsp, kotlin-lsp, typescript-lsp, pyright-lsp, csharp-lsp &mdash; installed per-language for semantic code understanding.</p>
+      <p>swift-lsp, kotlin-lsp, typescript-lsp, pyright-lsp, csharp-lsp - installed per-language for semantic code understanding.</p>
       <h3>Available Review Agents</h3>
       <p>These agent types are provided by the installed plugins and used during the PR review phase:</p>
       <table>
@@ -785,63 +737,63 @@ footer {
 <!-- Code Generation and Review Guidelines -->
 <section id="guidelines">
   <h2><span class="num">02</span>Code Generation and Review Guidelines <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="repo-header-link">View on GitHub &rarr;</a></h2>
-  <p class="lead">Shared coding guidelines installed globally at <code>~/.claude/guidelines/</code>. Used for both code generation and code review. Every Claude Code session reads these automatically. All rules use hierarchical <strong>CG-</strong> numbering &mdash; <code>CG-X.Y</code> (file.section) or <code>CG-X.Y.Z</code> (file.section.subrule) &mdash; for unambiguous cross-referencing.</p>
+  <p class="lead">Shared coding guidelines installed globally at <code>~/.claude/guidelines/</code>. Used for both code generation and code review. Every Claude Code session reads these automatically. All rules use hierarchical <strong>CG-</strong> numbering - <code>CG-X.Y</code> (file.section) or <code>CG-X.Y.Z</code> (file.section.subrule) - for unambiguous cross-referencing.</p>
 
   <details>
-    <summary>CG-1 &mdash; General Coding Guidelines (21 rules) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/general.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <summary>CG-1 - General Coding Guidelines (21 rules) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/general.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
     <div class="detail-body">
       <ul>
-        <li><strong>CG-1.1 Prefer native controls</strong> &mdash; Always use platform built-in frameworks first (Swift Concurrency over raw threads, Room/SwiftData over raw SQLite). Explicitly note which native controls are used and why.</li>
-        <li><strong>CG-1.2 Prefer proven open-source</strong> &mdash; When no native solution exists, research battle-tested libraries and present options before building custom. Custom is a deliberate choice, not a default.</li>
-        <li><strong>CG-1.3 Surface all design decisions</strong> &mdash; Any LLM choice affecting behavior must be noted and approved. Record in a <strong>Design Decisions</strong> section so all platform implementations stay consistent.</li>
-        <li><strong>CG-1.4 No blocking the main thread</strong> &mdash; Use platform async primitives: Swift Concurrency (<code>async/await</code>, actors), Kotlin Coroutines (<code>Dispatchers.IO</code>), <code>Promise/async</code> (Web), <code>asyncio</code> (Python), <code>async/await</code> + <code>DispatcherQueue</code> (.NET).</li>
-        <li><strong>CG-1.5 Always show progress</strong> &mdash; Determinate progress bar when total is known. Spinner/skeleton/shimmer when not. Never a frozen UI.</li>
-        <li><strong>CG-1.6 Comprehensive unit testing</strong> &mdash; Prioritize unit tests over integration. Test state transitions, edge cases, serialization. Every implementation needs a test file.</li>
-        <li><strong>CG-1.7 Small atomic commits</strong> &mdash; One logical change per commit. May touch multiple files if part of the same concept. Commit as work progresses.</li>
-        <li><strong>CG-1.8 Post-generation verification</strong> &mdash; Build for all targets, run tests, lint, verify log output, accessibility audit (tap targets, contrast), code review against best practices. Fix before considering done.</li>
-        <li><strong>CG-1.9 Instrumented logging</strong> &mdash; Every component instrumented with structured debug logging via platform logger (<code>os.log</code>, <code>Timber</code>, <code>console</code>, <code>logging</code>, <code>ILogger&lt;T&gt;</code>). Log state transitions, async task lifecycle, branching logic.</li>
-        <li><strong>CG-1.10 Deep linking</strong> &mdash; All views reachable via URL. Apple: Universal Links + <code>onOpenURL</code>. Android: App Links + intent filters. Web: URL routing.</li>
-        <li><strong>CG-1.11 Scriptable and automatable</strong> &mdash; Apple: <code>AppIntents</code> for Shortcuts. Android: <code>AppActions</code>. Web: API endpoints or query params.</li>
-        <li><strong>CG-1.12 Accessibility from day one</strong> &mdash; Semantic roles/labels, VoiceOver/TalkBack/screen reader support, keyboard nav, Dynamic Type, WCAG AA contrast (4.5:1 text, 3:1 large), meaningful focus order.</li>
-        <li><strong>CG-1.13 Localizability</strong> &mdash; No hardcoded strings. Apple: <code>String(localized:)</code>. Android: <code>strings.xml</code>. Web: <code>react-intl</code>/<code>i18next</code>.</li>
-        <li><strong>CG-1.14 RTL layout support</strong> &mdash; Leading/trailing not left/right. Mirror directional icons. Test with RTL locale.</li>
-        <li><strong>CG-1.15 Respect accessibility display options</strong> &mdash; Respond to reduced motion, high contrast, color inversion, bold text, grayscale. See platform files for full environment key lists.</li>
-        <li><strong>CG-1.16 Privacy and security</strong> &mdash; Data minimization, opt-in consent, platform secure storage (Keychain/EncryptedSharedPreferences/DPAPI/HttpOnly cookies), no PII logging, TLS only, input sanitization.</li>
-        <li><strong>CG-1.17 Feature flags</strong> &mdash; All features gated from day one. <code>FeatureFlagProvider</code> interface with local default (UserDefaults/SharedPreferences/localStorage). Backend swap via DI.</li>
-        <li><strong>CG-1.18 Analytics</strong> &mdash; All user actions instrumented via <code>AnalyticsProvider</code> interface. Logging-only default. No direct backend coupling.</li>
-        <li><strong>CG-1.19 A/B testing</strong> &mdash; <code>ExperimentProvider</code> interface with local default and debug panel override.</li>
-        <li><strong>CG-1.20 Debug mode</strong> &mdash; Debug-only panel (not in release): flag overrides, analytics log, A/B picker, env info. Shake (iOS/Android), debug menu (macOS), <code>/debug</code> (web).</li>
-        <li><strong>CG-1.21 Linting from day one</strong> &mdash; SwiftLint + swift-format, ktlint, ESLint + Prettier, Roslyn Analyzers + dotnet format. Config committed. Runs in build or pre-commit. Auto-fixable.</li>
+        <li><strong>CG-1.1 Prefer native controls</strong> - Always use platform built-in frameworks first (Swift Concurrency over raw threads, Room/SwiftData over raw SQLite). Explicitly note which native controls are used and why.</li>
+        <li><strong>CG-1.2 Prefer proven open-source</strong> - When no native solution exists, research battle-tested libraries and present options before building custom. Custom is a deliberate choice, not a default.</li>
+        <li><strong>CG-1.3 Surface all design decisions</strong> - Any LLM choice affecting behavior must be noted and approved. Record in a <strong>Design Decisions</strong> section so all platform implementations stay consistent.</li>
+        <li><strong>CG-1.4 No blocking the main thread</strong> - Use platform async primitives: Swift Concurrency (<code>async/await</code>, actors), Kotlin Coroutines (<code>Dispatchers.IO</code>), <code>Promise/async</code> (Web), <code>asyncio</code> (Python), <code>async/await</code> + <code>DispatcherQueue</code> (.NET).</li>
+        <li><strong>CG-1.5 Always show progress</strong> - Determinate progress bar when total is known. Spinner/skeleton/shimmer when not. Never a frozen UI.</li>
+        <li><strong>CG-1.6 Comprehensive unit testing</strong> - Prioritize unit tests over integration. Test state transitions, edge cases, serialization. Every implementation needs a test file.</li>
+        <li><strong>CG-1.7 Small atomic commits</strong> - One logical change per commit. May touch multiple files if part of the same concept. Commit as work progresses.</li>
+        <li><strong>CG-1.8 Post-generation verification</strong> - Build for all targets, run tests, lint, verify log output, accessibility audit (tap targets, contrast), code review against best practices. Fix before considering done.</li>
+        <li><strong>CG-1.9 Instrumented logging</strong> - Every component instrumented with structured debug logging via platform logger (<code>os.log</code>, <code>Timber</code>, <code>console</code>, <code>logging</code>, <code>ILogger&lt;T&gt;</code>). Log state transitions, async task lifecycle, branching logic.</li>
+        <li><strong>CG-1.10 Deep linking</strong> - All views reachable via URL. Apple: Universal Links + <code>onOpenURL</code>. Android: App Links + intent filters. Web: URL routing.</li>
+        <li><strong>CG-1.11 Scriptable and automatable</strong> - Apple: <code>AppIntents</code> for Shortcuts. Android: <code>AppActions</code>. Web: API endpoints or query params.</li>
+        <li><strong>CG-1.12 Accessibility from day one</strong> - Semantic roles/labels, VoiceOver/TalkBack/screen reader support, keyboard nav, Dynamic Type, WCAG AA contrast (4.5:1 text, 3:1 large), meaningful focus order.</li>
+        <li><strong>CG-1.13 Localizability</strong> - No hardcoded strings. Apple: <code>String(localized:)</code>. Android: <code>strings.xml</code>. Web: <code>react-intl</code>/<code>i18next</code>.</li>
+        <li><strong>CG-1.14 RTL layout support</strong> - Leading/trailing not left/right. Mirror directional icons. Test with RTL locale.</li>
+        <li><strong>CG-1.15 Respect accessibility display options</strong> - Respond to reduced motion, high contrast, color inversion, bold text, grayscale. See platform files for full environment key lists.</li>
+        <li><strong>CG-1.16 Privacy and security</strong> - Data minimization, opt-in consent, platform secure storage (Keychain/EncryptedSharedPreferences/DPAPI/HttpOnly cookies), no PII logging, TLS only, input sanitization.</li>
+        <li><strong>CG-1.17 Feature flags</strong> - All features gated from day one. <code>FeatureFlagProvider</code> interface with local default (UserDefaults/SharedPreferences/localStorage). Backend swap via DI.</li>
+        <li><strong>CG-1.18 Analytics</strong> - All user actions instrumented via <code>AnalyticsProvider</code> interface. Logging-only default. No direct backend coupling.</li>
+        <li><strong>CG-1.19 A/B testing</strong> - <code>ExperimentProvider</code> interface with local default and debug panel override.</li>
+        <li><strong>CG-1.20 Debug mode</strong> - Debug-only panel (not in release): flag overrides, analytics log, A/B picker, env info. Shake (iOS/Android), debug menu (macOS), <code>/debug</code> (web).</li>
+        <li><strong>CG-1.21 Linting from day one</strong> - SwiftLint + swift-format, ktlint, ESLint + Prettier, Roslyn Analyzers + dotnet format. Config committed. Runs in build or pre-commit. Auto-fixable.</li>
       </ul>
     </div>
   </details>
 
   <details>
-    <summary>CG-2 &mdash; Engineering Principles (16 rules) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/engineering-principles.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <summary>CG-2 - Engineering Principles (16 rules) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/engineering-principles.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
     <div class="detail-body">
       <ul>
-        <li><strong>CG-2.1 Simplicity</strong> &mdash; Simple ≠ easy. No interleaving of concerns. Complexity compounds — resist at introduction time.</li>
-        <li><strong>CG-2.2 Make It Work, Make It Right, Make It Fast</strong> &mdash; Working solution → refactor for clarity → optimize only what measurement proves slow. Never skip phase 2.</li>
-        <li><strong>CG-2.3 Composition over inheritance</strong> &mdash; Default to composing behaviors from small pieces. Protocols/interfaces over base classes. Wrap rather than subclass.</li>
-        <li><strong>CG-2.4 Dependency injection</strong> &mdash; Receive dependencies from outside, never construct internally. Protocol types, not concrete types. No service locator.</li>
-        <li><strong>CG-2.5 Immutability by default</strong> &mdash; <code>let</code>/<code>val</code>/<code>const</code> by default. Value types over reference types. Contain mutation behind clear boundaries (actors, StateFlow, useState).</li>
-        <li><strong>CG-2.6 Fail fast</strong> &mdash; Detect invalid state at origin. Assertions in debug, typed errors over swallowed exceptions, never empty catch blocks.</li>
-        <li><strong>CG-2.7 Idempotency</strong> &mdash; Safe to repeat without duplicate effects. Debounce buttons, idempotency keys for APIs, migrations safe to re-run.</li>
-        <li><strong>CG-2.8 Design for deletion</strong> &mdash; Code is a liability. Easy to throw away without affecting the system. Duplicate rather than couple. Don't abstract prematurely.</li>
-        <li><strong>CG-2.9 YAGNI</strong> &mdash; Build for today's requirements. Speculative generality costs more to maintain than adding it later.</li>
-        <li><strong>CG-2.10 Explicit over implicit</strong> &mdash; Visible dependencies, clear naming, parameter passing over ambient state.</li>
-        <li><strong>CG-2.11 Small reversible decisions</strong> &mdash; Cheap to reverse → decide fast. Expensive to reverse → invest in understanding. Defer binding until last responsible moment.</li>
-        <li><strong>CG-2.12 Tight feedback loops</strong> &mdash; Fast tests, frequent deploys, early user feedback, automate commit-to-production.</li>
-        <li><strong>CG-2.13 Separation of concerns</strong> &mdash; One reason to change. If describing a module requires "and," split it.</li>
-        <li><strong>CG-2.14 Least astonishment</strong> &mdash; Behavior matches expectations. Side effects obvious from API signature.</li>
-        <li><strong>CG-2.15 Manage complexity through boundaries</strong> &mdash; Ports (interfaces) + adapters (implementations). Test core without databases, UIs, or networks.</li>
+        <li><strong>CG-2.1 Simplicity</strong> - Simple ≠ easy. No interleaving of concerns. Complexity compounds — resist at introduction time.</li>
+        <li><strong>CG-2.2 Make It Work, Make It Right, Make It Fast</strong> - Working solution → refactor for clarity → optimize only what measurement proves slow. Never skip phase 2.</li>
+        <li><strong>CG-2.3 Composition over inheritance</strong> - Default to composing behaviors from small pieces. Protocols/interfaces over base classes. Wrap rather than subclass.</li>
+        <li><strong>CG-2.4 Dependency injection</strong> - Receive dependencies from outside, never construct internally. Protocol types, not concrete types. No service locator.</li>
+        <li><strong>CG-2.5 Immutability by default</strong> - <code>let</code>/<code>val</code>/<code>const</code> by default. Value types over reference types. Contain mutation behind clear boundaries (actors, StateFlow, useState).</li>
+        <li><strong>CG-2.6 Fail fast</strong> - Detect invalid state at origin. Assertions in debug, typed errors over swallowed exceptions, never empty catch blocks.</li>
+        <li><strong>CG-2.7 Idempotency</strong> - Safe to repeat without duplicate effects. Debounce buttons, idempotency keys for APIs, migrations safe to re-run.</li>
+        <li><strong>CG-2.8 Design for deletion</strong> - Code is a liability. Easy to throw away without affecting the system. Duplicate rather than couple. Don't abstract prematurely.</li>
+        <li><strong>CG-2.9 YAGNI</strong> - Build for today's requirements. Speculative generality costs more to maintain than adding it later.</li>
+        <li><strong>CG-2.10 Explicit over implicit</strong> - Visible dependencies, clear naming, parameter passing over ambient state.</li>
+        <li><strong>CG-2.11 Small reversible decisions</strong> - Cheap to reverse → decide fast. Expensive to reverse → invest in understanding. Defer binding until last responsible moment.</li>
+        <li><strong>CG-2.12 Tight feedback loops</strong> - Fast tests, frequent deploys, early user feedback, automate commit-to-production.</li>
+        <li><strong>CG-2.13 Separation of concerns</strong> - One reason to change. If describing a module requires "and," split it.</li>
+        <li><strong>CG-2.14 Least astonishment</strong> - Behavior matches expectations. Side effects obvious from API signature.</li>
+        <li><strong>CG-2.15 Manage complexity through boundaries</strong> - Ports (interfaces) + adapters (implementations). Test core without databases, UIs, or networks.</li>
       </ul>
       <p><strong>Meta-principle: Optimize for Change.</strong> Every principle above makes future change cheaper and safer.</p>
     </div>
   </details>
 
   <details>
-    <summary>CG-12 &mdash; Spec Writing Format <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/specs.md" class="gh-icon">[source]</a> <span class="tag tag-arch">specs</span></summary>
+    <summary>CG-12 - Spec Writing Format <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/specs.md" class="gh-icon">[source]</a> <span class="tag tag-arch">specs</span></summary>
     <div class="detail-body">
       <p>Format for behavioral specifications (from <a href="https://github.com/mikefullerton/litterbox" class="gh">litterbox</a> and <a href="https://github.com/mikefullerton/temporal-platform" class="gh">temporal-platform</a>).</p>
       <ul>
@@ -857,7 +809,7 @@ footer {
   </details>
 
   <details>
-    <summary>CG-13 &mdash; Best Practices References <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/best-practices-references.md" class="gh-icon">[source]</a> <span class="tag tag-arch">references</span></summary>
+    <summary>CG-13 - Best Practices References <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/best-practices-references.md" class="gh-icon">[source]</a> <span class="tag tag-arch">references</span></summary>
     <div class="detail-body">
       <h3>Apple</h3>
       <ul>
@@ -928,7 +880,7 @@ footer {
   <h3>Languages</h3>
 
   <details>
-    <summary>CG-3 &mdash; Swift / SwiftUI / AppKit <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/swift.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Apple</span></summary>
+    <summary>CG-3 - Swift / SwiftUI / AppKit <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/swift.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Apple</span></summary>
     <div class="detail-body">
       <ul>
         <li><strong>References</strong>: <a href="https://www.swift.org/documentation/api-design-guidelines/" class="gh">Swift API Design Guidelines</a>, <a href="https://developer.apple.com/documentation/Xcode/understanding-and-improving-swiftui-performance" class="gh">SwiftUI Performance</a></li>
@@ -947,7 +899,7 @@ footer {
   </details>
 
   <details>
-    <summary>CG-4 &mdash; Kotlin / Compose / Ktor <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/kotlin.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Android</span></summary>
+    <summary>CG-4 - Kotlin / Compose / Ktor <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/kotlin.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Android</span></summary>
     <div class="detail-body">
       <ul>
         <li><strong>References</strong>: <a href="https://kotlinlang.org/docs/coding-conventions.html" class="gh">Kotlin Conventions</a>, <a href="https://m3.material.io/" class="gh">Material Design 3</a>, <a href="https://developer.android.com/topic/architecture/recommendations" class="gh">Architecture Recommendations</a></li>
@@ -966,7 +918,7 @@ footer {
   </details>
 
   <details>
-    <summary>CG-5 &mdash; TypeScript / React / Web <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/typescript.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Web</span></summary>
+    <summary>CG-5 - TypeScript / React / Web <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/typescript.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Web</span></summary>
     <div class="detail-body">
       <ul>
         <li><strong>Linting</strong>: <a href="https://eslint.org/" class="gh">ESLint</a> + <a href="https://prettier.io/" class="gh">Prettier</a> + <a href="https://stylelint.io/" class="gh">Stylelint</a>. <code>eslint-config-prettier</code> to avoid conflicts.</li>
@@ -984,59 +936,59 @@ footer {
   </details>
 
   <details>
-    <summary>CG-6 &mdash; Python Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/python.md" class="gh-icon">[source]</a> <span class="tag tag-arch">cat-herding</span></summary>
+    <summary>CG-6 - Python Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/python.md" class="gh-icon">[source]</a> <span class="tag tag-arch">cat-herding</span></summary>
     <div class="detail-body">
       <ul>
-        <li><strong>CG-6.1 No external deps in core</strong> &mdash; <code>roadmap_lib</code> uses stdlib only. No PyYAML, no requests.</li>
-        <li><strong>CG-6.2 Testing</strong> &mdash; pytest. Every change needs tests. Every fix needs a regression test. Never touch production DB (port 8888) — use demo port 9888.</li>
-        <li><strong>CG-6.3 Type hints</strong> &mdash; Welcome but not required. Python 3.9 compat.</li>
-        <li><strong>CG-6.4 File paths</strong> &mdash; <code>pathlib.Path</code>, not <code>os.path</code>.</li>
-        <li><strong>CG-6.5 YAML frontmatter</strong> &mdash; Use <code>roadmap_lib.parse_frontmatter()</code>. No PyYAML dependency.</li>
-        <li><strong>CG-6.6 Web services</strong> &mdash; Flask for REST APIs.</li>
-        <li><strong>CG-6.7 Database</strong> &mdash; SQLite with WAL mode via stdlib <code>sqlite3</code>. No ORM.</li>
-        <li><strong>CG-6.8 Use roadmap_lib</strong> &mdash; Don't reimplement. Use existing functions for state, parsing, discovery.</li>
-        <li><strong>CG-6.9 Deterministic IDs</strong> &mdash; From YAML frontmatter. Never random UUIDs.</li>
-        <li><strong>CG-6.10 Dashboard is display-only</strong> &mdash; No git/file knowledge. Agents sync data to it.</li>
-        <li><strong>CG-6.11 Shell scripts</strong> &mdash; <code>main()</code> calls functions only, no inline logic.</li>
-        <li><strong>CG-6.12 Logging</strong> &mdash; <code>logging</code> module with <code>getLogger(__name__)</code>.</li>
+        <li><strong>CG-6.1 No external deps in core</strong> - <code>roadmap_lib</code> uses stdlib only. No PyYAML, no requests.</li>
+        <li><strong>CG-6.2 Testing</strong> - pytest. Every change needs tests. Every fix needs a regression test. Never touch production DB (port 8888) — use demo port 9888.</li>
+        <li><strong>CG-6.3 Type hints</strong> - Welcome but not required. Python 3.9 compat.</li>
+        <li><strong>CG-6.4 File paths</strong> - <code>pathlib.Path</code>, not <code>os.path</code>.</li>
+        <li><strong>CG-6.5 YAML frontmatter</strong> - Use <code>roadmap_lib.parse_frontmatter()</code>. No PyYAML dependency.</li>
+        <li><strong>CG-6.6 Web services</strong> - Flask for REST APIs.</li>
+        <li><strong>CG-6.7 Database</strong> - SQLite with WAL mode via stdlib <code>sqlite3</code>. No ORM.</li>
+        <li><strong>CG-6.8 Use roadmap_lib</strong> - Don't reimplement. Use existing functions for state, parsing, discovery.</li>
+        <li><strong>CG-6.9 Deterministic IDs</strong> - From YAML frontmatter. Never random UUIDs.</li>
+        <li><strong>CG-6.10 Dashboard is display-only</strong> - No git/file knowledge. Agents sync data to it.</li>
+        <li><strong>CG-6.11 Shell scripts</strong> - <code>main()</code> calls functions only, no inline logic.</li>
+        <li><strong>CG-6.12 Logging</strong> - <code>logging</code> module with <code>getLogger(__name__)</code>.</li>
       </ul>
     </div>
   </details>
 
   <details>
-    <summary>CG-7 &mdash; C# / .NET Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/csharp.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows/.NET</span></summary>
+    <summary>CG-7 - C# / .NET Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/csharp.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows/.NET</span></summary>
     <div class="detail-body">
       <ul>
         <li><strong>References</strong>: <a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions" class="gh">C# Coding Conventions</a>, <a href="https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/" class="gh">.NET Design Guidelines</a>, <a href="https://github.com/dotnet/runtime/blob/main/docs/coding-guidelines/coding-style.md" class="gh">.NET Runtime Coding Style</a></li>
-        <li><strong>Naming</strong> &mdash; <code>PascalCase</code> for types/methods/properties/constants, <code>camelCase</code> for parameters/locals, <code>_camelCase</code> for private fields, <code>I</code> prefix for interfaces, <code>Async</code> suffix for async methods.</li>
-        <li><strong>Nullable reference types</strong> &mdash; Enable <code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code> in all projects. Avoid <code>!</code> operator &mdash; prefer <code>?? throw</code> or guard clauses. Use <code>required</code> properties.</li>
-        <li><strong>Immutability</strong> &mdash; <code>readonly</code> fields and <code>readonly struct</code> by default. <code>record</code> for DTOs/value objects. <code>System.Collections.Immutable</code> for shared collections. <code>with</code> expressions for non-destructive mutation.</li>
-        <li><strong>Concurrency</strong> &mdash; <code>async/await</code> everywhere. <code>ConfigureAwait(false)</code> in library code. Never <code>.Result</code>/<code>.Wait()</code>. Never <code>async void</code> except event handlers. <code>CancellationToken</code> in all async APIs.</li>
-        <li><strong>DI</strong> &mdash; Constructor injection via <code>Microsoft.Extensions.DependencyInjection</code>. Interface types, not concrete. Never inject scoped into singleton.</li>
-        <li><strong>Logging</strong> &mdash; <code>ILogger&lt;T&gt;</code> with structured message templates. Never string interpolation in log calls. <code>[LoggerMessage]</code> source generator for hot paths.</li>
-        <li><strong>Linting</strong> &mdash; <code>.editorconfig</code> + Roslyn analyzers (<code>EnforceCodeStyleInBuild</code>). <code>dotnet format</code> for auto-fixing.</li>
-        <li><strong>Testing</strong> &mdash; <a href="https://xunit.net/" class="gh">xUnit</a> + <a href="https://fluentassertions.com/" class="gh">FluentAssertions</a> + <a href="https://nsubstitute.github.io/" class="gh">NSubstitute</a>.</li>
-        <li><strong>Secure storage</strong> &mdash; DPAPI (<code>ProtectedData</code>) for Windows-only secrets. User Secrets for dev-time only.</li>
-        <li><strong>Privacy</strong> &mdash; Minimal capabilities in manifest. No PII logging. Respect consent.</li>
+        <li><strong>Naming</strong> - <code>PascalCase</code> for types/methods/properties/constants, <code>camelCase</code> for parameters/locals, <code>_camelCase</code> for private fields, <code>I</code> prefix for interfaces, <code>Async</code> suffix for async methods.</li>
+        <li><strong>Nullable reference types</strong> - Enable <code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code> in all projects. Avoid <code>!</code> operator - prefer <code>?? throw</code> or guard clauses. Use <code>required</code> properties.</li>
+        <li><strong>Immutability</strong> - <code>readonly</code> fields and <code>readonly struct</code> by default. <code>record</code> for DTOs/value objects. <code>System.Collections.Immutable</code> for shared collections. <code>with</code> expressions for non-destructive mutation.</li>
+        <li><strong>Concurrency</strong> - <code>async/await</code> everywhere. <code>ConfigureAwait(false)</code> in library code. Never <code>.Result</code>/<code>.Wait()</code>. Never <code>async void</code> except event handlers. <code>CancellationToken</code> in all async APIs.</li>
+        <li><strong>DI</strong> - Constructor injection via <code>Microsoft.Extensions.DependencyInjection</code>. Interface types, not concrete. Never inject scoped into singleton.</li>
+        <li><strong>Logging</strong> - <code>ILogger&lt;T&gt;</code> with structured message templates. Never string interpolation in log calls. <code>[LoggerMessage]</code> source generator for hot paths.</li>
+        <li><strong>Linting</strong> - <code>.editorconfig</code> + Roslyn analyzers (<code>EnforceCodeStyleInBuild</code>). <code>dotnet format</code> for auto-fixing.</li>
+        <li><strong>Testing</strong> - <a href="https://xunit.net/" class="gh">xUnit</a> + <a href="https://fluentassertions.com/" class="gh">FluentAssertions</a> + <a href="https://nsubstitute.github.io/" class="gh">NSubstitute</a>.</li>
+        <li><strong>Secure storage</strong> - DPAPI (<code>ProtectedData</code>) for Windows-only secrets. User Secrets for dev-time only.</li>
+        <li><strong>Privacy</strong> - Minimal capabilities in manifest. No PII logging. Respect consent.</li>
       </ul>
     </div>
   </details>
 
   <details>
-    <summary>CG-8 &mdash; Windows / WinUI 3 Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/windows.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows</span></summary>
+    <summary>CG-8 - Windows / WinUI 3 Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/windows.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows</span></summary>
     <div class="detail-body">
       <ul>
         <li><strong>References</strong>: <a href="https://learn.microsoft.com/en-us/windows/apps/winui/winui3/" class="gh">WinUI 3</a>, <a href="https://fluent2.microsoft.design/" class="gh">Fluent 2 Design System</a>, <a href="https://github.com/microsoft/WinUI-Gallery" class="gh">WinUI Gallery</a></li>
-        <li><strong>Architecture</strong> &mdash; MVVM with <a href="https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/" class="gh">CommunityToolkit.Mvvm</a> (source-generated <code>ObservableObject</code>, <code>RelayCommand</code>). NavigationView + Frame. Never manipulate Frame from code-behind.</li>
-        <li><strong>Fluent Design</strong> &mdash; Use built-in WinUI 3 controls (Fluent 2 natively). Segoe UI Variable, Segoe Fluent Icons. Never custom-draw what a standard control can do.</li>
-        <li><strong>Theming</strong> &mdash; Tri-state: Light, Dark, High Contrast. Always <code>ThemeResource</code> (not <code>StaticResource</code>). Semantic color resources, not hex values.</li>
-        <li><strong>Accessibility</strong> &mdash; UI Automation automatic for standard controls. <code>AutomationProperties.Name</code> on elements without labels. <a href="https://accessibilityinsights.io/" class="gh">Accessibility Insights</a> for testing. Settings: HighContrast, AnimationsEnabled, TextScaleFactor (225%), Narrator, keyboard nav.</li>
-        <li><strong>Localization</strong> &mdash; MRT Core with <code>.resw</code> files. <code>x:Uid</code> directive for multi-property binding. <code>ResourceLoader</code> in code-behind.</li>
-        <li><strong>Deep linking</strong> &mdash; <code>&lt;uap:Protocol&gt;</code> in manifest. <code>AppInstance.GetActivatedEventArgs()</code>. Single-instancing via <code>FindOrRegisterForKey()</code>.</li>
-        <li><strong>Notifications</strong> &mdash; <code>AppNotificationManager</code> + <code>AppNotificationBuilder</code> fluent API.</li>
-        <li><strong>High DPI</strong> &mdash; Effective pixels (automatic scaling). Multi-scale assets (<code>.scale-100</code> through <code>.scale-400</code>). <code>XamlRoot.RasterizationScale</code> for custom rendering.</li>
-        <li><strong>MSIX</strong> &mdash; Single-project packaging. Minimal capabilities. Monotonically increasing versions.</li>
-        <li><strong>Concurrency</strong> &mdash; <code>DispatcherQueue.TryEnqueue</code> for UI thread marshaling. See <code>csharp.md</code> for general async/await.</li>
+        <li><strong>Architecture</strong> - MVVM with <a href="https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/" class="gh">CommunityToolkit.Mvvm</a> (source-generated <code>ObservableObject</code>, <code>RelayCommand</code>). NavigationView + Frame. Never manipulate Frame from code-behind.</li>
+        <li><strong>Fluent Design</strong> - Use built-in WinUI 3 controls (Fluent 2 natively). Segoe UI Variable, Segoe Fluent Icons. Never custom-draw what a standard control can do.</li>
+        <li><strong>Theming</strong> - Tri-state: Light, Dark, High Contrast. Always <code>ThemeResource</code> (not <code>StaticResource</code>). Semantic color resources, not hex values.</li>
+        <li><strong>Accessibility</strong> - UI Automation automatic for standard controls. <code>AutomationProperties.Name</code> on elements without labels. <a href="https://accessibilityinsights.io/" class="gh">Accessibility Insights</a> for testing. Settings: HighContrast, AnimationsEnabled, TextScaleFactor (225%), Narrator, keyboard nav.</li>
+        <li><strong>Localization</strong> - MRT Core with <code>.resw</code> files. <code>x:Uid</code> directive for multi-property binding. <code>ResourceLoader</code> in code-behind.</li>
+        <li><strong>Deep linking</strong> - <code>&lt;uap:Protocol&gt;</code> in manifest. <code>AppInstance.GetActivatedEventArgs()</code>. Single-instancing via <code>FindOrRegisterForKey()</code>.</li>
+        <li><strong>Notifications</strong> - <code>AppNotificationManager</code> + <code>AppNotificationBuilder</code> fluent API.</li>
+        <li><strong>High DPI</strong> - Effective pixels (automatic scaling). Multi-scale assets (<code>.scale-100</code> through <code>.scale-400</code>). <code>XamlRoot.RasterizationScale</code> for custom rendering.</li>
+        <li><strong>MSIX</strong> - Single-project packaging. Minimal capabilities. Monotonically increasing versions.</li>
+        <li><strong>Concurrency</strong> - <code>DispatcherQueue.TryEnqueue</code> for UI thread marshaling. See <code>csharp.md</code> for general async/await.</li>
       </ul>
     </div>
   </details>
@@ -1044,22 +996,22 @@ footer {
   <h3>Design</h3>
 
   <details>
-    <summary>CG-9 &mdash; UI Design Guidelines (12 principles) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/ui.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <summary>CG-9 - UI Design Guidelines (12 principles) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/ui.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
     <div class="detail-body">
       <p>Platform HIG always takes precedence. These defaults fill gaps or establish a cross-platform baseline. References: <a href="https://developer.apple.com/design/human-interface-guidelines/" class="gh">Apple HIG</a>, <a href="https://m3.material.io/" class="gh">Material Design 3</a>, <a href="https://fluent2.microsoft.design/" class="gh">Fluent 2</a>, <a href="https://www.w3.org/TR/WCAG21/" class="gh">WCAG 2.1</a>.</p>
       <ul>
-        <li><strong>Visual hierarchy</strong> &mdash; One primary action per screen. Use size and weight (not just color) to establish importance. Group with proximity, separate with whitespace.</li>
-        <li><strong>Spacing</strong> &mdash; 4px base unit, 8px primary grid. Scale: 4, 8, 12, 16, 24, 32, 48, 64. No arbitrary values.</li>
-        <li><strong>Typography</strong> &mdash; Platform system font. Body: 14-17pt (16px cross-platform default). Line height: 1.4-1.5x. 2-3 weights max per screen. 45-75 char paragraph width.</li>
-        <li><strong>Color</strong> &mdash; Semantic tokens over hex. 1 accent + neutrals + semantic (success/warning/error). Never color alone for meaning. WCAG AA: 4.5:1 text, 3:1 large text &amp; UI components.</li>
-        <li><strong>Layout</strong> &mdash; Single-column by default. Content-first. Consistent alignment. Platform adaptive layout (Size Classes, CSS media queries, VisualStateManager). One scroll direction per view.</li>
-        <li><strong>State design</strong> &mdash; Every data view handles four states: Loading (skeleton/spinner), Empty (icon + message + CTA), Error (problem + reason + recovery action), Loaded. Design empty/error states with equal care.</li>
-        <li><strong>Form design</strong> &mdash; Single-column. Validate on blur, not keystroke. Errors inline below field with icon + color + text. Specific messages ("8+ characters" not "Invalid"). Mark optional fields, not required.</li>
-        <li><strong>Feedback</strong> &mdash; Inline for field-level, toast/snackbar for non-critical confirmations (3-5s auto-dismiss), dialog only for destructive actions. Never dialog for success. Default focus on Cancel for destructive confirms.</li>
-        <li><strong>Touch targets</strong> &mdash; Platform HIG first (44pt Apple, 48dp Material, 40epx Fluent, 24px WCAG AA). Cross-platform default: 44x44. 8px spacing between adjacent targets.</li>
-        <li><strong>Animation</strong> &mdash; Purposeful only. State changes: 100-200ms. Enter/exit: 200-350ms. Page transitions: 300-500ms. Platform easing curves. Always respect reduced-motion.</li>
-        <li><strong>Iconography</strong> &mdash; Platform icon set first (SF Symbols, Material Symbols, Segoe Fluent Icons). Icons supplement text, not replace it. Consistent size/weight. State icons need color AND shape.</li>
-        <li><strong>Data display</strong> &mdash; Lists for sequential, Tables for comparable multi-attribute (sortable), Cards for heterogeneous, Grids for uniform visual. Sort/filter at 10+ items, search at 50+.</li>
+        <li><strong>Visual hierarchy</strong> - One primary action per screen. Use size and weight (not just color) to establish importance. Group with proximity, separate with whitespace.</li>
+        <li><strong>Spacing</strong> - 4px base unit, 8px primary grid. Scale: 4, 8, 12, 16, 24, 32, 48, 64. No arbitrary values.</li>
+        <li><strong>Typography</strong> - Platform system font. Body: 14-17pt (16px cross-platform default). Line height: 1.4-1.5x. 2-3 weights max per screen. 45-75 char paragraph width.</li>
+        <li><strong>Color</strong> - Semantic tokens over hex. 1 accent + neutrals + semantic (success/warning/error). Never color alone for meaning. WCAG AA: 4.5:1 text, 3:1 large text &amp; UI components.</li>
+        <li><strong>Layout</strong> - Single-column by default. Content-first. Consistent alignment. Platform adaptive layout (Size Classes, CSS media queries, VisualStateManager). One scroll direction per view.</li>
+        <li><strong>State design</strong> - Every data view handles four states: Loading (skeleton/spinner), Empty (icon + message + CTA), Error (problem + reason + recovery action), Loaded. Design empty/error states with equal care.</li>
+        <li><strong>Form design</strong> - Single-column. Validate on blur, not keystroke. Errors inline below field with icon + color + text. Specific messages ("8+ characters" not "Invalid"). Mark optional fields, not required.</li>
+        <li><strong>Feedback</strong> - Inline for field-level, toast/snackbar for non-critical confirmations (3-5s auto-dismiss), dialog only for destructive actions. Never dialog for success. Default focus on Cancel for destructive confirms.</li>
+        <li><strong>Touch targets</strong> - Platform HIG first (44pt Apple, 48dp Material, 40epx Fluent, 24px WCAG AA). Cross-platform default: 44x44. 8px spacing between adjacent targets.</li>
+        <li><strong>Animation</strong> - Purposeful only. State changes: 100-200ms. Enter/exit: 200-350ms. Page transitions: 300-500ms. Platform easing curves. Always respect reduced-motion.</li>
+        <li><strong>Iconography</strong> - Platform icon set first (SF Symbols, Material Symbols, Segoe Fluent Icons). Icons supplement text, not replace it. Consistent size/weight. State icons need color AND shape.</li>
+        <li><strong>Data display</strong> - Lists for sequential, Tables for comparable multi-attribute (sortable), Cards for heterogeneous, Grids for uniform visual. Sort/filter at 10+ items, search at 50+.</li>
       </ul>
     </div>
   </details>
@@ -1067,38 +1019,38 @@ footer {
   <h3>Client-Server</h3>
 
   <details>
-    <summary>CG-10 &mdash; Networking Guidelines (9 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/networking.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <summary>CG-10 - Networking Guidelines (9 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/networking.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
     <div class="detail-body">
       <p>References: <a href="https://github.com/microsoft/api-guidelines" class="gh">Microsoft REST Guidelines</a>, <a href="https://cloud.google.com/apis/design" class="gh">Google API Design</a>, <a href="https://opensource.zalando.com/restful-api-guidelines/" class="gh">Zalando Guidelines</a>, <a href="https://www.rfc-editor.org/rfc/rfc9457" class="gh">RFC 9457</a>.</p>
       <ul>
-        <li><strong>API design</strong> &mdash; REST with lowercase-hyphen URLs, plural nouns, shallow nesting (max 2). HTTP methods as verbs. URL path versioning (<code>/v1/</code>). Consensus across Microsoft, Google, Zalando.</li>
-        <li><strong>Error responses</strong> &mdash; RFC 9457 Problem Details (<code>application/problem+json</code>): type, title, status, detail, instance. Extension fields for validation errors.</li>
-        <li><strong>Pagination</strong> &mdash; Cursor pagination preferred (stable under mutation, consistent perf). Offset for static data with page numbers. Response envelope with <code>data</code> + <code>pagination</code>.</li>
-        <li><strong>Retry &amp; resilience</strong> &mdash; Exponential backoff with full jitter. Base 1s, max 30s, 3-5 retries. Retryable: 408, 429, 502, 503, 504. Never retry 400/401/403/404. Circuit breaker for cascading failures.</li>
-        <li><strong>Timeouts</strong> &mdash; Connection: 10s. Read: 30s. Total: 60-120s. Never infinite. Use 202 Accepted + polling for long operations.</li>
-        <li><strong>Caching</strong> &mdash; HTTP headers (Cache-Control, ETag, If-None-Match). Immutable assets: 1 year. Dynamic: short max-age or no-cache. Sensitive: no-store. Invalidate after mutations.</li>
-        <li><strong>Offline</strong> &mdash; Optimistic updates + queue-based sync + server-wins as default pattern. ETags for conflict detection. Never silently discard user work.</li>
-        <li><strong>Rate limiting</strong> &mdash; Respect <code>Retry-After</code>. Track <code>RateLimit-Remaining</code> proactively. Queue and batch rather than fire-and-retry.</li>
-        <li><strong>Real-time</strong> &mdash; SSE for server-push (80% of cases). WebSocket only for bidirectional. Polling as low-frequency fallback.</li>
+        <li><strong>API design</strong> - REST with lowercase-hyphen URLs, plural nouns, shallow nesting (max 2). HTTP methods as verbs. URL path versioning (<code>/v1/</code>). Consensus across Microsoft, Google, Zalando.</li>
+        <li><strong>Error responses</strong> - RFC 9457 Problem Details (<code>application/problem+json</code>): type, title, status, detail, instance. Extension fields for validation errors.</li>
+        <li><strong>Pagination</strong> - Cursor pagination preferred (stable under mutation, consistent perf). Offset for static data with page numbers. Response envelope with <code>data</code> + <code>pagination</code>.</li>
+        <li><strong>Retry &amp; resilience</strong> - Exponential backoff with full jitter. Base 1s, max 30s, 3-5 retries. Retryable: 408, 429, 502, 503, 504. Never retry 400/401/403/404. Circuit breaker for cascading failures.</li>
+        <li><strong>Timeouts</strong> - Connection: 10s. Read: 30s. Total: 60-120s. Never infinite. Use 202 Accepted + polling for long operations.</li>
+        <li><strong>Caching</strong> - HTTP headers (Cache-Control, ETag, If-None-Match). Immutable assets: 1 year. Dynamic: short max-age or no-cache. Sensitive: no-store. Invalidate after mutations.</li>
+        <li><strong>Offline</strong> - Optimistic updates + queue-based sync + server-wins as default pattern. ETags for conflict detection. Never silently discard user work.</li>
+        <li><strong>Rate limiting</strong> - Respect <code>Retry-After</code>. Track <code>RateLimit-Remaining</code> proactively. Queue and batch rather than fire-and-retry.</li>
+        <li><strong>Real-time</strong> - SSE for server-push (80% of cases). WebSocket only for bidirectional. Polling as low-frequency fallback.</li>
       </ul>
     </div>
   </details>
 
   <details>
-    <summary>CG-11 &mdash; Security Guidelines (10 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/security.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <summary>CG-11 - Security Guidelines (10 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/security.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
     <div class="detail-body">
       <p>Supplements general.md rule 16. References: <a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10</a>, <a href="https://cheatsheetseries.owasp.org/" class="gh">OWASP Cheat Sheets</a>, <a href="https://wiki.mozilla.org/Security/Server_Side_TLS" class="gh">Mozilla TLS</a>.</p>
       <ul>
-        <li><strong>Authentication</strong> &mdash; OAuth 2.0 + PKCE for all public clients. System browser for native (never WebView). BFF pattern for SPAs. Short-lived access tokens (5-15 min), refresh token rotation.</li>
-        <li><strong>Token handling</strong> &mdash; Platform secure storage (Keychain, EncryptedSharedPreferences, DPAPI, HttpOnly cookies). Never localStorage. Never tokens in URLs. Proactive refresh at 75% TTL.</li>
-        <li><strong>Authorization</strong> &mdash; Server-side only. Deny by default. Least privilege. RBAC with fine-grained permissions. BOLA is #1 API risk &mdash; always verify resource ownership.</li>
-        <li><strong>Transport</strong> &mdash; TLS 1.2 minimum (prefer 1.3). HSTS with preload. Certificate pinning: intermediate CA only, mobile only, backup pins required. AEAD ciphers.</li>
-        <li><strong>CORS</strong> &mdash; Explicit origin allowlist (never reflect Origin). Never wildcard with credentials. Cache preflights. Common misconfigs: unanchored regex, null origin.</li>
-        <li><strong>CSP</strong> &mdash; <code>default-src 'none'</code> + nonce-based scripts + <code>strict-dynamic</code>. Never <code>unsafe-inline</code>/<code>unsafe-eval</code>. Report-only mode first. <code>frame-ancestors 'self'</code>.</li>
-        <li><strong>Input validation</strong> &mdash; Never trust client input. Allowlists over denylists. Validate &rarr; sanitize &rarr; escape. Parameterized queries only. Context-specific output encoding.</li>
-        <li><strong>Sensitive data</strong> &mdash; Data minimization in APIs. PII classification by tier. Field-level encryption via KMS. No PII in logs. No internals in error responses. <code>no-store</code> for sensitive responses.</li>
-        <li><strong>Dependency security</strong> &mdash; Lockfiles mandatory (committed). Automated scanning in CI. Pin versions. SRI for CDN assets. Watch for typosquatting and dependency confusion.</li>
-        <li><strong>Security headers</strong> &mdash; HSTS, CSP, <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code>.</li>
+        <li><strong>Authentication</strong> - OAuth 2.0 + PKCE for all public clients. System browser for native (never WebView). BFF pattern for SPAs. Short-lived access tokens (5-15 min), refresh token rotation.</li>
+        <li><strong>Token handling</strong> - Platform secure storage (Keychain, EncryptedSharedPreferences, DPAPI, HttpOnly cookies). Never localStorage. Never tokens in URLs. Proactive refresh at 75% TTL.</li>
+        <li><strong>Authorization</strong> - Server-side only. Deny by default. Least privilege. RBAC with fine-grained permissions. BOLA is #1 API risk - always verify resource ownership.</li>
+        <li><strong>Transport</strong> - TLS 1.2 minimum (prefer 1.3). HSTS with preload. Certificate pinning: intermediate CA only, mobile only, backup pins required. AEAD ciphers.</li>
+        <li><strong>CORS</strong> - Explicit origin allowlist (never reflect Origin). Never wildcard with credentials. Cache preflights. Common misconfigs: unanchored regex, null origin.</li>
+        <li><strong>CSP</strong> - <code>default-src 'none'</code> + nonce-based scripts + <code>strict-dynamic</code>. Never <code>unsafe-inline</code>/<code>unsafe-eval</code>. Report-only mode first. <code>frame-ancestors 'self'</code>.</li>
+        <li><strong>Input validation</strong> - Never trust client input. Allowlists over denylists. Validate &rarr; sanitize &rarr; escape. Parameterized queries only. Context-specific output encoding.</li>
+        <li><strong>Sensitive data</strong> - Data minimization in APIs. PII classification by tier. Field-level encryption via KMS. No PII in logs. No internals in error responses. <code>no-store</code> for sensitive responses.</li>
+        <li><strong>Dependency security</strong> - Lockfiles mandatory (committed). Automated scanning in CI. Pin versions. SRI for CDN assets. Watch for typosquatting and dependency confusion.</li>
+        <li><strong>Security headers</strong> - HSTS, CSP, <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code>.</li>
       </ul>
     </div>
   </details>
@@ -1132,7 +1084,7 @@ footer {
   <p class="lead">Multi-agent code review runs automatically during implementation. Configurable per-roadmap, with coding guideline compliance checking built in.</p>
 
   <details>
-    <summary>Review Flow &mdash; Per-Step + Final <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Review Flow - Per-Step + Final <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <h3>Per-Step Review (Step 4.5)</h3>
       <p>Runs after build and test pass, before pushing. Quick review to catch issues before they accumulate.</p>
@@ -1183,7 +1135,7 @@ footer {
   </details>
 
   <details>
-    <summary>Configuration &mdash; Frontmatter + Global Default <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Configuration - Frontmatter + Global Default <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>Review agents are configurable at two levels. Per-roadmap overrides global.</p>
       <h3>Global Default (CLAUDE.md)</h3>
@@ -1249,7 +1201,7 @@ footer {
   <p class="lead">Guardrails that prevent data loss during planning, repair, and implementation. Born from an incident where a repair agent silently dropped 6 L-complexity steps.</p>
 
   <details>
-    <summary>The Incident &mdash; Why These Rules Exist <span class="tag tag-algo">algorithm</span></summary>
+    <summary>The Incident - Why These Rules Exist <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>A roadmap repair ran on CatnipIDEEnhancements (20 steps, 6 L-complexity). The repair agent inherited "reviewable in one sitting" guidance and dropped all L-complexity steps. Result: 14 steps, 6 features silently deleted.</p>
       <p><strong>Root causes:</strong> no scope reduction rule, no step-count comparison, complexity treated as a filter.</p>
@@ -1279,7 +1231,7 @@ footer {
   <details>
     <summary>Alignment Review (plan-roadmap v12) <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
-      <p>Six-point check comparing draft Roadmap against Discussion Summary: goal match, requirements coverage, no scope creep, constraints honored, user quotes, nothing skipped. Hard stop on failure &mdash; draft discarded, planning restarts.</p>
+      <p>Six-point check comparing draft Roadmap against Discussion Summary: goal match, requirements coverage, no scope creep, constraints honored, user quotes, nothing skipped. Hard stop on failure - draft discarded, planning restarts.</p>
     </div>
   </details>
 </section>
@@ -1321,20 +1273,20 @@ footer {
   &lt;project&gt;/             (code only)             port 8888</div>
 
   <details>
-    <summary>Planning Phase &mdash; /plan-roadmap v11 <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Planning Phase - /plan-roadmap v11 <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p><strong>Two sub-phases:</strong> Discussion (conversational, no files) and Planning (structured, produces Roadmap.md).</p>
       <h3>Discussion (Steps 0-3)</h3>
       <ul>
         <li>Validate git repo, create drafts directory, initialize planning log</li>
         <li>Ask the user what they want to build</li>
-        <li>Natural conversation &mdash; understand scope, clarify unknowns</li>
+        <li>Natural conversation - understand scope, clarify unknowns</li>
         <li>Summarize, propose a PascalCase roadmap name, request transition permission</li>
       </ul>
       <h3>Planning (Steps 4-6)</h3>
       <ul>
         <li>Enter plan mode with deep thinking</li>
-        <li>Draft Roadmap.md from template &mdash; definition sections at top, implementation steps below</li>
+        <li>Draft Roadmap.md from template - definition sections at top, implementation steps below</li>
         <li><strong>CLI readiness checks</strong>: before marking any step Manual, test if the tool is installed and authenticated. Ask user to install/auth or confirm Manual.</li>
         <li>Present full draft, iterate until approved</li>
         <li>Write to <code>~/.roadmaps/&lt;project&gt;/YYYY-MM-DD-&lt;Name&gt;/</code></li>
@@ -1353,12 +1305,12 @@ description: "one-line summary"</code></pre>
   </details>
 
   <details>
-    <summary>Implementation Phase &mdash; /implement-roadmap v26 <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Implementation Phase - /implement-roadmap v26 <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <h3>Startup Sequence</h3>
       <ul>
         <li><strong>Step 1</strong>: Resolve roadmap (coordinator scans <code>~/.roadmaps/</code> + <code>Roadmaps/</code>, filters by project field)</li>
-        <li><strong>Step 1a</strong>: Check for stale artifacts (worktree, branch, PR, Implementing state) &mdash; <strong>prompt user immediately</strong></li>
+        <li><strong>Step 1a</strong>: Check for stale artifacts (worktree, branch, PR, Implementing state) - <strong>prompt user immediately</strong></li>
         <li><strong>Step 1b</strong>: Initialize implementation log</li>
         <li><strong>Step 1c</strong>: Mark as Implementing (only after cleanup)</li>
         <li><strong>Step 2</strong>: Start dashboard (auto-starts if not running)</li>
@@ -1385,7 +1337,7 @@ description: "one-line summary"</code></pre>
   </details>
 
   <details>
-    <summary>Worker Agent &mdash; implement-step-agent v11 <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Worker Agent - implement-step-agent v11 <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>Implements exactly one step. Receives step number, description, complexity, roadmap path, worktree path, dashboard info, and log path in its prompt.</p>
       <h3>Three Flows</h3>
@@ -1413,13 +1365,13 @@ description: "one-line summary"</code></pre>
   <p class="lead">The coordinator is a deterministic Python script. It reads roadmap files with regex, decides the next step, and outputs JSON. No LLM involved in step selection. <a href="https://github.com/mikefullerton/cat-herding/blob/main/skills/implement-roadmap/references/coordinator" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
-    <summary>next-step &mdash; Find the next implementable step <span class="tag tag-algo">algorithm</span></summary>
+    <summary>next-step - Find the next implementable step <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>Iterates all <code>### Step N:</code> sections in order. For each:</p>
       <ul>
-        <li>If status is <code>Complete</code> &mdash; skip</li>
-        <li>If type is <code>Manual</code> &mdash; add to <code>manual_skipped</code>, skip</li>
-        <li>Otherwise &mdash; this is the next step. Return it with the skipped manual steps.</li>
+        <li>If status is <code>Complete</code> - skip</li>
+        <li>If type is <code>Manual</code> - add to <code>manual_skipped</code>, skip</li>
+        <li>Otherwise - this is the next step. Return it with the skipped manual steps.</li>
       </ul>
       <p>If no implementable step remains, return <code>{"action": "done"}</code>.</p>
       <pre><code>for step in steps:
@@ -1434,12 +1386,12 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
   </details>
 
   <details>
-    <summary>resolve &mdash; Find and select a roadmap <span class="tag tag-algo">algorithm</span></summary>
+    <summary>resolve - Find and select a roadmap <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>Scans two locations:</p>
       <ul>
-        <li><code>~/.roadmaps/&lt;project&gt;/</code> &mdash; working directory (drafts + in-progress)</li>
-        <li><code>Roadmaps/</code> in the repo &mdash; committed roadmaps</li>
+        <li><code>~/.roadmaps/&lt;project&gt;/</code> - working directory (drafts + in-progress)</li>
+        <li><code>Roadmaps/</code> in the repo - committed roadmaps</li>
       </ul>
       <p><strong>Project filtering:</strong> reads the <code>project</code> frontmatter field from each Roadmap.md. If it doesn't match the current git repo name, the roadmap is excluded.</p>
       <p><strong>Implementable check:</strong> only roadmaps in <code>Ready</code> or <code>Implementing</code> state are offered. Implementing is included so failed runs can be retried.</p>
@@ -1448,7 +1400,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
   </details>
 
   <details>
-    <summary>summary &mdash; Progress report <span class="tag tag-algo">algorithm</span></summary>
+    <summary>summary - Progress report <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>Parses all steps and returns counts:</p>
       <pre><code>{"feature": "AuthMiddleware", "total": 8, "complete": 5,
@@ -1467,7 +1419,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
                               <span class="dim">Declined</span>           <span class="dim">Paused &rarr; Archived</span></div>
 
   <details>
-    <summary>Lifecycle ordering &mdash; Why not alphabetical? <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Lifecycle ordering - Why not alphabetical? <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p>State files are named <code>YYYY-MM-DD-StateName.md</code>. Sorting alphabetically puts <code>Complete</code> before <code>Ready</code> (C &lt; R), which caused a bug where completed roadmaps showed as Ready.</p>
       <p>Fix: sort by date first, then by lifecycle order:</p>
@@ -1484,9 +1436,9 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
     <summary>State predicates <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <ul>
-        <li><code>is_active()</code> &mdash; True for Created, Planning, Ready, Implementing, Paused</li>
-        <li><code>is_implementable()</code> &mdash; True for Ready or Implementing (Implementing allows retrying failed runs)</li>
-        <li><code>current_state()</code> &mdash; Returns the state name from the newest State/ file</li>
+        <li><code>is_active()</code> - True for Created, Planning, Ready, Implementing, Paused</li>
+        <li><code>is_implementable()</code> - True for Ready or Implementing (Implementing allows retrying failed runs)</li>
+        <li><code>current_state()</code> - Returns the state name from the newest State/ file</li>
       </ul>
     </div>
   </details>
@@ -1495,7 +1447,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
 <!-- Dashboard -->
 <section id="dashboard">
   <h2><span class="num">08</span>Dashboard Service</h2>
-  <p class="lead">Flask-based REST API and web UI. Generic progress tracker &mdash; knows nothing about git, files, or Claude Code. Agents push data to it. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard" class="gh-icon" title="View source">[source]</a></p>
+  <p class="lead">Flask-based REST API and web UI. Generic progress tracker - knows nothing about git, files, or Claude Code. Agents push data to it. <a href="https://github.com/mikefullerton/cat-herding/tree/main/services/dashboard" class="gh-icon" title="View source">[source]</a></p>
 
   <details>
     <summary>Architecture <span class="tag tag-arch">architecture</span></summary>
@@ -1517,7 +1469,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
     <div class="detail-body">
       <p><strong>Overview page</strong>: polls <code>/api/v1/roadmaps?detail=true</code> every 10s (configurable via <code>?poll=&lt;ms&gt;</code>).</p>
       <p><strong>Detail page</strong>: uses Server-Sent Events for real-time updates. Falls back to polling when <code>?poll=&lt;ms&gt;</code> is set (used by tests).</p>
-      <p>The <code>?poll=</code> parameter was added specifically for Playwright testing &mdash; tests use 1s polling instead of SSE to avoid flaky browser connections.</p>
+      <p>The <code>?poll=</code> parameter was added specifically for Playwright testing - tests use 1s polling instead of SSE to avoid flaky browser connections.</p>
     </div>
   </details>
 
@@ -1535,7 +1487,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
       <h3>Test Naming</h3>
       <p>Roadmap named <code>Dashboard Lifecycle Test #N</code> with a persisted counter file that increments each run.</p>
       <h3>Demo Mode</h3>
-      <p><code>python3 tests/integration/dashboard_ui/demo.py</code> &mdash; runs the same flow in a headed browser with realistic timing (2s pauses) on port 9888.</p>
+      <p><code>python3 tests/integration/dashboard_ui/demo.py</code> - runs the same flow in a headed browser with realistic timing (2s pauses) on port 9888.</p>
     </div>
   </details>
 </section>
@@ -1574,16 +1526,16 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
     <div class="detail-body">
       <p>The CLI scans three locations for each repo, deduplicating by roadmap ID:</p>
       <ul>
-        <li><strong>Flat files first</strong>: <code>Roadmaps/&lt;Name&gt;-Roadmap.md</code> &mdash; finished roadmaps. Scanned first so completed versions win dedup.</li>
-        <li><strong>Directories</strong>: <code>Roadmaps/YYYY-MM-DD-&lt;Name&gt;/Roadmap.md</code> &mdash; legacy layout. Skipped if flat file with same ID exists.</li>
-        <li><strong>Working directory</strong>: <code>~/.roadmaps/&lt;project&gt;/</code> &mdash; drafts and in-progress roadmaps.</li>
+        <li><strong>Flat files first</strong>: <code>Roadmaps/&lt;Name&gt;-Roadmap.md</code> - finished roadmaps. Scanned first so completed versions win dedup.</li>
+        <li><strong>Directories</strong>: <code>Roadmaps/YYYY-MM-DD-&lt;Name&gt;/Roadmap.md</code> - legacy layout. Skipped if flat file with same ID exists.</li>
+        <li><strong>Working directory</strong>: <code>~/.roadmaps/&lt;project&gt;/</code> - drafts and in-progress roadmaps.</li>
       </ul>
-      <p><strong>Regression test:</strong> <code>test_flat_file_wins_over_implementing_directory_with_same_id</code> &mdash; a completed flat file must beat a stale directory showing Implementing state.</p>
+      <p><strong>Regression test:</strong> <code>test_flat_file_wins_over_implementing_directory_with_same_id</code> - a completed flat file must beat a stale directory showing Implementing state.</p>
     </div>
   </details>
 
   <details>
-    <summary>Diagnose &mdash; Health Checks <span class="tag tag-algo">algorithm</span></summary>
+    <summary>Diagnose - Health Checks <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
       <p><code>roadmaps --diagnose</code> checks for:</p>
       <ul>
@@ -1758,11 +1710,11 @@ change-history:
     <summary>Key Regression Tests <span class="tag tag-test">testing</span></summary>
     <div class="detail-body">
       <ul>
-        <li><code>test_complete_beats_ready_on_same_date</code> &mdash; lifecycle ordering beats alphabetical</li>
-        <li><code>test_flat_file_wins_over_implementing_directory_with_same_id</code> &mdash; completed flat file beats stale directory</li>
-        <li><code>test_implementing_is_implementable</code> &mdash; failed runs can be retried</li>
-        <li><code>test_filters_out_wrong_project</code> &mdash; project field prevents cross-repo execution</li>
-        <li><code>test_finds_roadmap_in_workdir</code> &mdash; coordinator scans <code>~/.roadmaps/</code></li>
+        <li><code>test_complete_beats_ready_on_same_date</code> - lifecycle ordering beats alphabetical</li>
+        <li><code>test_flat_file_wins_over_implementing_directory_with_same_id</code> - completed flat file beats stale directory</li>
+        <li><code>test_implementing_is_implementable</code> - failed runs can be retried</li>
+        <li><code>test_filters_out_wrong_project</code> - project field prevents cross-repo execution</li>
+        <li><code>test_finds_roadmap_in_workdir</code> - coordinator scans <code>~/.roadmaps/</code></li>
       </ul>
     </div>
   </details>
@@ -1831,26 +1783,40 @@ change-history:
   <h2><span class="num">14</span>General Skills</h2>
   <p class="lead">General-purpose Claude Code skills that are not specific to the roadmap system.</p>
 
-  <div class="repo-cards">
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/import-shared-project">/import-shared-project</a></h4>
-      <p>Add a shared project reference to CLAUDE.md. Takes a project name or Git URL, clones if needed, builds a reference block.</p>
-      <span class="card-tag tag-arch">v1</span>
+  <details>
+    <summary>/import-shared-project - Cross-Project References <span class="tag tag-arch">setup</span></summary>
+    <div class="detail-body">
+      <p>Adds a reference block to your project&rsquo;s CLAUDE.md so that Claude Code sessions know about a sibling project&rsquo;s specs, conventions, or shared code.</p>
+      <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>Resolve</td><td>Accepts a project name (looked up in <code>~/projects/</code>) or a Git URL (cloned next to the current project)</td></tr>
+        <tr><td>Gather Context</td><td>Asks what the shared project provides - component specs, shared libraries, documentation, or conventions</td></tr>
+        <tr><td>Build Reference</td><td>Constructs a purpose-specific reference block with path, repo URL, and usage instructions</td></tr>
+        <tr><td>Write</td><td>Appends the block to CLAUDE.md after user confirmation</td></tr>
+      </table>
+      <p><strong>Input:</strong> project name (e.g., <code>litterbox</code>) or Git URL (e.g., <code>git@github.com:user/repo.git</code>).</p>
+      <p><strong>Output:</strong> a <code>## Shared Project</code> section in CLAUDE.md with path verification and purpose-specific instructions.</p>
     </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/review-claude-extension">/review-claude-extension</a></h4>
-      <p>Validate skills and agents against best practices. Produces structured PASS/WARN/FAIL report. Read-only.</p>
-      <span class="card-tag tag-arch">v2</span>
-    </div>
-    <div class="repo-card">
-      <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/guideline-review">/guideline-review</a></h4>
-      <p>Review all code against coding guidelines. 4 parallel agents check general rules, engineering principles, platform conventions, and error handling.</p>
-      <span class="card-tag tag-test">v1</span>
-    </div>
-  </div>
+  </details>
 
   <details>
-    <summary>/guideline-review &mdash; Full Codebase Audit <span class="tag tag-test">testing</span></summary>
+    <summary>/review-claude-extension - Skill &amp; Agent Validator <span class="tag tag-arch">quality</span></summary>
+    <div class="detail-body">
+      <p>Reviews a Claude Code skill or agent against Anthropic&rsquo;s official best practices and structural requirements. Produces a structured report with actionable recommendations.</p>
+      <table>
+        <tr><th>Section</th><th>Checks</th><th>Focus</th></tr>
+        <tr><td>Structure &amp; Format (S01&ndash;S12)</td><td>YAML frontmatter, file size, references</td><td>Correct frontmatter fields, line limits, supporting files</td></tr>
+        <tr><td>Content Quality (C01&ndash;C10)</td><td>Responsibility, error handling, instructions</td><td>Single purpose, clear steps, guard clauses</td></tr>
+        <tr><td>Best Practices (B01&ndash;B12)</td><td>Verification, capabilities, context</td><td>Native tool usage, fork context, argument handling</td></tr>
+        <tr><td>Agent-Specific (A01&ndash;A08)</td><td>Agent fields, bounds, tools</td><td>maxTurns, tool restrictions, permission mode</td></tr>
+      </table>
+      <p><strong>Input:</strong> path to a skill directory or agent <code>.md</code> file. Defaults to the current directory.</p>
+      <p><strong>Output:</strong> PASS/WARN/FAIL ratings per criterion, summary counts, and top 10 prioritized recommendations. Read-only - no files are modified.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/guideline-review - Full Codebase Audit <span class="tag tag-test">testing</span></summary>
     <div class="detail-body">
       <p>Launches 4 review agents in parallel, each checking a different aspect of the codebase against the <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="gh">coding guidelines</a>:</p>
       <table>
@@ -1866,11 +1832,168 @@ change-history:
   </details>
 </section>
 
+<!-- Repository Contents -->
+<section id="repo">
+  <h2><span class="num">00</span>Repository Contents <a href="https://github.com/mikefullerton/cat-herding" class="repo-header-link">View on GitHub &rarr;</a></h2>
+  <p class="lead">The roadmap tools automate the full roadmap lifecycle - from conversation to shipped code.</p>
+
+  <h3>Roadmap System</h3>
+
+  <details>
+    <summary>/plan-roadmap - Two-Phase Feature Planning <span class="tag tag-algo">planning</span></summary>
+    <div class="detail-body">
+      <p>Collaborative planning workflow that turns a feature idea into a structured roadmap through conversation, then structured artifact creation.</p>
+      <table>
+        <tr><th>Phase</th><th>Action</th></tr>
+        <tr><td>Phase 1 - Discussion</td><td>Conversational exploration of the feature idea. Clarifies scope, constraints, and acceptance criteria. No files created.</td></tr>
+        <tr><td>Phase 2 - Planning</td><td>Produces a Feature Roadmap file in <code>~/.roadmaps/</code> with goal, scope, acceptance criteria, and implementation steps.</td></tr>
+        <tr><td>Alignment Review</td><td>Six-point intent verification ensures the roadmap matches the original discussion before finalizing.</td></tr>
+      </table>
+      <p><strong>Output:</strong> a single Roadmap.md file with YAML frontmatter. GitHub issues use <code>{{REPO}}#{{ISSUE_NUMBER}}</code> placeholders - issues are created by <code>/implement-roadmap</code>.</p>
+      <p><strong>Guard:</strong> no implementation code is ever generated. Only Markdown files in <code>~/.roadmaps/</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/implement-roadmap - Automated Step Execution <span class="tag tag-algo">implementation</span></summary>
+    <div class="detail-body">
+      <p>Deterministic coordinator that implements a planned roadmap step-by-step, using a Python script for step selection and the Agent tool for each worker.</p>
+      <table>
+        <tr><th>Component</th><th>Role</th></tr>
+        <tr><td>Python coordinator</td><td>Deterministic step selection via regex parsing - the LLM never decides what to do next</td></tr>
+        <tr><td>Worker agent</td><td>Implements one step: code, build, test, commit, push, comment on PR</td></tr>
+        <tr><td>Dashboard sync</td><td>Real-time progress updates pushed to the Flask dashboard via REST API</td></tr>
+        <tr><td>Draft PR flow</td><td>Creates a draft PR at the start; each step comments on it; final step marks it ready and merges</td></tr>
+      </table>
+      <p><strong>Worktree isolation:</strong> code goes in a git worktree. Roadmap files stay in <code>~/.roadmaps/</code>. Never mixed.</p>
+      <p><strong>Review agents:</strong> configurable per-step and final review agents (code-reviewer, silent-failure-hunter, pr-test-analyzer, etc.).</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/repair-roadmap - Re-Plan Incomplete Roadmaps <span class="tag tag-algo">planning</span></summary>
+    <div class="detail-body">
+      <p>Re-plans an existing incomplete roadmap while preserving its identity. Archives the original for comparison.</p>
+      <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>Resolve</td><td>Finds the roadmap to repair using the coordinator scanner</td></tr>
+        <tr><td>Diagnose</td><td>Reads current roadmap state, identifies stuck or incorrect steps</td></tr>
+        <tr><td>Re-plan</td><td>Produces a revised roadmap using the same planning logic as <code>/plan-roadmap</code></td></tr>
+        <tr><td>Archive</td><td>Renames the original roadmap for comparison; new roadmap keeps the same ID, project, and github-user</td></tr>
+      </table>
+      <p><strong>NO SCOPE REDUCTION rule:</strong> the repaired roadmap must not lose any functionality from the original. Step count comparison enforces this.</p>
+      <p><strong>Repair log:</strong> every action is logged to <code>repair.log</code> inside the roadmap directory.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/plan-bugfix-roadmap - Batch Bug Planning <span class="tag tag-algo">planning</span></summary>
+    <div class="detail-body">
+      <p>Lightweight roadmap generator for batches of existing GitHub issues. Skips discussion and produces a ready-to-implement roadmap.</p>
+      <table>
+        <tr><th>Feature</th><th>Detail</th></tr>
+        <tr><td>Input</td><td>Issue numbers (e.g., <code>3 4 5 6 7 8</code>) or <code>all</code> to fetch all open issues</td></tr>
+        <tr><td>Grouping</td><td>Automatically groups and orders bugs by component/area</td></tr>
+        <tr><td>Approval</td><td>Single approval - shows the full plan once, then writes everything</td></tr>
+        <tr><td>Output</td><td>Feature Roadmap in <code>~/.roadmaps/</code>, ready for <code>/implement-roadmap</code></td></tr>
+      </table>
+      <p><strong>Unlike /plan-roadmap:</strong> no discussion phase, uses existing GitHub issues (no new issues created), requires only one approval.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/progress-dashboard - Live Progress UI <span class="tag tag-arch">dashboard</span></summary>
+    <div class="detail-body">
+      <p>Reusable live progress dashboard with a Flask REST API backend and web UI frontend. Any agent or skill can push updates.</p>
+      <table>
+        <tr><th>Component</th><th>Detail</th></tr>
+        <tr><td>Server</td><td>Flask REST API on port 8888, SQLite (WAL mode) database, SSE/polling for real-time updates</td></tr>
+        <tr><td>Web UI</td><td>Overview page (all roadmaps) + detail page (single roadmap steps, event log, commit history)</td></tr>
+        <tr><td>Controls</td><td>Pause/resume/stop buttons in the UI; agents check control state via <code>dash check-control</code></td></tr>
+        <tr><td><code>dash</code> CLI</td><td>One command per state change: <code>init</code>, <code>step-start</code>, <code>step-complete</code>, <code>step-error</code>, <code>event</code>, <code>shutdown</code></td></tr>
+      </table>
+      <p><strong>Decoupled:</strong> the dashboard knows nothing about git, files, or Claude Code. Agents push data to it via REST.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>/implement-step-agent - Single Step Worker <span class="tag tag-algo">agent</span></summary>
+    <div class="detail-body">
+      <p>Worker agent that implements exactly one roadmap step. Launched by the coordinator via the Agent tool, returns when done.</p>
+      <table>
+        <tr><th>Phase</th><th>Action</th></tr>
+        <tr><td>Parse</td><td>Reads step number, worktree path, roadmap path, dashboard CLI, and branch from the task prompt</td></tr>
+        <tr><td>Implement</td><td>Writes code in the worktree, following the step&rsquo;s description and acceptance criteria</td></tr>
+        <tr><td>Verify</td><td>Builds the project and runs tests using the roadmap&rsquo;s verification strategy</td></tr>
+        <tr><td>Commit &amp; Push</td><td>Stages changes, commits with a structured message, pushes to the feature branch</td></tr>
+        <tr><td>Report</td><td>Updates the roadmap step status, comments on the PR, logs to the implementation log</td></tr>
+      </table>
+      <p><strong>Special steps:</strong> &ldquo;Create Draft PR&rdquo; and &ldquo;Finalize &amp; Merge PR&rdquo; have dedicated handling for PR lifecycle.</p>
+      <p><strong>Critical rule:</strong> uses <code>git -C /path</code> instead of <code>cd /path &amp;&amp; git</code> to avoid security prompts.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>roadmaps CLI - Cross-Repo Scanner <span class="tag tag-arch">tooling</span></summary>
+    <div class="detail-body">
+      <p>Command-line tool that scans all repos in a projects directory for roadmaps and dashboards.</p>
+      <table>
+        <tr><th>Command</th><th>Purpose</th></tr>
+        <tr><td><code>--list</code></td><td>List active roadmaps with filters: <code>--running</code>, <code>--complete</code>, <code>--archived</code>, <code>--all</code>, <code>--search</code>, <code>--sort</code>, <code>--json</code></td></tr>
+        <tr><td><code>--show &lt;name&gt;</code></td><td>Detailed view of a single roadmap with step status</td></tr>
+        <tr><td><code>--logs &lt;name&gt;</code></td><td>Show log files for a roadmap</td></tr>
+        <tr><td><code>--cancel &lt;name&gt;</code></td><td>Cancel a stuck roadmap - cleans up worktree, branches, PRs</td></tr>
+        <tr><td><code>--stale [hours]</code></td><td>Find roadmaps stuck in Implementing state (default: 24h)</td></tr>
+        <tr><td><code>--dashboard-sync</code></td><td>Sync all roadmaps to the dashboard service</td></tr>
+        <tr><td><code>--monitor [seconds]</code></td><td>Live monitor with auto-refresh (default: 30s)</td></tr>
+      </table>
+      <p><strong>70 tests</strong> covering all commands, edge cases, and output formats.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>roadmap_lib - Core Python Library <span class="tag tag-test">library</span></summary>
+    <div class="detail-body">
+      <p>Shared library used by the coordinator, CLI, dashboard, and migration tools. No external dependencies.</p>
+      <table>
+        <tr><th>Module</th><th>Provides</th></tr>
+        <tr><td>Frontmatter parser</td><td>Custom YAML parser handling key-value pairs, nested lists, and change-history blocks - no PyYAML dependency</td></tr>
+        <tr><td>Roadmap discovery</td><td>Scans <code>~/.roadmaps/</code> and repo <code>Roadmaps/</code> directories; supports flat file and per-directory layouts</td></tr>
+        <tr><td>State management</td><td>Reads/writes roadmap lifecycle state (Ready, Implementing, Complete, Archived, Declined)</td></tr>
+        <tr><td>Step parsing</td><td>Extracts step status (pending/in-progress/complete/skipped) from Markdown checkboxes</td></tr>
+      </table>
+      <p><strong>54 tests</strong> covering parsing, discovery, state transitions, and edge cases.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Other Skills <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <table>
+        <tr><th>Skill</th><th>Purpose</th></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/list-roadmaps" class="gh">/list-roadmaps</a></td><td>Quick progress scan with bars (v5)</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/describe-roadmap" class="gh">/describe-roadmap</a></td><td>Detailed single roadmap view (v4)</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/implement-roadmap-interactively" class="gh">/implement-roadmap-interactively</a></td><td>Step-by-step with per-step PRs and review checkpoints (v10)</td></tr>
+        <tr><td><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/generate-test-roadmap" class="gh">/generate-test-roadmap</a></td><td>Test roadmap generator - 20 cat-herding themed steps (v3)</td></tr>
+      </table>
+    </div>
+  </details>
+</section>
+
 </div>
 
 <footer>
   <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a>
 </footer>
 
+<script>
+function setHeaderHeight() {
+  var h = document.querySelector('header');
+  if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+}
+setHeaderHeight();
+window.addEventListener('resize', setHeaderHeight);
+window.addEventListener('load', setHeaderHeight);
+</script>
 </body>
 </html>
