@@ -57,6 +57,21 @@ header {
   background: linear-gradient(180deg, rgba(196,163,90,0.04) 0%, transparent 100%);
 }
 
+.dev-stamp {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--red);
+  border: 3px solid var(--red);
+  padding: 6px 20px;
+  transform: rotate(-4deg);
+  opacity: 0.85;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+}
+
 header h1 {
   font-family: var(--serif);
   font-size: 4rem;
@@ -575,6 +590,7 @@ footer {
 <div class="grain"></div>
 
 <header>
+  <div class="dev-stamp">IN DEVELOPMENT</div>
   <h1>Cat <em>Herding</em></h1>
   <div class="cat-name">My cat's name is <a href="https://docs.anthropic.com/en/docs/claude-code/overview"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.604 2.985L9.627 20.199a.875.875 0 01-1.626-.003L1.07 3.005a.875.875 0 011.18-1.098l6.251 3.126 6.26-3.126a.875.875 0 011.18 1.078l-.337.02v-.02zM22.93 3.005l-6.932 17.18a.875.875 0 01-1.625-.003" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Claude</a></div>
   <div class="tagline">Automated Roadmap Planning &amp; Implementation for Claude Code</div>
