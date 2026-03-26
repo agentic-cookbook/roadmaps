@@ -50,7 +50,9 @@ Phase Gate (requires your permission)
 
 Planning Phase
   → Feature Definition drafted, reviewed, approved
-  → Feature Roadmap drafted, reviewed, approved
+  → Feature Roadmap drafted
+  → Alignment review (6-point check vs discussion summary)
+  → Roadmap reviewed, approved
   → Files written to ~/.roadmaps/<project>/
 
 Done → run /implement-roadmap to build it
@@ -62,6 +64,7 @@ Done → run /implement-roadmap to build it
 - **Every draft is shown in full** and requires your approval before being written to disk.
 - **Checkpoint gates** pause for your acknowledgment between major steps.
 - **Phase gate** between Discussion and Planning requires explicit permission.
+- **Alignment review** — a six-point check compares the draft Roadmap against the discussion summary. Divergences discard the draft and restart planning.
 
 **Files created (in `~/.roadmaps/<project>/`):**
 
@@ -142,7 +145,7 @@ Review all code in the current repo against the installed coding guidelines. Lau
 
 Repair an existing incomplete roadmap. Re-plans steps using the same logic as `/plan-roadmap`, preserving the roadmap ID and archiving the original for comparison.
 
-**What it does:** Reads an existing roadmap, lets you specify what needs fixing (replan remaining steps, fix specific steps, or full replan), then produces a revised roadmap with CLI readiness checks for any Manual step candidates.
+**What it does:** Reads an existing roadmap, lets you specify what needs fixing (replan remaining steps, fix specific steps, or full replan), then produces a revised roadmap. Enforces the NO SCOPE REDUCTION rule — steps are fixed in place, never removed — and prints a step-count comparison before approval.
 
 **Usage:**
 
@@ -155,6 +158,7 @@ Repair an existing incomplete roadmap. Re-plans steps using the same logic as `/
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2 | 2026-03-26 | NO SCOPE REDUCTION rule: steps are fixed in place, never removed; step-count comparison with warning before approval; 4 new active guards for scope preservation; original step inventory recorded before changes |
 | v1 | 2026-03-25 | Initial release — resolve, analyze, revise, archive original, reset to Ready |
 
 ---
@@ -480,7 +484,7 @@ claude --agent implement-step-agent "Implement step 1 of MyFeature. Step 1: Desc
 
 ## Coding Guidelines
 
-Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. These are referenced by `CLAUDE.md` and apply to all projects using the matching language/platform.
+Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. These are referenced by `CLAUDE.md` and apply to all projects using the matching language/platform. All rules use hierarchical `CG-` numbering (`CG-X.Y` for file.section, `CG-X.Y.Z` for file.section.subrule). See `guidelines/INDEX.md` for the complete cross-reference index.
 
 | File | Scope |
 |------|-------|

@@ -1,6 +1,6 @@
 ---
 name: repair-roadmap
-version: "1"
+version: "2"
 description: "Repair an existing incomplete roadmap — re-plans steps using /plan-roadmap logic, preserves the roadmap ID, archives the old version. Use when a roadmap has stuck/incorrect steps."
 disable-model-invocation: true
 ---
