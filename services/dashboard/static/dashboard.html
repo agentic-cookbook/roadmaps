@@ -628,7 +628,7 @@
   <div id="poll-status" class="footer">
     <span class="footer-left"><label><input type="checkbox" id="debug-mode" onchange="toggleDebug()"> Debug Mode</label></span>
     <span class="footer-status" id="footer-status">Connecting...</span>
-    <span class="footer-version">Dashboard Service v14</span>
+    <span class="footer-version">Dashboard Service v15</span>
   </div>
 </div><!-- /main-wrap -->
 
@@ -856,7 +856,7 @@ function buildStepEl(step, index, isPaused, allStepEvents) {
 
   // Always show event log — empty with placeholder if no events
   var logContainer = el('div', { className: 'step-event-log' });
-  logContainer.appendChild(el('div', { className: 'step-event-log-header', textContent: 'Event Log' }));
+  // Event Log header removed (#31)
   var logScroll = el('div', { className: 'step-event-scroll' });
   if (stepEvents.length > 0) {
     stepEvents.forEach(function(evt) {
