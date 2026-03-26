@@ -493,11 +493,11 @@ footer {
   </div>
 
   <h3>Roadmap System</h3>
-  <p>The roadmap tools automate the full feature lifecycle &mdash; from conversation to shipped code. <a href="#overview" class="gh">See full documentation below &darr;</a></p>
+  <p>The roadmap tools automate the full roadmap lifecycle &mdash; from conversation to shipped code. <a href="#overview" class="gh">See full documentation below &darr;</a></p>
   <div class="repo-cards">
     <div class="repo-card">
       <h4><a href="https://github.com/mikefullerton/cat-herding/tree/main/skills/plan-roadmap">/plan-roadmap</a></h4>
-      <p>Two-phase feature planning: discussion then structured roadmap with CLI readiness checks.</p>
+      <p>Two-phase roadmap planning: discussion then structured roadmap with CLI readiness checks.</p>
       <span class="card-tag tag-algo">v11</span>
     </div>
     <div class="repo-card">
@@ -554,7 +554,7 @@ footer {
 <!-- Overview -->
 <section id="overview">
   <h2><span class="num">01</span>System Overview</h2>
-  <p class="lead">Cat Herding turns a feature conversation into shipped code through structured planning, deterministic step execution, and real-time progress tracking. The LLM handles individual tasks; a Python coordinator decides what to do next.</p>
+  <p class="lead">Cat Herding turns a conversation about what you want to build into shipped code through structured planning, deterministic step execution, and real-time progress tracking. The LLM handles individual tasks; a Python coordinator decides what to do next.</p>
 
   <div class="stats">
     <div class="stat"><span class="num">11</span><span class="label">Skills</span></div>
@@ -799,7 +799,7 @@ footer {
 <!-- Lifecycle -->
 <section id="lifecycle">
   <h2><span class="num">03</span>The Lifecycle</h2>
-  <p class="lead">A feature goes through three phases: planning, implementation, and completion. Each phase has its own skill, file layout, and state tracking.</p>
+  <p class="lead">A roadmap goes through three phases: planning, implementation, and completion. Each phase has its own skill, file layout, and state tracking.</p>
 
   <div class="flow">
     <div class="flow-step">
@@ -828,12 +828,12 @@ footer {
         <li>Validate git repo, create drafts directory, initialize planning log</li>
         <li>Ask the user what they want to build</li>
         <li>Natural conversation &mdash; understand scope, clarify unknowns</li>
-        <li>Summarize, propose a PascalCase feature name, request transition permission</li>
+        <li>Summarize, propose a PascalCase roadmap name, request transition permission</li>
       </ul>
       <h3>Planning (Steps 4-6)</h3>
       <ul>
         <li>Enter plan mode with deep thinking</li>
-        <li>Draft Roadmap.md from template &mdash; feature definition sections at top, implementation steps below</li>
+        <li>Draft Roadmap.md from template &mdash; definition sections at top, implementation steps below</li>
         <li><strong>CLI readiness checks</strong>: before marking any step Manual, test if the tool is installed and authenticated. Ask user to install/auth or confirm Manual.</li>
         <li>Present full draft, iterate until approved</li>
         <li>Write to <code>~/.roadmaps/&lt;project&gt;/YYYY-MM-DD-&lt;Name&gt;/</code></li>
@@ -1104,7 +1104,7 @@ return {"action": "done", "manual_skipped": manual_skipped}</code></pre>
     <summary>Working Directory (during planning &amp; implementation) <span class="tag tag-arch">architecture</span></summary>
     <div class="detail-body">
       <pre><code>~/.roadmaps/temporal/2026-03-25-AuthMiddleware/
-  Roadmap.md            # Feature definition + implementation steps
+  Roadmap.md            # Roadmap definition + implementation steps
   State/
     2026-03-25-Created.md
     2026-03-25-Planning.md
@@ -1145,7 +1145,7 @@ change-history:
     description: "Initial draft"
 ---
 
-# Feature Roadmap: FeatureName
+# Roadmap: FeatureName
 
 ## Goal and Purpose
 ## Platform / Component
@@ -1176,7 +1176,7 @@ change-history:
     <div class="detail-body">
       <table>
         <tr><th>Skill</th><th>Version</th><th>Purpose</th></tr>
-        <tr><td>/plan-roadmap</td><td>v11</td><td>Two-phase feature planning with CLI readiness checks</td></tr>
+        <tr><td>/plan-roadmap</td><td>v11</td><td>Two-phase roadmap planning with CLI readiness checks</td></tr>
         <tr><td>/plan-bugfix-roadmap</td><td>v4</td><td>Lightweight planning for existing GitHub issues</td></tr>
         <tr><td>/implement-roadmap</td><td>v26</td><td>Automated implementation with draft PR flow</td></tr>
         <tr><td>/implement-roadmap-interactively</td><td>v10</td><td>Step-by-step with per-step PRs and reviews</td></tr>
