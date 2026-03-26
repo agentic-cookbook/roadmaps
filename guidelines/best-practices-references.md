@@ -2,7 +2,7 @@
 
 Canonical external documentation for code review and implementation verification.
 
-## Apple
+## §13.1. Apple
 
 - [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
 - [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)
@@ -10,7 +10,7 @@ Canonical external documentation for code review and implementation verification
 - [App Store Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)
 - [SwiftUI Performance](https://developer.apple.com/documentation/Xcode/understanding-and-improving-swiftui-performance)
 
-## Android
+## §13.2. Android
 
 - [Material Design 3](https://m3.material.io/)
 - [Architecture Recommendations](https://developer.android.com/topic/architecture/recommendations)
@@ -18,14 +18,14 @@ Canonical external documentation for code review and implementation verification
 - [Accessibility](https://developer.android.com/guide/topics/ui/accessibility)
 - [Google Play Developer Policy](https://support.google.com/googleplay/android-developer/answer/10144311)
 
-## Web
+## §13.3. Web
 
 - [WCAG 2.1](https://www.w3.org/TR/WCAG21/)
 - [WAI-ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [MDN Web Docs](https://developer.mozilla.org/en-US/)
 
-## Windows / .NET
+## §13.4. Windows / .NET
 
 - [C# Coding Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
 - [.NET Framework Design Guidelines](https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/)
@@ -35,7 +35,7 @@ Canonical external documentation for code review and implementation verification
 - [MSIX Packaging](https://learn.microsoft.com/en-us/windows/msix/)
 - [WinUI Gallery (GitHub)](https://github.com/microsoft/WinUI-Gallery)
 
-## UI Design
+## §13.5. UI Design
 
 - [NNGroup: Visual Hierarchy](https://www.nngroup.com/articles/visual-hierarchy-ux-definition/)
 - [NNGroup: Form Design Guidelines](https://www.nngroup.com/articles/web-form-design/)
@@ -43,7 +43,7 @@ Canonical external documentation for code review and implementation verification
 - [NNGroup: Empty State Design](https://www.nngroup.com/articles/empty-state-interface-design/)
 - [NNGroup: Ten Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)
 
-## Networking
+## §13.6. Networking
 
 - [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines)
 - [Google API Design Guide](https://cloud.google.com/apis/design)
@@ -51,7 +51,7 @@ Canonical external documentation for code review and implementation verification
 - [RFC 9457: Problem Details](https://www.rfc-editor.org/rfc/rfc9457)
 - [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111)
 
-## Security
+## §13.7. Security
 
 - [OWASP Top 10 (2021)](https://owasp.org/www-project-top-ten/)
 - [OWASP Mobile Top 10 (2024)](https://owasp.org/www-project-mobile-top-10/)
@@ -59,7 +59,7 @@ Canonical external documentation for code review and implementation verification
 - [Mozilla Server Side TLS](https://wiki.mozilla.org/Security/Server_Side_TLS)
 - [SLSA Framework](https://slsa.dev/)
 
-## Cross-Platform
+## §13.8. Cross-Platform
 
 - [Nielsen Norman Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)
 - [OWASP Mobile Security (MASVS)](https://mas.owasp.org/MASVS/)
