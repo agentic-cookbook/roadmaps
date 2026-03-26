@@ -222,7 +222,7 @@
 
 <div class="footer">
   <span><span class="status-dot" id="sse-dot"></span> <span id="sse-status">Connecting...</span></span>
-  <span>Dashboard Service v22</span>
+  <span>Dashboard Service v23</span>
 </div>
 
 <script>
@@ -450,12 +450,27 @@ function sortRoadmaps(arr) {
   return sorted;
 }
 
-// --- Archive ---
+// --- Archive / Cancel ---
 
 function archiveRoadmap(id, ev) {
   ev.stopPropagation();
   fetch(API + '/roadmaps/' + id + '/archive', { method: 'POST' })
     .then(function() { loadRoadmaps(); }).catch(function() {});
+}
+
+function cancelRoadmap(id, name, ev) {
+  ev.stopPropagation();
+  if (!confirm('Cancel "' + name + '" and archive it?\n\nThis will mark the roadmap as errored and archive it. The implementation session (if still running) should be stopped separately.')) {
+    return;
+  }
+  fetch(API + '/roadmaps/' + id + '/error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: 'Cancelled by user from dashboard' })
+  })
+    .then(function() { return fetch(API + '/roadmaps/' + id + '/archive', { method: 'POST' }); })
+    .then(function() { loadRoadmaps(); })
+    .catch(function() {});
 }
 
 // --- Actions row ---
@@ -550,13 +565,26 @@ function renderRoadmaps(roadmaps) {
       }, 'Archive'));
     }
 
+    var isRunningOrError = !isComplete && !isArchived && (r.status === 'running' || r.status === 'error');
+    if (isRunningOrError) {
+      (function(roadmapId, roadmapName) {
+        footerRightItems.push(el('button', {
+          className: 'archive-btn',
+          title: 'Cancel and archive this roadmap',
+          onclick: function(ev) { cancelRoadmap(roadmapId, roadmapName, ev); }
+        }, 'Cancel'));
+      })(r.id, r.name);
+    }
+
     if (r.prs && r.prs.length > 0) {
       var pr = r.prs[0];
+      var prText = pr.title ? 'PR #' + pr.number + ': ' + pr.title : 'PR #' + pr.number;
       var prLink = el('a', {
         href: pr.url || '#',
         className: 'card-pr-link',
+        title: prText,
         onclick: function(ev) { ev.stopPropagation(); }
-      }, 'PR #' + pr.number);
+      }, prText);
       footerRightItems.push(prLink);
     }
 
