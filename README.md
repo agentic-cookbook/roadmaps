@@ -455,3 +455,20 @@ claude --agent implement-step-agent "Implement step 1 of MyFeature. Step 1: Desc
 |---------|------|---------|
 | v1 | 2026-03-22 | Initial release — single-step worker, replaces the multi-step implement-roadmap-agent |
 | v1 | 2026-03-21 | Initial release — autonomous implementation agent with bypassPermissions, worktree isolation, and error-handling-with-lock-release |
+
+## Coding Guidelines
+
+Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. These are referenced by `CLAUDE.md` and apply to all projects using the matching language/platform.
+
+| File | Scope |
+|------|-------|
+| `general.md` | Universal rules (all projects) |
+| `engineering-principles.md` | Core engineering principles |
+| `swift.md` | Swift / SwiftUI / AppKit |
+| `kotlin.md` | Kotlin / Compose / Ktor |
+| `typescript.md` | TypeScript / React / Web |
+| `python.md` | Python (cat-herding conventions) |
+| `csharp.md` | C# / .NET |
+| `windows.md` | Windows / WinUI 3 |
+| `specs.md` | Spec writing format |
+| `best-practices-references.md` | External reference links |
