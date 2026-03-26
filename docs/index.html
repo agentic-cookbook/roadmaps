@@ -719,6 +719,49 @@ footer {
       </table>
     </div>
   </details>
+
+  <details>
+    <summary>Plugin Dependencies <span class="tag tag-arch">architecture</span></summary>
+    <div class="detail-body">
+      <p>The roadmap system uses Claude Code plugins for code review, security analysis, and development workflows. These are installed via <code>/plugin install</code>.</p>
+      <h3>Required (core functionality)</h3>
+      <table>
+        <tr><th>Plugin</th><th>Installs</th><th>Used By</th></tr>
+        <tr><td><strong>superpowers</strong></td><td>233K</td><td>Brainstorming, plan writing, TDD, debugging, worktrees, verification</td></tr>
+        <tr><td><strong>pr-review-toolkit</strong></td><td>59K</td><td>Code review, silent failure hunting, test analysis, type design</td></tr>
+        <tr><td><strong>code-review</strong></td><td>170K</td><td>Guideline compliance checking</td></tr>
+        <tr><td><strong>code-simplifier</strong></td><td>140K</td><td>Post-implementation simplification</td></tr>
+        <tr><td><strong>feature-dev</strong></td><td>131K</td><td>Code exploration, architecture analysis, code review</td></tr>
+        <tr><td><strong>security-guidance</strong></td><td>87K</td><td>Security vulnerability detection</td></tr>
+      </table>
+      <h3>Recommended (enhanced workflows)</h3>
+      <table>
+        <tr><th>Plugin</th><th>Installs</th><th>Purpose</th></tr>
+        <tr><td>frontend-design</td><td>371K</td><td>Dashboard UI, documentation site</td></tr>
+        <tr><td>claude-md-management</td><td>93K</td><td>CLAUDE.md file management</td></tr>
+        <tr><td>hookify</td><td>30K</td><td>Custom hooks from natural language</td></tr>
+        <tr><td>skill-creator</td><td>78K</td><td>Skill benchmarking and eval</td></tr>
+        <tr><td>document-skills</td><td>&mdash;</td><td>PDF, DOCX, PPTX, XLSX creation</td></tr>
+      </table>
+      <h3>Language Support (LSP plugins)</h3>
+      <p>swift-lsp, kotlin-lsp, typescript-lsp, pyright-lsp, csharp-lsp &mdash; installed per-language for semantic code understanding.</p>
+      <h3>Available Review Agents</h3>
+      <p>These agent types are provided by the installed plugins and used during the PR review phase:</p>
+      <table>
+        <tr><th>Agent Type</th><th>Plugin</th><th>What It Reviews</th></tr>
+        <tr><td><code>pr-review-toolkit:code-reviewer</code></td><td>pr-review-toolkit</td><td>Bugs, logic errors, code quality, project conventions</td></tr>
+        <tr><td><code>pr-review-toolkit:silent-failure-hunter</code></td><td>pr-review-toolkit</td><td>Error handling, swallowed exceptions, bad fallbacks</td></tr>
+        <tr><td><code>pr-review-toolkit:pr-test-analyzer</code></td><td>pr-review-toolkit</td><td>Test coverage quality and completeness</td></tr>
+        <tr><td><code>pr-review-toolkit:type-design-analyzer</code></td><td>pr-review-toolkit</td><td>Type design, encapsulation, invariant expression</td></tr>
+        <tr><td><code>pr-review-toolkit:comment-analyzer</code></td><td>pr-review-toolkit</td><td>Comment accuracy and maintainability</td></tr>
+        <tr><td><code>pr-review-toolkit:code-simplifier</code></td><td>pr-review-toolkit</td><td>Code clarity and maintainability</td></tr>
+        <tr><td><code>feature-dev:code-reviewer</code></td><td>feature-dev</td><td>Confidence-based filtering, high-priority issues only</td></tr>
+        <tr><td><code>feature-dev:code-explorer</code></td><td>feature-dev</td><td>Deep execution path analysis</td></tr>
+        <tr><td><code>feature-dev:code-architect</code></td><td>feature-dev</td><td>Architecture analysis against existing patterns</td></tr>
+        <tr><td><code>superpowers:code-reviewer</code></td><td>superpowers</td><td>Review against plan and coding standards</td></tr>
+      </table>
+    </div>
+  </details>
 </section>
 
 <!-- Code Generation Guidelines -->
