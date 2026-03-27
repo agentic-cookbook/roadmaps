@@ -1219,6 +1219,27 @@ footer {
     </div>
   </details>
 
+  <h3>Testing</h3>
+
+  <details>
+    <summary>CG-14 &mdash; Testing Guidelines (11 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/testing.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
+    <div class="detail-body">
+      <p>Consolidates testing guidance from CG-1.6, CG-1.8, and platform-specific sections. References: <a href="https://abseil.io/resources/swe-book/html/ch11.html" class="gh">Google SWE Book</a>, <a href="https://martinfowler.com/articles/practical-test-pyramid.html" class="gh">Martin Fowler</a>, <a href="https://medium.com/@kentbeck_7670/test-desiderata-94150638a4b3" class="gh">Kent Beck</a>.</p>
+      <ul>
+        <li><strong>Test pyramid</strong> &mdash; 80% unit / 15% integration / 5% E2E. When unsure, write a unit test.</li>
+        <li><strong>Good test properties</strong> &mdash; Kent Beck's 12 desiderata: isolated, composable, deterministic, fast, writable, readable, behavioral, structure-insensitive, automated, specific, predictive, inspiring.</li>
+        <li><strong>Unit test patterns</strong> &mdash; Arrange-Act-Assert. One assertion concept per test. No logic in tests. Test public API, not internals. Descriptive names that read as specifications.</li>
+        <li><strong>Property-based testing</strong> &mdash; For parsers, serializers, transformers: describe properties, generate random inputs. <a href="https://github.com/HypothesisWorks/hypothesis" class="gh">Hypothesis</a> (Python), <a href="https://github.com/dubzzz/fast-check" class="gh">fast-check</a> (TS/JS), FsCheck (.NET), jqwik (JVM). At least one property test per data transformation.</li>
+        <li><strong>Mutation testing</strong> &mdash; Validate tests catch real bugs, not just achieve coverage. Closed loop: write tests &rarr; run mutations &rarr; kill surviving mutants. <a href="https://github.com/boxed/mutmut" class="gh">mutmut</a> (Python), <a href="https://stryker-mutator.io/" class="gh">Stryker</a> (TS/.NET), <a href="https://github.com/muter-mutation-testing/muter" class="gh">Muter</a> (Swift), Pitest (JVM).</li>
+        <li><strong>Test doubles</strong> &mdash; Fowler taxonomy: dummy, stub, spy, mock, fake. Prefer fakes over mocks. Never mock what you don't own &mdash; wrap behind interfaces.</li>
+        <li><strong>Security testing</strong> &mdash; SAST: <a href="https://semgrep.dev/" class="gh">Semgrep</a>, <a href="https://github.com/PyCQA/bandit" class="gh">Bandit</a>. Dependency: <code>pip-audit</code>, <code>npm audit</code>. DAST: <a href="https://www.zaproxy.org/" class="gh">OWASP ZAP</a>.</li>
+        <li><strong>Flaky test prevention</strong> &mdash; No shared state, no order dependency, no real network, no sleep. Quarantine immediately &mdash; fix or delete.</li>
+        <li><strong>Test data</strong> &mdash; Builder/factory per test. No magic fixtures. Property-based generators for coverage. Inline literals for simple cases.</li>
+        <li><strong>The workflow</strong> &mdash; Write code &rarr; write tests &rarr; run tests &rarr; mutation testing &rarr; kill mutants &rarr; security scan &rarr; E2E. Closed loop: AI generates, tools validate.</li>
+      </ul>
+    </div>
+  </details>
+
   <details>
     <summary>How Guidelines Are Installed <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
@@ -1236,6 +1257,7 @@ footer {
   CG-10 networking.md            → Networking (9 topics)
   CG-11 security.md              → Security (11 topics)
   CG-12 specs.md                 → Spec Writing Format
+  CG-14 testing.md               → Testing (11 topics)
   CG-13 best-practices-references.md → External References</code></pre>
       <p>The agent reads <code>general.md</code> + <code>engineering-principles.md</code> for every project, plus the platform-specific file for the current language and <code>ui.md</code> for any UI work.</p>
     </div>

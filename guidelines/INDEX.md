@@ -253,4 +253,21 @@ Use `CG-X.Y` notation to cross-reference any rule. Search this file to find wher
 | [CG-13.5](best-practices-references.md#CG-135-ui-design) | UI Design | NNGroup, Visual Hierarchy, Form Design, Empty States |
 | [CG-13.6](best-practices-references.md#CG-136-networking) | Networking | Microsoft REST, Google API, Zalando, RFC 9457, RFC 9111 |
 | [CG-13.7](best-practices-references.md#CG-137-security) | Security | OWASP Top 10, Mobile Top 10, Cheat Sheets, Mozilla TLS, SLSA |
-| [CG-13.8](best-practices-references.md#CG-138-cross-platform) | Cross-Platform | Nielsen Norman, MASVS, MASTG |
+| [CG-13.9](best-practices-references.md#CG-139-testing) | Testing | Google SWE Book, Martin Fowler, Kent Beck, Hypothesis, mutmut, Stryker |
+| [CG-13.10](best-practices-references.md#CG-1310-cross-platform) | Cross-Platform | Nielsen Norman, MASVS, MASTG |
+
+## CG-14. Testing — [testing.md](testing.md)
+
+| CG- | Section | Keywords |
+|---|---------|----------|
+| [CG-14.1](testing.md#CG-141-references) | References | Google SWE Book, Martin Fowler, Kent Beck, ISTQB |
+| [CG-14.2](testing.md#CG-142-test-pyramid) | Test Pyramid | 80/15/5, unit, integration, E2E |
+| [CG-14.3](testing.md#CG-143-properties-of-good-tests) | Properties of Good Tests | isolated, deterministic, fast, readable, behavioral |
+| [CG-14.4](testing.md#CG-144-unit-test-patterns) | Unit Test Patterns | AAA, arrange-act-assert, naming, one concept |
+| [CG-14.5](testing.md#CG-145-property-based-testing) | Property-Based Testing | Hypothesis, fast-check, round-trip, generators |
+| [CG-14.6](testing.md#CG-146-mutation-testing) | Mutation Testing | mutmut, Stryker, Muter, Pitest, surviving mutants |
+| [CG-14.7](testing.md#CG-147-test-doubles) | Test Doubles | mock, stub, fake, spy, dummy, NSubstitute |
+| [CG-14.8](testing.md#CG-148-security-testing) | Security Testing | Semgrep, Bandit, CodeQL, OWASP ZAP, pip-audit |
+| [CG-14.9](testing.md#CG-149-flaky-test-prevention) | Flaky Test Prevention | determinism, shared state, sleep, timing |
+| [CG-14.10](testing.md#CG-1410-test-data) | Test Data | builder pattern, factory, generators, inline literals |
+| [CG-14.11](testing.md#CG-1411-the-testing-workflow) | The Testing Workflow | closed loop, mutation, security scan, E2E |

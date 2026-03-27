@@ -499,5 +499,6 @@ Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. 
 | `ui.md` | Cross-platform UI design principles |
 | `networking.md` | Client-server networking |
 | `security.md` | Application security |
+| `testing.md` | Testing principles and tools |
 | `specs.md` | Spec writing format |
 | `best-practices-references.md` | External reference links |
