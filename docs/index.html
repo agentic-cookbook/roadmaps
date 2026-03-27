@@ -642,11 +642,10 @@ footer {
 <button class="hamburger-btn" aria-label="Toggle navigation">&#9776;</button>
 <nav>
   <div class="nav-links">
-    <a href="#intro">Flummix your Greebles</a>
+    <a href="#intro">Flummox your Greebles</a>
     <span class="nav-divider"></span>
     <a href="#overview">Overview</a>
     <a href="#repo">Roadmap System</a>
-    <a href="#guidelines">Guidelines</a>
     <a href="#code-review">Code Review</a>
     <a href="#data-integrity">Data Integrity</a>
     <a href="#lifecycle">Lifecycle</a>
@@ -668,11 +667,11 @@ footer {
 <!-- Story Introduction -->
 <section id="intro">
   <div class="story">
-    <p>It&rsquo;s 2 AM and you&rsquo;re struck by an inspiring idea for an app. What if I could automate my flummixing! Kind of ambitious, honestly. It&rsquo;s the sort of thing that would normally take weeks of planning before anyone writes a line of code. But you open Claude Code, start the <code>/plan-roadmap</code> skill and just&hellip; start talking about it.</p>
+    <p>It&rsquo;s 2 AM and you&rsquo;re struck by an inspiring idea for an app. What if I could automate my flummoxing! Kind of ambitious, honestly. It&rsquo;s the sort of thing that would normally take weeks of planning before anyone writes a line of code. But you open Claude Code, start the <code>/plan-roadmap</code> skill and just&hellip; start talking about it.</p>
     <p>Claude asks the right questions. What&rsquo;s the core use case? What can we cut? Where are the tricky parts? You go back and forth for a bit, and before you know it there&rsquo;s a full roadmap. You look it over, tweak a couple of details, and then say &ldquo;yes&rdquo; when Claude asks you, &ldquo;Run it through <code>/implement-roadmap</code> now?&rdquo;</p>
     <p>Yes. You watch for a bit - a draft pull request is opened, commits start getting added, with lots of context and explanation. Then you go to sleep. Or try to. You keep sneaking a look at the progress dashboard. One, two, three hours go by&hellip; You see the roadmap steps light up green one by one, done and committed to the PR. Features, subsystems, and user flows taking shape. The app is becoming a real thing. It&rsquo;s like watching someone build your house in fast-forward.</p>
     <p>As you sleep, it&rsquo;s finalized - all code reviewed and double checked against best practices and standards, CI builds it just fine, and your pull request is merged automatically. It&rsquo;s waiting for you, sleepyhead.</p>
-    <p>Finally the garbage truck wakes you up and you stumble back to the dashboard - a big green checkbox! The pull request is merged. Forty-three commits&hellip; all the stuff you brainstormed. You read through the diffs with your coffee as it&rsquo;s building locally. Then you&rsquo;re running it and you&rsquo;re happily flummixing your greebles with a giggle, then you smile, and get on with your day.</p>
+    <p>Finally the garbage truck wakes you up and you stumble back to the dashboard - a big green checkbox! The pull request is merged. Forty-three commits&hellip; all the stuff you brainstormed. You read through the diffs with your coffee as it&rsquo;s building locally. Then you&rsquo;re running it and you&rsquo;re happily flummoxing your greebles with a giggle, then you smile, and get on with your day.</p>
     <p>"Well, that didn&rsquo;t suck", you say.</p>
     <p class="story-tagline">That&rsquo;s Cat Herding.</p>
     <p class="story-coda">That&rsquo;s a good kitty. <b>Good Claude.</b></p>
@@ -686,7 +685,7 @@ footer {
   <p class="lead">Cat Herding turns a conversation about what you want to build into shipped code through structured planning, deterministic step execution, and real-time progress tracking. The LLM handles individual tasks; a Python coordinator decides what to do next.</p>
 
   <div class="stats">
-    <div class="stat"><span class="num">11</span><span class="label">Skills</span></div>
+    <div class="stat"><span class="num">9</span><span class="label">Skills</span></div>
     <div class="stat"><span class="num">1</span><span class="label">Worker Agent</span></div>
     <div class="stat"><span class="num">28</span><span class="label">API Endpoints</span></div>
     <div class="stat"><span class="num">370+</span><span class="label">Tests</span></div>
@@ -898,372 +897,6 @@ footer {
   </details>
 </section>
 
-<!-- Code Generation and Review Guidelines -->
-<section id="guidelines">
-  <h2><span class="num">02</span>Code Generation and Review Guidelines <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="repo-header-link">View on GitHub &rarr;</a></h2>
-  <p class="lead">Shared coding guidelines installed globally at <code>~/.claude/guidelines/</code>. Used for both code generation and code review. Every Claude Code session reads these automatically. All rules use hierarchical <strong>CG-</strong> numbering - <code>CG-X.Y</code> (file.section) or <code>CG-X.Y.Z</code> (file.section.subrule) - for unambiguous cross-referencing.</p>
-
-  <details>
-    <summary>CG-1 - General Coding Guidelines (21 rules) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/general.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>CG-1.1 Prefer native controls</strong> - Always use platform built-in frameworks first (Swift Concurrency over raw threads, Room/SwiftData over raw SQLite). Explicitly note which native controls are used and why.</li>
-        <li><strong>CG-1.2 Prefer proven open-source</strong> - When no native solution exists, research battle-tested libraries and present options before building custom. Custom is a deliberate choice, not a default.</li>
-        <li><strong>CG-1.3 Surface all design decisions</strong> - Any LLM choice affecting behavior must be noted and approved. Record in a <strong>Design Decisions</strong> section so all platform implementations stay consistent.</li>
-        <li><strong>CG-1.4 No blocking the main thread</strong> - Use platform async primitives: Swift Concurrency (<code>async/await</code>, actors), Kotlin Coroutines (<code>Dispatchers.IO</code>), <code>Promise/async</code> (Web), <code>asyncio</code> (Python), <code>async/await</code> + <code>DispatcherQueue</code> (.NET).</li>
-        <li><strong>CG-1.5 Always show progress</strong> - Determinate progress bar when total is known. Spinner/skeleton/shimmer when not. Never a frozen UI.</li>
-        <li><strong>CG-1.6 Comprehensive unit testing</strong> - Prioritize unit tests over integration. Test state transitions, edge cases, serialization. Every implementation needs a test file.</li>
-        <li><strong>CG-1.7 Small atomic commits</strong> - One logical change per commit. May touch multiple files if part of the same concept. Commit as work progresses.</li>
-        <li><strong>CG-1.8 Post-generation verification</strong> - Build for all targets, run tests, lint, verify log output, accessibility audit (tap targets, contrast), code review against best practices. Fix before considering done.</li>
-        <li><strong>CG-1.9 Instrumented logging</strong> - Every component instrumented with structured debug logging via platform logger (<code>os.log</code>, <code>Timber</code>, <code>console</code>, <code>logging</code>, <code>ILogger&lt;T&gt;</code>). Log state transitions, async task lifecycle, branching logic.</li>
-        <li><strong>CG-1.10 Deep linking</strong> - All views reachable via URL. Apple: Universal Links + <code>onOpenURL</code>. Android: App Links + intent filters. Web: URL routing.</li>
-        <li><strong>CG-1.11 Scriptable and automatable</strong> - Apple: <code>AppIntents</code> for Shortcuts. Android: <code>AppActions</code>. Web: API endpoints or query params.</li>
-        <li><strong>CG-1.12 Accessibility from day one</strong> - Semantic roles/labels, VoiceOver/TalkBack/screen reader support, keyboard nav, Dynamic Type, WCAG AA contrast (4.5:1 text, 3:1 large), meaningful focus order.</li>
-        <li><strong>CG-1.13 Localizability</strong> - No hardcoded strings. Apple: <code>String(localized:)</code>. Android: <code>strings.xml</code>. Web: <code>react-intl</code>/<code>i18next</code>.</li>
-        <li><strong>CG-1.14 RTL layout support</strong> - Leading/trailing not left/right. Mirror directional icons. Test with RTL locale.</li>
-        <li><strong>CG-1.15 Respect accessibility display options</strong> - Respond to reduced motion, high contrast, color inversion, bold text, grayscale. See platform files for full environment key lists.</li>
-        <li><strong>CG-1.16 Privacy and security</strong> - Data minimization, opt-in consent, platform secure storage (Keychain/EncryptedSharedPreferences/DPAPI/HttpOnly cookies), no PII logging, TLS only, input sanitization.</li>
-        <li><strong>CG-1.17 Feature flags</strong> - All features gated from day one. <code>FeatureFlagProvider</code> interface with local default (UserDefaults/SharedPreferences/localStorage). Backend swap via DI.</li>
-        <li><strong>CG-1.18 Analytics</strong> - All user actions instrumented via <code>AnalyticsProvider</code> interface. Logging-only default. No direct backend coupling.</li>
-        <li><strong>CG-1.19 A/B testing</strong> - <code>ExperimentProvider</code> interface with local default and debug panel override.</li>
-        <li><strong>CG-1.20 Debug mode</strong> - Debug-only panel (not in release): flag overrides, analytics log, A/B picker, env info. Shake (iOS/Android), debug menu (macOS), <code>/debug</code> (web).</li>
-        <li><strong>CG-1.21 Linting from day one</strong> - SwiftLint + swift-format, ktlint, ESLint + Prettier, Roslyn Analyzers + dotnet format. Config committed. Runs in build or pre-commit. Auto-fixable.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-2 - Engineering Principles (16 rules) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/engineering-principles.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>CG-2.1 Simplicity</strong> - Simple ≠ easy. No interleaving of concerns. Complexity compounds — resist at introduction time.</li>
-        <li><strong>CG-2.2 Make It Work, Make It Right, Make It Fast</strong> - Working solution → refactor for clarity → optimize only what measurement proves slow. Never skip phase 2.</li>
-        <li><strong>CG-2.3 Composition over inheritance</strong> - Default to composing behaviors from small pieces. Protocols/interfaces over base classes. Wrap rather than subclass.</li>
-        <li><strong>CG-2.4 Dependency injection</strong> - Receive dependencies from outside, never construct internally. Protocol types, not concrete types. No service locator.</li>
-        <li><strong>CG-2.5 Immutability by default</strong> - <code>let</code>/<code>val</code>/<code>const</code> by default. Value types over reference types. Contain mutation behind clear boundaries (actors, StateFlow, useState).</li>
-        <li><strong>CG-2.6 Fail fast</strong> - Detect invalid state at origin. Assertions in debug, typed errors over swallowed exceptions, never empty catch blocks.</li>
-        <li><strong>CG-2.7 Idempotency</strong> - Safe to repeat without duplicate effects. Debounce buttons, idempotency keys for APIs, migrations safe to re-run.</li>
-        <li><strong>CG-2.8 Design for deletion</strong> - Code is a liability. Easy to throw away without affecting the system. Duplicate rather than couple. Don't abstract prematurely.</li>
-        <li><strong>CG-2.9 YAGNI</strong> - Build for today's requirements. Speculative generality costs more to maintain than adding it later.</li>
-        <li><strong>CG-2.10 Explicit over implicit</strong> - Visible dependencies, clear naming, parameter passing over ambient state.</li>
-        <li><strong>CG-2.11 Small reversible decisions</strong> - Cheap to reverse → decide fast. Expensive to reverse → invest in understanding. Defer binding until last responsible moment.</li>
-        <li><strong>CG-2.12 Tight feedback loops</strong> - Fast tests, frequent deploys, early user feedback, automate commit-to-production.</li>
-        <li><strong>CG-2.13 Separation of concerns</strong> - One reason to change. If describing a module requires "and," split it.</li>
-        <li><strong>CG-2.14 Least astonishment</strong> - Behavior matches expectations. Side effects obvious from API signature.</li>
-        <li><strong>CG-2.15 Manage complexity through boundaries</strong> - Ports (interfaces) + adapters (implementations). Test core without databases, UIs, or networks.</li>
-      </ul>
-      <p><strong>Meta-principle: Optimize for Change.</strong> Every principle above makes future change cheaper and safer.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-12 - Spec Writing Format <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/specs.md" class="gh-icon">[source]</a> <span class="tag tag-arch">specs</span></summary>
-    <div class="detail-body">
-      <p>Format for behavioral specifications (from <a href="https://github.com/mikefullerton/litterbox" class="gh">litterbox</a> and <a href="https://github.com/mikefullerton/temporal-platform" class="gh">temporal-platform</a>).</p>
-      <ul>
-        <li><strong>Frontmatter</strong>: version (semver), status (draft/review/accepted/deprecated), created, last-updated, author, platforms, tags, dependencies with version pins.</li>
-        <li><strong>RFC 2119 keywords</strong>: MUST, MUST NOT, SHOULD, SHOULD NOT, MAY for all behavioral requirements.</li>
-        <li><strong>REQ-NNN numbering</strong>: Sequential, never reused. Every MUST needs at least one test vector.</li>
-        <li><strong>Template variables</strong>: <code>{{app_name}}</code>, <code>{{org_package}}</code>, <code>{{api_base_url}}</code>, <code>{{bundle_id}}</code> — resolved at implementation time.</li>
-        <li><strong>18 standard sections</strong>: Overview, Terminology, Requirements, Data Structures, Appearance, States, API Contract, Accessibility, Test Vectors, Edge Cases, Logging, Deep Linking, Privacy, Feature Flags, Analytics, Platform Notes, Design Decisions, Changelog.</li>
-        <li><strong>Test vectors</strong>: Behavioral tables (ID | Requirements | Input | Expected) or data JSON blocks. May also be published as separate JSON in <code>vectors/</code>.</li>
-        <li><strong>Logging section</strong>: Exact log messages per event. Enables grepping output for verification instead of visual inspection.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-13 - Best Practices References <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/best-practices-references.md" class="gh-icon">[source]</a> <span class="tag tag-arch">references</span></summary>
-    <div class="detail-body">
-      <h3>Apple</h3>
-      <ul>
-        <li><a href="https://developer.apple.com/design/human-interface-guidelines/" class="gh">Human Interface Guidelines</a></li>
-        <li><a href="https://www.swift.org/documentation/api-design-guidelines/" class="gh">Swift API Design Guidelines</a></li>
-        <li><a href="https://developer.apple.com/documentation/accessibility" class="gh">Accessibility</a></li>
-        <li><a href="https://developer.apple.com/app-store/review/guidelines/" class="gh">App Store Review Guidelines</a></li>
-        <li><a href="https://developer.apple.com/documentation/Xcode/understanding-and-improving-swiftui-performance" class="gh">SwiftUI Performance</a></li>
-      </ul>
-      <h3>Android</h3>
-      <ul>
-        <li><a href="https://m3.material.io/" class="gh">Material Design 3</a></li>
-        <li><a href="https://developer.android.com/topic/architecture/recommendations" class="gh">Architecture Recommendations</a></li>
-        <li><a href="https://kotlinlang.org/docs/coding-conventions.html" class="gh">Kotlin Coding Conventions</a></li>
-        <li><a href="https://developer.android.com/guide/topics/ui/accessibility" class="gh">Accessibility</a></li>
-        <li><a href="https://support.google.com/googleplay/android-developer/answer/10144311" class="gh">Google Play Policy</a></li>
-      </ul>
-      <h3>Web</h3>
-      <ul>
-        <li><a href="https://www.w3.org/TR/WCAG21/" class="gh">WCAG 2.1</a></li>
-        <li><a href="https://www.w3.org/WAI/ARIA/apg/" class="gh">WAI-ARIA Authoring Practices</a></li>
-        <li><a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10</a></li>
-        <li><a href="https://developer.mozilla.org/en-US/" class="gh">MDN Web Docs</a></li>
-      </ul>
-      <h3>Windows / .NET</h3>
-      <ul>
-        <li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions" class="gh">C# Coding Conventions</a></li>
-        <li><a href="https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/" class="gh">.NET Framework Design Guidelines</a></li>
-        <li><a href="https://learn.microsoft.com/en-us/windows/apps/winui/winui3/" class="gh">WinUI 3 / Windows App SDK</a></li>
-        <li><a href="https://fluent2.microsoft.design/" class="gh">Fluent 2 Design System</a></li>
-        <li><a href="https://learn.microsoft.com/en-us/windows/apps/develop/accessibility" class="gh">Windows Accessibility</a></li>
-        <li><a href="https://learn.microsoft.com/en-us/windows/msix/" class="gh">MSIX Packaging</a></li>
-        <li><a href="https://github.com/microsoft/WinUI-Gallery" class="gh">WinUI Gallery</a></li>
-      </ul>
-      <h3>UI Design</h3>
-      <ul>
-        <li><a href="https://www.nngroup.com/articles/visual-hierarchy-ux-definition/" class="gh">NNGroup: Visual Hierarchy</a></li>
-        <li><a href="https://www.nngroup.com/articles/web-form-design/" class="gh">NNGroup: Form Design Guidelines</a></li>
-        <li><a href="https://www.nngroup.com/articles/error-message-guidelines/" class="gh">NNGroup: Error Message Guidelines</a></li>
-        <li><a href="https://www.nngroup.com/articles/empty-state-interface-design/" class="gh">NNGroup: Empty State Design</a></li>
-        <li><a href="https://www.nngroup.com/articles/ten-usability-heuristics/" class="gh">NNGroup: Ten Usability Heuristics</a></li>
-      </ul>
-      <h3>Networking</h3>
-      <ul>
-        <li><a href="https://github.com/microsoft/api-guidelines" class="gh">Microsoft REST API Guidelines</a></li>
-        <li><a href="https://cloud.google.com/apis/design" class="gh">Google API Design Guide</a></li>
-        <li><a href="https://opensource.zalando.com/restful-api-guidelines/" class="gh">Zalando RESTful API Guidelines</a></li>
-        <li><a href="https://www.rfc-editor.org/rfc/rfc9457" class="gh">RFC 9457: Problem Details</a></li>
-        <li><a href="https://www.rfc-editor.org/rfc/rfc9111" class="gh">RFC 9111: HTTP Caching</a></li>
-      </ul>
-      <h3>Security</h3>
-      <ul>
-        <li><a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10 (2021)</a></li>
-        <li><a href="https://owasp.org/www-project-mobile-top-10/" class="gh">OWASP Mobile Top 10 (2024)</a></li>
-        <li><a href="https://cheatsheetseries.owasp.org/" class="gh">OWASP Cheat Sheet Series</a></li>
-        <li><a href="https://wiki.mozilla.org/Security/Server_Side_TLS" class="gh">Mozilla Server Side TLS</a></li>
-        <li><a href="https://slsa.dev/" class="gh">SLSA Framework</a></li>
-      </ul>
-      <h3>Cross-Platform</h3>
-      <ul>
-        <li><a href="https://www.nngroup.com/articles/ten-usability-heuristics/" class="gh">Nielsen Norman Usability Heuristics</a></li>
-        <li><a href="https://mas.owasp.org/MASVS/" class="gh">OWASP Mobile Security (MASVS)</a></li>
-        <li><a href="https://mas.owasp.org/MASTG/" class="gh">OWASP Mobile Testing Guide (MASTG)</a></li>
-      </ul>
-    </div>
-  </details>
-
-  <h3>Languages</h3>
-
-  <details>
-    <summary>CG-3 - Swift / SwiftUI / AppKit <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/swift.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Apple</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>References</strong>: <a href="https://www.swift.org/documentation/api-design-guidelines/" class="gh">Swift API Design Guidelines</a>, <a href="https://developer.apple.com/documentation/Xcode/understanding-and-improving-swiftui-performance" class="gh">SwiftUI Performance</a></li>
-        <li><strong>Logging</strong>: <code>os.log</code> via <code>Logger(subsystem: "{{bundle_id}}", category: "ComponentName")</code>. Debug level for flow instrumentation.</li>
-        <li><strong>Secure storage</strong>: Keychain Services. Never UserDefaults for secrets.</li>
-        <li><strong>Localization</strong>: <code>String(localized:)</code> or <code>NSLocalizedString</code>. Store in <code>.xcstrings</code>.</li>
-        <li><strong>Linting</strong>: <a href="https://github.com/realm/SwiftLint" class="gh">SwiftLint</a> (strict mode) + <a href="https://github.com/swiftlang/swift-format" class="gh">swift-format</a>.</li>
-        <li><strong>Automation</strong>: <code>AppIntents</code> for Shortcuts/Siri. AppleScript via <code>NSScriptCommand</code> on macOS.</li>
-        <li><strong>Previews</strong>: All SwiftUI views MUST have <code>#Preview</code> blocks that render without crashes.</li>
-        <li><strong>Dynamic Type</strong>: Layouts MUST NOT break at larger sizes. Avoid fixed font sizes.</li>
-        <li><strong>Concurrency</strong>: Swift Concurrency (<code>async/await</code>, actors, <code>@MainActor</code>). Never block main thread.</li>
-        <li><strong>Privacy</strong>: App Tracking Transparency, App Privacy Report, <code>NS*UsageDescription</code> keys.</li>
-      </ul>
-      <p><strong>Accessibility environment values</strong>: <code>accessibilityReduceMotion</code>, <code>accessibilityReduceTransparency</code>, <code>accessibilityDifferentiateWithoutColor</code>, <code>colorSchemeContrast</code>, <code>isInvertColorsEnabled</code>, <code>prefersCrossFadeTransitions</code>.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-4 - Kotlin / Compose / Ktor <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/kotlin.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Android</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>References</strong>: <a href="https://kotlinlang.org/docs/coding-conventions.html" class="gh">Kotlin Conventions</a>, <a href="https://m3.material.io/" class="gh">Material Design 3</a>, <a href="https://developer.android.com/topic/architecture/recommendations" class="gh">Architecture Recommendations</a></li>
-        <li><strong>Logging</strong>: <a href="https://github.com/JakeWharton/timber" class="gh">Timber</a> for structured logging.</li>
-        <li><strong>Concurrency</strong>: Coroutines with <code>Dispatchers.IO</code>. <code>viewModelScope</code> for ViewModel work. Never block main.</li>
-        <li><strong>Secure storage</strong>: <code>EncryptedSharedPreferences</code> or Android Keystore. Never plain SharedPreferences for secrets.</li>
-        <li><strong>Localization</strong>: <code>strings.xml</code> resources, <code>stringResource()</code> in Compose.</li>
-        <li><strong>Linting</strong>: <a href="https://pinterest.github.io/ktlint/" class="gh">ktlint</a> via Gradle plugin.</li>
-        <li><strong>Previews</strong>: All Compose components MUST have <code>@Preview</code> functions that compile.</li>
-        <li><strong>Font scaling</strong>: Layouts MUST NOT break at 2x <code>Configuration.fontScale</code>.</li>
-        <li><strong>Immutability</strong>: <code>val</code> by default, <code>data class</code> for value types, <code>StateFlow</code> for contained mutation.</li>
-        <li><strong>Privacy</strong>: Scoped storage, per-app language prefs, graceful permission denials with rationale dialogs.</li>
-      </ul>
-      <p><strong>Accessibility settings</strong>: animator_duration_scale, fontScale, high contrast, color inversion, TalkBack, Switch Access, dark theme, display size.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-5 - TypeScript / React / Web <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/typescript.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Web</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>Linting</strong>: <a href="https://eslint.org/" class="gh">ESLint</a> + <a href="https://prettier.io/" class="gh">Prettier</a> + <a href="https://stylelint.io/" class="gh">Stylelint</a>. <code>eslint-config-prettier</code> to avoid conflicts.</li>
-        <li><strong>Accessibility</strong>: <a href="https://www.w3.org/TR/WCAG21/" class="gh">WCAG 2.1</a> AA minimum. <a href="https://www.w3.org/WAI/ARIA/apg/" class="gh">WAI-ARIA</a> roles, states, properties. <code>aria-live</code> for dynamic content.</li>
-        <li><strong>Security</strong>: Content Security Policy headers, HttpOnly cookies (never <code>localStorage</code> for tokens), input sanitization, TLS only, minimize third-party scripts, Do Not Track.</li>
-        <li><strong>Localization</strong>: <code>react-intl</code> / <code>i18next</code> / <code>FormatJS</code>. Extract to message catalogs.</li>
-        <li><strong>RTL</strong>: CSS logical properties (<code>margin-inline-start</code> not <code>margin-left</code>). <code>dir="rtl"</code> on root.</li>
-        <li><strong>Testing</strong>: <a href="https://playwright.dev/" class="gh">Playwright</a> for E2E and visual regression. Storybook for component catalogs.</li>
-        <li><strong>Deep linking</strong>: Every view MUST have a unique shareable URL via framework routing.</li>
-        <li><strong>Debug mode</strong>: <code>/debug</code> route or <code>Ctrl+Shift+D</code>, guarded by <code>NODE_ENV === 'development'</code>.</li>
-        <li><strong>Immutability</strong>: <code>const</code> by default. <code>useState</code> for contained mutation.</li>
-      </ul>
-      <p><strong>CSS media queries</strong>: <code>prefers-reduced-motion</code>, <code>prefers-contrast</code>, <code>forced-colors</code>, <code>prefers-color-scheme</code>, <code>prefers-reduced-transparency</code>, <code>prefers-reduced-data</code>.</p>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-6 - Python Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/python.md" class="gh-icon">[source]</a> <span class="tag tag-arch">cat-herding</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>CG-6.1 No external deps in core</strong> - <code>roadmap_lib</code> uses stdlib only. No PyYAML, no requests.</li>
-        <li><strong>CG-6.2 Testing</strong> - pytest. Every change needs tests. Every fix needs a regression test. Never touch production DB (port 8888) — use demo port 9888.</li>
-        <li><strong>CG-6.3 Type hints</strong> - Welcome but not required. Python 3.9 compat.</li>
-        <li><strong>CG-6.4 File paths</strong> - <code>pathlib.Path</code>, not <code>os.path</code>.</li>
-        <li><strong>CG-6.5 YAML frontmatter</strong> - Use <code>roadmap_lib.parse_frontmatter()</code>. No PyYAML dependency.</li>
-        <li><strong>CG-6.6 Web services</strong> - Flask for REST APIs.</li>
-        <li><strong>CG-6.7 Database</strong> - SQLite with WAL mode via stdlib <code>sqlite3</code>. No ORM.</li>
-        <li><strong>CG-6.8 Use roadmap_lib</strong> - Don't reimplement. Use existing functions for state, parsing, discovery.</li>
-        <li><strong>CG-6.9 Deterministic IDs</strong> - From YAML frontmatter. Never random UUIDs.</li>
-        <li><strong>CG-6.10 Dashboard is display-only</strong> - No git/file knowledge. Agents sync data to it.</li>
-        <li><strong>CG-6.11 Shell scripts</strong> - <code>main()</code> calls functions only, no inline logic.</li>
-        <li><strong>CG-6.12 Logging</strong> - <code>logging</code> module with <code>getLogger(__name__)</code>.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-7 - C# / .NET Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/csharp.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows/.NET</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>References</strong>: <a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions" class="gh">C# Coding Conventions</a>, <a href="https://learn.microsoft.com/en-us/dotnet/standard/design-guidelines/" class="gh">.NET Design Guidelines</a>, <a href="https://github.com/dotnet/runtime/blob/main/docs/coding-guidelines/coding-style.md" class="gh">.NET Runtime Coding Style</a></li>
-        <li><strong>Naming</strong> - <code>PascalCase</code> for types/methods/properties/constants, <code>camelCase</code> for parameters/locals, <code>_camelCase</code> for private fields, <code>I</code> prefix for interfaces, <code>Async</code> suffix for async methods.</li>
-        <li><strong>Nullable reference types</strong> - Enable <code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code> in all projects. Avoid <code>!</code> operator - prefer <code>?? throw</code> or guard clauses. Use <code>required</code> properties.</li>
-        <li><strong>Immutability</strong> - <code>readonly</code> fields and <code>readonly struct</code> by default. <code>record</code> for DTOs/value objects. <code>System.Collections.Immutable</code> for shared collections. <code>with</code> expressions for non-destructive mutation.</li>
-        <li><strong>Concurrency</strong> - <code>async/await</code> everywhere. <code>ConfigureAwait(false)</code> in library code. Never <code>.Result</code>/<code>.Wait()</code>. Never <code>async void</code> except event handlers. <code>CancellationToken</code> in all async APIs.</li>
-        <li><strong>DI</strong> - Constructor injection via <code>Microsoft.Extensions.DependencyInjection</code>. Interface types, not concrete. Never inject scoped into singleton.</li>
-        <li><strong>Logging</strong> - <code>ILogger&lt;T&gt;</code> with structured message templates. Never string interpolation in log calls. <code>[LoggerMessage]</code> source generator for hot paths.</li>
-        <li><strong>Linting</strong> - <code>.editorconfig</code> + Roslyn analyzers (<code>EnforceCodeStyleInBuild</code>). <code>dotnet format</code> for auto-fixing.</li>
-        <li><strong>Testing</strong> - <a href="https://xunit.net/" class="gh">xUnit</a> + <a href="https://fluentassertions.com/" class="gh">FluentAssertions</a> + <a href="https://nsubstitute.github.io/" class="gh">NSubstitute</a>.</li>
-        <li><strong>Secure storage</strong> - DPAPI (<code>ProtectedData</code>) for Windows-only secrets. User Secrets for dev-time only.</li>
-        <li><strong>Privacy</strong> - Minimal capabilities in manifest. No PII logging. Respect consent.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-8 - Windows / WinUI 3 Conventions <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/windows.md" class="gh-icon">[source]</a> <span class="tag tag-arch">Windows</span></summary>
-    <div class="detail-body">
-      <ul>
-        <li><strong>References</strong>: <a href="https://learn.microsoft.com/en-us/windows/apps/winui/winui3/" class="gh">WinUI 3</a>, <a href="https://fluent2.microsoft.design/" class="gh">Fluent 2 Design System</a>, <a href="https://github.com/microsoft/WinUI-Gallery" class="gh">WinUI Gallery</a></li>
-        <li><strong>Architecture</strong> - MVVM with <a href="https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/" class="gh">CommunityToolkit.Mvvm</a> (source-generated <code>ObservableObject</code>, <code>RelayCommand</code>). NavigationView + Frame. Never manipulate Frame from code-behind.</li>
-        <li><strong>Fluent Design</strong> - Use built-in WinUI 3 controls (Fluent 2 natively). Segoe UI Variable, Segoe Fluent Icons. Never custom-draw what a standard control can do.</li>
-        <li><strong>Theming</strong> - Tri-state: Light, Dark, High Contrast. Always <code>ThemeResource</code> (not <code>StaticResource</code>). Semantic color resources, not hex values.</li>
-        <li><strong>Accessibility</strong> - UI Automation automatic for standard controls. <code>AutomationProperties.Name</code> on elements without labels. <a href="https://accessibilityinsights.io/" class="gh">Accessibility Insights</a> for testing. Settings: HighContrast, AnimationsEnabled, TextScaleFactor (225%), Narrator, keyboard nav.</li>
-        <li><strong>Localization</strong> - MRT Core with <code>.resw</code> files. <code>x:Uid</code> directive for multi-property binding. <code>ResourceLoader</code> in code-behind.</li>
-        <li><strong>Deep linking</strong> - <code>&lt;uap:Protocol&gt;</code> in manifest. <code>AppInstance.GetActivatedEventArgs()</code>. Single-instancing via <code>FindOrRegisterForKey()</code>.</li>
-        <li><strong>Notifications</strong> - <code>AppNotificationManager</code> + <code>AppNotificationBuilder</code> fluent API.</li>
-        <li><strong>High DPI</strong> - Effective pixels (automatic scaling). Multi-scale assets (<code>.scale-100</code> through <code>.scale-400</code>). <code>XamlRoot.RasterizationScale</code> for custom rendering.</li>
-        <li><strong>MSIX</strong> - Single-project packaging. Minimal capabilities. Monotonically increasing versions.</li>
-        <li><strong>Concurrency</strong> - <code>DispatcherQueue.TryEnqueue</code> for UI thread marshaling. See <code>csharp.md</code> for general async/await.</li>
-      </ul>
-    </div>
-  </details>
-
-  <h3>Design</h3>
-
-  <details>
-    <summary>CG-9 - UI Design Guidelines (12 principles) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/ui.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
-    <div class="detail-body">
-      <p>Platform HIG always takes precedence. These defaults fill gaps or establish a cross-platform baseline. References: <a href="https://developer.apple.com/design/human-interface-guidelines/" class="gh">Apple HIG</a>, <a href="https://m3.material.io/" class="gh">Material Design 3</a>, <a href="https://fluent2.microsoft.design/" class="gh">Fluent 2</a>, <a href="https://www.w3.org/TR/WCAG21/" class="gh">WCAG 2.1</a>.</p>
-      <ul>
-        <li><strong>Visual hierarchy</strong> - One primary action per screen. Use size and weight (not just color) to establish importance. Group with proximity, separate with whitespace.</li>
-        <li><strong>Spacing</strong> - 4px base unit, 8px primary grid. Scale: 4, 8, 12, 16, 24, 32, 48, 64. No arbitrary values.</li>
-        <li><strong>Typography</strong> - Platform system font. Body: 14-17pt (16px cross-platform default). Line height: 1.4-1.5x. 2-3 weights max per screen. 45-75 char paragraph width.</li>
-        <li><strong>Color</strong> - Semantic tokens over hex. 1 accent + neutrals + semantic (success/warning/error). Never color alone for meaning. WCAG AA: 4.5:1 text, 3:1 large text &amp; UI components.</li>
-        <li><strong>Layout</strong> - Single-column by default. Content-first. Consistent alignment. Platform adaptive layout (Size Classes, CSS media queries, VisualStateManager). One scroll direction per view.</li>
-        <li><strong>State design</strong> - Every data view handles four states: Loading (skeleton/spinner), Empty (icon + message + CTA), Error (problem + reason + recovery action), Loaded. Design empty/error states with equal care.</li>
-        <li><strong>Form design</strong> - Single-column. Validate on blur, not keystroke. Errors inline below field with icon + color + text. Specific messages ("8+ characters" not "Invalid"). Mark optional fields, not required.</li>
-        <li><strong>Feedback</strong> - Inline for field-level, toast/snackbar for non-critical confirmations (3-5s auto-dismiss), dialog only for destructive actions. Never dialog for success. Default focus on Cancel for destructive confirms.</li>
-        <li><strong>Touch targets</strong> - Platform HIG first (44pt Apple, 48dp Material, 40epx Fluent, 24px WCAG AA). Cross-platform default: 44x44. 8px spacing between adjacent targets.</li>
-        <li><strong>Animation</strong> - Purposeful only. State changes: 100-200ms. Enter/exit: 200-350ms. Page transitions: 300-500ms. Platform easing curves. Always respect reduced-motion.</li>
-        <li><strong>Iconography</strong> - Platform icon set first (SF Symbols, Material Symbols, Segoe Fluent Icons). Icons supplement text, not replace it. Consistent size/weight. State icons need color AND shape.</li>
-        <li><strong>Data display</strong> - Lists for sequential, Tables for comparable multi-attribute (sortable), Cards for heterogeneous, Grids for uniform visual. Sort/filter at 10+ items, search at 50+.</li>
-      </ul>
-    </div>
-  </details>
-
-  <h3>Client-Server</h3>
-
-  <details>
-    <summary>CG-10 - Networking Guidelines (9 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/networking.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
-    <div class="detail-body">
-      <p>References: <a href="https://github.com/microsoft/api-guidelines" class="gh">Microsoft REST Guidelines</a>, <a href="https://cloud.google.com/apis/design" class="gh">Google API Design</a>, <a href="https://opensource.zalando.com/restful-api-guidelines/" class="gh">Zalando Guidelines</a>, <a href="https://www.rfc-editor.org/rfc/rfc9457" class="gh">RFC 9457</a>.</p>
-      <ul>
-        <li><strong>API design</strong> - REST with lowercase-hyphen URLs, plural nouns, shallow nesting (max 2). HTTP methods as verbs. URL path versioning (<code>/v1/</code>). Consensus across Microsoft, Google, Zalando.</li>
-        <li><strong>Error responses</strong> - RFC 9457 Problem Details (<code>application/problem+json</code>): type, title, status, detail, instance. Extension fields for validation errors.</li>
-        <li><strong>Pagination</strong> - Cursor pagination preferred (stable under mutation, consistent perf). Offset for static data with page numbers. Response envelope with <code>data</code> + <code>pagination</code>.</li>
-        <li><strong>Retry &amp; resilience</strong> - Exponential backoff with full jitter. Base 1s, max 30s, 3-5 retries. Retryable: 408, 429, 502, 503, 504. Never retry 400/401/403/404. Circuit breaker for cascading failures.</li>
-        <li><strong>Timeouts</strong> - Connection: 10s. Read: 30s. Total: 60-120s. Never infinite. Use 202 Accepted + polling for long operations.</li>
-        <li><strong>Caching</strong> - HTTP headers (Cache-Control, ETag, If-None-Match). Immutable assets: 1 year. Dynamic: short max-age or no-cache. Sensitive: no-store. Invalidate after mutations.</li>
-        <li><strong>Offline</strong> - Optimistic updates + queue-based sync + server-wins as default pattern. ETags for conflict detection. Never silently discard user work.</li>
-        <li><strong>Rate limiting</strong> - Respect <code>Retry-After</code>. Track <code>RateLimit-Remaining</code> proactively. Queue and batch rather than fire-and-retry.</li>
-        <li><strong>Real-time</strong> - SSE for server-push (80% of cases). WebSocket only for bidirectional. Polling as low-frequency fallback.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary>CG-11 - Security Guidelines (10 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/security.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
-    <div class="detail-body">
-      <p>Supplements general.md rule 16. References: <a href="https://owasp.org/www-project-top-ten/" class="gh">OWASP Top 10</a>, <a href="https://cheatsheetseries.owasp.org/" class="gh">OWASP Cheat Sheets</a>, <a href="https://wiki.mozilla.org/Security/Server_Side_TLS" class="gh">Mozilla TLS</a>.</p>
-      <ul>
-        <li><strong>Authentication</strong> - OAuth 2.0 + PKCE for all public clients. System browser for native (never WebView). BFF pattern for SPAs. Short-lived access tokens (5-15 min), refresh token rotation.</li>
-        <li><strong>Token handling</strong> - Platform secure storage (Keychain, EncryptedSharedPreferences, DPAPI, HttpOnly cookies). Never localStorage. Never tokens in URLs. Proactive refresh at 75% TTL.</li>
-        <li><strong>Authorization</strong> - Server-side only. Deny by default. Least privilege. RBAC with fine-grained permissions. BOLA is #1 API risk - always verify resource ownership.</li>
-        <li><strong>Transport</strong> - TLS 1.2 minimum (prefer 1.3). HSTS with preload. Certificate pinning: intermediate CA only, mobile only, backup pins required. AEAD ciphers.</li>
-        <li><strong>CORS</strong> - Explicit origin allowlist (never reflect Origin). Never wildcard with credentials. Cache preflights. Common misconfigs: unanchored regex, null origin.</li>
-        <li><strong>CSP</strong> - <code>default-src 'none'</code> + nonce-based scripts + <code>strict-dynamic</code>. Never <code>unsafe-inline</code>/<code>unsafe-eval</code>. Report-only mode first. <code>frame-ancestors 'self'</code>.</li>
-        <li><strong>Input validation</strong> - Never trust client input. Allowlists over denylists. Validate &rarr; sanitize &rarr; escape. Parameterized queries only. Context-specific output encoding.</li>
-        <li><strong>Sensitive data</strong> - Data minimization in APIs. PII classification by tier. Field-level encryption via KMS. No PII in logs. No internals in error responses. <code>no-store</code> for sensitive responses.</li>
-        <li><strong>Dependency security</strong> - Lockfiles mandatory (committed). Automated scanning in CI. Pin versions. SRI for CDN assets. Watch for typosquatting and dependency confusion.</li>
-        <li><strong>Security headers</strong> - HSTS, CSP, <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code>.</li>
-      </ul>
-    </div>
-  </details>
-
-  <h3>Testing</h3>
-
-  <details>
-    <summary>CG-14 &mdash; Testing Guidelines (11 topics) <a href="https://github.com/mikefullerton/cat-herding/blob/main/guidelines/testing.md" class="gh-icon">[source]</a> <span class="tag tag-arch">all projects</span></summary>
-    <div class="detail-body">
-      <p>Consolidates testing guidance from CG-1.6, CG-1.8, and platform-specific sections. References: <a href="https://abseil.io/resources/swe-book/html/ch11.html" class="gh">Google SWE Book</a>, <a href="https://martinfowler.com/articles/practical-test-pyramid.html" class="gh">Martin Fowler</a>, <a href="https://medium.com/@kentbeck_7670/test-desiderata-94150638a4b3" class="gh">Kent Beck</a>.</p>
-      <ul>
-        <li><strong>Test pyramid</strong> &mdash; 80% unit / 15% integration / 5% E2E. When unsure, write a unit test.</li>
-        <li><strong>Good test properties</strong> &mdash; Kent Beck's 12 desiderata: isolated, composable, deterministic, fast, writable, readable, behavioral, structure-insensitive, automated, specific, predictive, inspiring.</li>
-        <li><strong>Unit test patterns</strong> &mdash; Arrange-Act-Assert. One assertion concept per test. No logic in tests. Test public API, not internals. Descriptive names that read as specifications.</li>
-        <li><strong>Property-based testing</strong> &mdash; For parsers, serializers, transformers: describe properties, generate random inputs. <a href="https://github.com/HypothesisWorks/hypothesis" class="gh">Hypothesis</a> (Python), <a href="https://github.com/dubzzz/fast-check" class="gh">fast-check</a> (TS/JS), FsCheck (.NET), jqwik (JVM). At least one property test per data transformation.</li>
-        <li><strong>Mutation testing</strong> &mdash; Validate tests catch real bugs, not just achieve coverage. Closed loop: write tests &rarr; run mutations &rarr; kill surviving mutants. <a href="https://github.com/boxed/mutmut" class="gh">mutmut</a> (Python), <a href="https://stryker-mutator.io/" class="gh">Stryker</a> (TS/.NET), <a href="https://github.com/muter-mutation-testing/muter" class="gh">Muter</a> (Swift), Pitest (JVM).</li>
-        <li><strong>Test doubles</strong> &mdash; Fowler taxonomy: dummy, stub, spy, mock, fake. Prefer fakes over mocks. Never mock what you don't own &mdash; wrap behind interfaces.</li>
-        <li><strong>Security testing</strong> &mdash; SAST: <a href="https://semgrep.dev/" class="gh">Semgrep</a>, <a href="https://github.com/PyCQA/bandit" class="gh">Bandit</a>. Dependency: <code>pip-audit</code>, <code>npm audit</code>. DAST: <a href="https://www.zaproxy.org/" class="gh">OWASP ZAP</a>.</li>
-        <li><strong>Flaky test prevention</strong> &mdash; No shared state, no order dependency, no real network, no sleep. Quarantine immediately &mdash; fix or delete.</li>
-        <li><strong>Test data</strong> &mdash; Builder/factory per test. No magic fixtures. Property-based generators for coverage. Inline literals for simple cases.</li>
-        <li><strong>The workflow</strong> &mdash; Write code &rarr; write tests &rarr; run tests &rarr; mutation testing &rarr; kill mutants &rarr; security scan &rarr; E2E. Closed loop: AI generates, tools validate.</li>
-      </ul>
-    </div>
-  </details>
-
-  <details>
-    <summary>How Guidelines Are Installed <span class="tag tag-algo">algorithm</span></summary>
-    <div class="detail-body">
-      <p><a href="https://github.com/mikefullerton/cat-herding/blob/main/install.sh" class="gh"><code>install.sh</code></a> symlinks all <code>guidelines/*.md</code> files to <code>~/.claude/guidelines/</code>. The global <code>~/.claude/CLAUDE.md</code> references them by path. Every Claude Code session inherits them automatically.</p>
-      <pre><code>~/.claude/guidelines/
-  CG-1  general.md               → General Coding Guidelines (21 rules)
-  CG-2  engineering-principles.md → Engineering Principles (16 rules)
-  CG-3  swift.md                 → Swift / SwiftUI / AppKit
-  CG-4  kotlin.md                → Kotlin / Compose / Ktor
-  CG-5  typescript.md            → TypeScript / React / Web
-  CG-6  python.md                → Python (cat-herding)
-  CG-7  csharp.md                → C# / .NET
-  CG-8  windows.md               → Windows / WinUI 3
-  CG-9  ui.md                    → UI Design (12 principles)
-  CG-10 networking.md            → Networking (9 topics)
-  CG-11 security.md              → Security (11 topics)
-  CG-12 specs.md                 → Spec Writing Format
-  CG-14 testing.md               → Testing (11 topics)
-  CG-13 best-practices-references.md → External References</code></pre>
-      <p>The agent reads <code>general.md</code> + <code>engineering-principles.md</code> for every project, plus the platform-specific file for the current language and <code>ui.md</code> for any UI work.</p>
-    </div>
-  </details>
-</section>
-
 <!-- Code Review Process -->
 <section id="code-review">
   <h2><span class="num">03</span>Code Review Process <a href="https://github.com/mikefullerton/cat-herding/blob/main/skills/implement-roadmap/references/review-guide.md" class="repo-header-link">Review Guide &rarr;</a></h2>
@@ -1277,7 +910,7 @@ footer {
       <ul>
         <li>Default agent: <code>code-reviewer</code></li>
         <li>Gets the diff via <code>git diff HEAD~1</code></li>
-        <li>Receives <code>general.md</code> + platform-specific guideline as context</li>
+        <li>Receives agentic-cookbook guidelines as context</li>
         <li>High/critical findings &rarr; fix, re-run build+test+review (max 3 iterations)</li>
         <li>Medium/low &rarr; continue (logged for follow-up)</li>
       </ul>
@@ -1286,7 +919,7 @@ footer {
       <ul>
         <li>Default agents: <code>code-reviewer</code> + <code>silent-failure-hunter</code></li>
         <li>Gets the diff via <code>gh pr diff</code></li>
-        <li>Receives <code>general.md</code> + <code>engineering-principles.md</code> + platform guideline</li>
+        <li>Receives agentic-cookbook guidelines + principles as context</li>
         <li>Findings aggregated across all agents</li>
         <li>High/critical &rarr; fix, re-run only failing reviewers (max 3 iterations)</li>
         <li>Medium &rarr; fix if quick, otherwise log as follow-up</li>
@@ -1339,12 +972,7 @@ footer {
   <details>
     <summary>Guideline Compliance Checking <span class="tag tag-algo">algorithm</span></summary>
     <div class="detail-body">
-      <p>Every review agent receives the relevant <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="gh">coding guidelines</a> as context in its prompt:</p>
-      <ul>
-        <li><strong>Per-step review</strong>: <code>general.md</code> + platform guideline (e.g., <code>swift.md</code>)</li>
-        <li><strong>Final review</strong>: <code>general.md</code> + <code>engineering-principles.md</code> + platform guideline</li>
-      </ul>
-      <p>The platform is auto-detected from the project's file extensions. Reviewers flag violations with severity:</p>
+      <p>Every review agent receives the relevant <a href="https://github.com/mikefullerton/agentic-cookbook" class="gh">agentic-cookbook guidelines</a> as context in its prompt. The platform is auto-detected from the project's file extensions. Reviewers flag violations with severity:</p>
       <ul>
         <li><em>[high] Rule 4: this blocks the main thread with a synchronous network call</em></li>
         <li><em>[medium] Rule 12: missing accessibility labels on interactive elements</em></li>
@@ -1824,7 +1452,7 @@ change-history:
   <p class="lead">Skills are Claude Code slash commands. Each has a versioned SKILL.md with instructions and a references/ directory.</p>
 
   <details>
-    <summary>All Skills (11) <span class="tag tag-arch">architecture</span></summary>
+    <summary>All Skills (9) <span class="tag tag-arch">architecture</span></summary>
     <div class="detail-body">
       <table>
         <tr><th>Skill</th><th>Version</th><th>Purpose</th></tr>
@@ -1838,7 +1466,6 @@ change-history:
         <tr><td>/describe-roadmap</td><td>v4</td><td>Detailed single roadmap view</td></tr>
         <tr><td>/progress-dashboard</td><td>v17</td><td>Self-contained progress display</td></tr>
         <tr><td>/generate-test-roadmap</td><td>v3</td><td>Test roadmap generator (20 cat-herding steps)</td></tr>
-        <tr><td>/review-claude-extension</td><td>v2</td><td>Skill/agent validator</td></tr>
       </table>
     </div>
   </details>
@@ -1985,43 +1612,13 @@ change-history:
     </div>
   </details>
 
-  <details>
-    <summary>/review-claude-extension - Skill &amp; Agent Validator <span class="tag tag-arch">quality</span></summary>
-    <div class="detail-body">
-      <p>Reviews a Claude Code skill or agent against Anthropic&rsquo;s official best practices and structural requirements. Produces a structured report with actionable recommendations.</p>
-      <table>
-        <tr><th>Section</th><th>Checks</th><th>Focus</th></tr>
-        <tr><td>Structure &amp; Format (S01&ndash;S12)</td><td>YAML frontmatter, file size, references</td><td>Correct frontmatter fields, line limits, supporting files</td></tr>
-        <tr><td>Content Quality (C01&ndash;C10)</td><td>Responsibility, error handling, instructions</td><td>Single purpose, clear steps, guard clauses</td></tr>
-        <tr><td>Best Practices (B01&ndash;B12)</td><td>Verification, capabilities, context</td><td>Native tool usage, fork context, argument handling</td></tr>
-        <tr><td>Agent-Specific (A01&ndash;A08)</td><td>Agent fields, bounds, tools</td><td>maxTurns, tool restrictions, permission mode</td></tr>
-      </table>
-      <p><strong>Input:</strong> path to a skill directory or agent <code>.md</code> file. Defaults to the current directory.</p>
-      <p><strong>Output:</strong> PASS/WARN/FAIL ratings per criterion, summary counts, and top 10 prioritized recommendations. Read-only - no files are modified.</p>
-    </div>
-  </details>
 
-  <details>
-    <summary>/guideline-review - Full Codebase Audit <span class="tag tag-test">testing</span></summary>
-    <div class="detail-body">
-      <p>Launches 4 review agents in parallel, each checking a different aspect of the codebase against the <a href="https://github.com/mikefullerton/cat-herding/tree/main/guidelines" class="gh">coding guidelines</a>:</p>
-      <table>
-        <tr><th>Agent</th><th>Checks Against</th><th>Focus</th></tr>
-        <tr><td>code-reviewer</td><td>general.md (21 rules)</td><td>Native controls, threading, progress, testing, accessibility, privacy, feature flags</td></tr>
-        <tr><td>code-reviewer</td><td>engineering-principles.md (15 principles)</td><td>Simplicity, DI, immutability, fail fast, YAGNI, boundaries</td></tr>
-        <tr><td>code-reviewer</td><td>Platform guideline (swift/kotlin/typescript/python)</td><td>Logging, secure storage, linting, previews, concurrency</td></tr>
-        <tr><td>silent-failure-hunter</td><td>Fail fast + security rules</td><td>Swallowed exceptions, empty catch blocks, missing error handling</td></tr>
-      </table>
-      <p><strong>Scope options:</strong> entire repo, specific directory, uncommitted changes (<code>--changed</code>), or branch diff (<code>--branch</code>).</p>
-      <p><strong>Output:</strong> severity-grouped report (high/medium/low) with file, line, rule number, and description. Optionally fixes high-severity findings.</p>
-    </div>
-  </details>
 </section>
 
 </div>
 
 <footer>
-  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a> &middot; <span style="color:var(--text-dim);font-size:0.6rem;">v2</span>
+  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a> &middot; <span style="color:var(--text-dim);font-size:0.6rem;">v3</span>
 </footer>
 
 <script>

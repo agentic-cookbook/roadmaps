@@ -229,6 +229,43 @@ remove_renamed_extensions() {
     fi
 }
 
+# --- Guidelines Removal ---
+
+remove_guidelines() {
+    echo ""
+    echo "--- Guidelines ---"
+
+    local target_dir="$CLAUDE_DIR/guidelines"
+
+    if [ ! -d "$target_dir" ]; then
+        echo "  [skip] $target_dir does not exist"
+        return
+    fi
+
+    local found=0
+    for link in "$target_dir"/*.md; do
+        [ -L "$link" ] || continue
+        local dest
+        dest=$(readlink "$link")
+        if [[ "$dest" == *"cat-herding/guidelines/"* ]]; then
+            rm -f "$link"
+            echo "  [removed] $(basename "$link")"
+            found=1
+        fi
+    done
+
+    if [ "$found" -eq 0 ]; then
+        echo "  No cat-herding guideline symlinks found"
+        return
+    fi
+
+    # Remove directory if empty
+    if [ -z "$(ls -A "$target_dir" 2>/dev/null)" ]; then
+        rmdir "$target_dir"
+        echo "  [removed] $target_dir (empty)"
+    fi
+}
+
 # --- CLI Scripts Removal ---
 
 remove_cli_scripts() {
@@ -270,6 +307,7 @@ main() {
     remove_renamed_extensions
     remove_skills "$SKILLS_DIR" "Claude Skills"
     remove_agents "$AGENTS_DIR" "Claude Agents"
+    remove_guidelines
     remove_cli_scripts
 
     local openclaw_dir

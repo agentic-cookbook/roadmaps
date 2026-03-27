@@ -189,21 +189,6 @@ Useful for integration testing and demos.
 
 ---
 
-#### `/review-claude-extension` (v2)
-
-**What it does:** Validates skills and agents against best practices.
-
-Takes a path to a skill or agent directory and produces a structured report with PASS/WARN/FAIL ratings. Checks structure, content quality, and adherence to the Claude Code skills specification.
-
-Read-only — it never modifies the files it's reviewing.
-
-```
-/review-claude-extension skills/plan-roadmap
-/review-claude-extension agents/implement-step-agent.md
-```
-
----
-
 ### Agents
 
 Agents are autonomous workers launched by the `Agent` tool. Unlike skills (which run in your conversation), agents run as subprocesses with their own context.
@@ -424,7 +409,7 @@ cat-herding/
 │   ├── describe-roadmap/           # Detailed roadmap view
 │   ├── progress-dashboard/         # Live progress display
 │   ├── generate-test-roadmap/      # Test roadmap generator
-│   └── review-claude-extension/    # Skill/agent validator
+│   └── import-shared-project/       # Shared project management
 ├── agents/                          # Claude Code agents
 │   └── implement-step-agent.md     # Worker agent for single steps
 ├── services/

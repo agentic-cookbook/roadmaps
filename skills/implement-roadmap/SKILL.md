@@ -81,7 +81,7 @@ Store `ROADMAP_DIR` as the parent directory of `ROADMAP_PATH`.
 
 Store as `REVIEW_PER_STEP` and `REVIEW_FINAL`.
 
-**Detect platform** for guideline selection: check the project's primary language from file extensions or CLAUDE.md. Map to the guideline file: swift.md, kotlin.md, typescript.md, python.md, csharp.md, windows.md. Store as `GUIDELINE_PLATFORM`.
+**Detect platform** for guideline selection: check the project's primary language from file extensions or CLAUDE.md. Map to the agentic-cookbook guideline directory: `../agentic-cookbook/cookbook/guidelines/language/<platform>/`. Store as `GUIDELINE_PLATFORM`.
 
 ## Step 1a: Check for Previous Implementation Artifacts
 
@@ -281,7 +281,7 @@ Roadmap ID: <roadmap_id>
 Implementation log: <$IMPL_LOG>
 Review config (per-step): <$REVIEW_PER_STEP>
 Review config (final): <$REVIEW_FINAL>
-Guidelines platform: <$GUIDELINE_PLATFORM>
+Guidelines platform: <$GUIDELINE_PLATFORM> (agentic-cookbook path)
 
 Implement ONLY this step. Commit your changes to the existing branch.
 When done, update the roadmap to mark this step Complete, then return.

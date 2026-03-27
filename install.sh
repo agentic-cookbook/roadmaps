@@ -610,38 +610,6 @@ install_cli_scripts() {
     done
 }
 
-# --- Guidelines Installation ---
-
-install_guidelines() {
-    echo ""
-    echo "--- Guidelines ---"
-
-    local guidelines_dir="$SCRIPT_DIR/guidelines"
-    local target_dir="$CLAUDE_DIR/guidelines"
-
-    if [ ! -d "$guidelines_dir" ]; then
-        echo "  [skip] No guidelines directory"
-        return
-    fi
-
-    mkdir -p "$target_dir"
-
-    for file in "$guidelines_dir"/*.md; do
-        [ -f "$file" ] || continue
-        local name
-        name=$(basename "$file")
-        local target="$target_dir/$name"
-
-        if [ -L "$target" ] && [ "$(readlink "$target")" = "$file" ]; then
-            echo "  [ok] $name (symlink)"
-        else
-            rm -f "$target" 2>/dev/null
-            ln -s "$file" "$target"
-            echo "  [symlinked] $name"
-        fi
-    done
-}
-
 # =============================================================================
 # Main
 # =============================================================================
@@ -671,7 +639,6 @@ main() {
     install_openclaw_skills "$method"
     install_openclaw_agents "$method"
     install_cli_scripts
-    install_guidelines
 
     echo ""
     echo "=== Done ==="

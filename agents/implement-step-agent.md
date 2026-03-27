@@ -225,10 +225,9 @@ If the step description contains **"Finalize & Merge PR"**, perform the followin
      Review PR #<PR_NUMBER> for <feature_name>.
      Run: gh pr diff <PR_NUMBER>
 
-     Check compliance with these coding guidelines:
-     - ~/.claude/guidelines/general.md
-     - ~/.claude/guidelines/engineering-principles.md
-     - ~/.claude/guidelines/<platform>.md
+     Check compliance with coding guidelines from the agentic-cookbook:
+     - ../agentic-cookbook/cookbook/guidelines/
+     - ../agentic-cookbook/cookbook/principles/
 
      Report findings with severity (high/medium/low).
      ```
@@ -337,9 +336,8 @@ Read the review config from the task prompt (`Review config (per-step): [...]`).
 
      Run: git -C <worktree_path> diff HEAD~1
 
-     Also check compliance with these coding guidelines:
-     - ~/.claude/guidelines/general.md
-     - ~/.claude/guidelines/<platform>.md
+     Also check compliance with coding guidelines from the agentic-cookbook:
+     - ../agentic-cookbook/cookbook/guidelines/
 
      Report findings with severity (high/medium/low).
      Focus on bugs, logic errors, and guideline violations.

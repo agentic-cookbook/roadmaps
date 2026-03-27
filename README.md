@@ -120,27 +120,6 @@ Pass issue numbers, or `all` to include every open issue.
 
 ---
 
-### /guideline-review
-
-Review all code in the current repo against the installed coding guidelines. Launches 4 review agents in parallel to check compliance with general rules, engineering principles, platform conventions, and error handling.
-
-**Usage:**
-
-```
-/guideline-review              Review entire repo
-/guideline-review src/         Review specific directory
-/guideline-review --changed    Review only uncommitted changes
-/guideline-review --branch     Review only branch diff vs main
-```
-
-**Changelog:**
-
-| Version | Date | Changes |
-|---------|------|---------|
-| v1 | 2026-03-26 | Initial release — 4 parallel review agents, severity-grouped report, optional fix mode |
-
----
-
 ### /repair-roadmap
 
 Repair an existing incomplete roadmap. Re-plans steps using the same logic as `/plan-roadmap`, preserving the roadmap ID and archiving the original for comparison.
@@ -412,48 +391,6 @@ Both `/implement-roadmap-interactively` and `implement-roadmap-agent` automatica
 
 ---
 
-### /review-claude-extension
-
-Review skill for validating Claude Code skills and agents against Anthropic's official best practices. Produces a structured report with PASS/WARN/FAIL ratings and actionable recommendations.
-
-**What it does:** Takes a skill or agent path and runs a comprehensive review:
-
-1. **Resolves** the target — detects whether it's a skill (has `SKILL.md`) or an agent (`.md` with agent frontmatter)
-2. **Reads** all target files and parses frontmatter
-3. **Fetches** the latest Anthropic guidance from official docs
-4. **Reviews** against a bundled checklist covering structure, content quality, best practices, and agent-specific criteria
-5. **Prints** a console report with per-check ratings and a prioritized recommendations list
-
-**Usage:**
-
-```
-/review-claude-extension path/to/skill-or-agent
-```
-
-If no path is given, the skill looks for a skill or agent in the current directory.
-
-**Review categories:**
-
-- **Structure & Format** (S01–S12) — frontmatter fields, file layout, naming conventions
-- **Content Quality** (C01–C10) — single responsibility, step-by-step instructions, error handling
-- **Best Practices** (B01–B12) — verification methods, anti-patterns, context budget
-- **Agent-Specific** (A01–A08) — tool access, permission modes, turn limits (only for agents)
-
-**Key rules:**
-
-- **Read-only** — never modifies the reviewed skill or agent.
-- **Console output only** — no files are created.
-- **Fetches latest docs** — supplements the bundled checklist with current Anthropic guidance (continues with bundled checklist alone if fetch fails).
-
-**Changelog:**
-
-| Version | Date | Changes |
-|---------|------|---------|
-| v2 | 2026-03-21 | Added `allowed-tools` restriction, `context: fork` for isolated execution, `version` field, and `--version` support |
-| v1 | 2026-03-21 | Initial release — comprehensive review checklist (S01–S12, C01–C10, B01–B12, A01–A08); fetches latest Anthropic docs; structured PASS/WARN/FAIL report |
-
----
-
 ## Agents
 
 ### implement-step-agent
@@ -484,21 +421,4 @@ claude --agent implement-step-agent "Implement step 1 of MyFeature. Step 1: Desc
 
 ## Coding Guidelines
 
-Shared coding guidelines installed to `~/.claude/guidelines/` via `install.sh`. These are referenced by `CLAUDE.md` and apply to all projects using the matching language/platform. All rules use hierarchical `CG-` numbering (`CG-X.Y` for file.section, `CG-X.Y.Z` for file.section.subrule). See `guidelines/INDEX.md` for the complete cross-reference index.
-
-| File | Scope |
-|------|-------|
-| `general.md` | Universal rules (all projects) |
-| `engineering-principles.md` | Core engineering principles |
-| `swift.md` | Swift / SwiftUI / AppKit |
-| `kotlin.md` | Kotlin / Compose / Ktor |
-| `typescript.md` | TypeScript / React / Web |
-| `python.md` | Python (cat-herding conventions) |
-| `csharp.md` | C# / .NET |
-| `windows.md` | Windows / WinUI 3 |
-| `ui.md` | Cross-platform UI design principles |
-| `networking.md` | Client-server networking |
-| `security.md` | Application security |
-| `testing.md` | Testing principles and tools |
-| `specs.md` | Spec writing format |
-| `best-practices-references.md` | External reference links |
+Coding guidelines have moved to the [agentic-cookbook](https://github.com/mikefullerton/agentic-cookbook) repository. Run `/configure-agentic-cookbook` to set up guideline consumption for this project.

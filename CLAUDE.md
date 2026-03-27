@@ -58,7 +58,7 @@ claude plugin install document-skills@anthropic-agent-skills
 
 ## Coding Guidelines
 
-See `~/.claude/CLAUDE.md` for the global guidelines reference. Platform-specific guidelines are in `guidelines/`.
+Provided by the [agentic-cookbook](https://github.com/mikefullerton/agentic-cookbook) (tier 4). See `.claude/rules/` for enforcement rules.
 
 ## Review Configuration
 
@@ -81,3 +81,12 @@ Available agents: `code-reviewer`, `silent-failure-hunter`, `pr-test-analyzer`, 
 - Never modify dashboard HTML while a real roadmap is running
 - Never directly modify roadmap state — build tools for it
 - Commit and push immediately after making changes
+
+## Agentic Cookbook
+
+This project uses the [agentic-cookbook](https://github.com/mikefullerton/agentic-cookbook) repo.
+
+- **Cookbook path**: `../agentic-cookbook/`
+- **Tier**: 4 (Contributor)
+
+Run `/configure-agentic-cookbook` to select your participation tier and install rules.
