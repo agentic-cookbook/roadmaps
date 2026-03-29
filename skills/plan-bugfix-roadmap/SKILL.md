@@ -1,9 +1,8 @@
 ---
 name: plan-bugfix-roadmap
-version: "4"
-description: "Create a bugfix roadmap from a list of GitHub issues. Lightweight alternative to /plan-roadmap — skips the discussion phase and generates a Roadmap with linked issues. Use when you have a known list of bugs to fix."
+version: "5"
+description: "Create a bugfix roadmap from GitHub issues. Use when the user wants to plan bug fixes, organize issues into a roadmap, or batch fix multiple bugs."
 argument-hint: "<issue-numbers or 'all'>"
-disable-model-invocation: true
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), Bash(gh api *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(git status *), Bash(git diff *), Bash(git log *), Bash(cat *), Bash(date *)
 ---
 
@@ -11,7 +10,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), B
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-bugfix-roadmap v4
+> plan-bugfix-roadmap v5
 
 Then stop. Do not continue with the rest of the skill.
 

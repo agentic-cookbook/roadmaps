@@ -1,8 +1,7 @@
 ---
 name: list-roadmaps
-version: "5"
-description: "List active roadmaps with progress and description. Use when the user wants to see what roadmaps exist, check roadmap progress, or review pending work."
-disable-model-invocation: true
+version: "6"
+description: "List active roadmaps with progress. Use when the user asks what roadmaps exist, wants to see roadmap status, or asks about pending work."
 ---
 
 ## Version Check
@@ -10,7 +9,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print:
-   > list-roadmaps v5
+   > list-roadmaps v6
 
 Then stop.
 

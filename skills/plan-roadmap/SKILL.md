@@ -1,17 +1,22 @@
 ---
 name: plan-roadmap
-version: "12"
-description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
-disable-model-invocation: true
+version: "15"
+description: "Plan a feature as a structured Roadmap with steps and PRs. Use when planning a feature, converting a plan to a roadmap, organizing work into steps, or saving a plan as a roadmap."
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v12
+> plan-roadmap v15
 
 Then stop. Do not continue with the rest of the skill.
+
+---
+
+## Output Rules
+
+Text inside `VERBATIM:` blocks MUST be printed exactly as written — character for character. No paraphrasing, no rewording, no additions, no omissions. Do not add greetings, commentary, or transitions around verbatim output.
 
 ---
 
@@ -52,45 +57,34 @@ Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for
 
 Before doing anything else, validate the environment.
 
-### 0a: Verify git repository
+### 0a: Environment validation
+
+Run all environment checks in a single command. If any check fails, STOP and tell the user the specific error.
 
 ```bash
-git rev-parse --is-inside-work-tree
+git rev-parse --is-inside-work-tree && \
+PROJECT=$(basename $(git rev-parse --show-toplevel)) && \
+mkdir -p "$HOME/.roadmaps/$PROJECT" && \
+touch "$HOME/.roadmaps/$PROJECT/.verify" && \
+rm "$HOME/.roadmaps/$PROJECT/.verify" && \
+echo "OK:$PROJECT"
 ```
 
-If this fails, **STOP**. Tell the user this skill must run inside a git repository.
-
-### 0b: Create drafts directory
-
-Drafts are written to `~/.roadmaps/<project>/`. The feature subdirectory is created in Step 5f once the feature name is known.
-
-```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-mkdir -p "$HOME/.roadmaps/$PROJECT"
-```
-
-### 0c: Verify directory is writable
-
-```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify"
-```
-
-If this fails, **STOP**. Tell the user the directory is not writable.
+If the output starts with `OK:`, validation passed. Extract the project name from the output. If the command fails, report the specific error (not in a git repo, directory not writable, etc.).
 
 ### 0d: Planning log
 
-This skill writes a planning log that records every decision, action, command, and user interaction. The log lives inside the roadmap directory for debugging and analysis.
+This skill writes a planning log that records every decision, action, command, and user interaction. The log file is created in Step 5f when the roadmap directory is created. Until then, no log entries are accumulated — logging begins once the file path is known.
 
-The log file is created in Step 5f when the roadmap directory is created. Until then, accumulate log entries in memory. Once the directory exists:
+Once the directory exists:
 
 ```bash
 PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 ```
 
-Write the accumulated entries plus the header:
+Write the header:
 ```
-[YYYY-MM-DD HH:MM:SS] plan-roadmap v12 started
+[YYYY-MM-DD HH:MM:SS] plan-roadmap v15 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
 [YYYY-MM-DD HH:MM:SS] repo: $(git rev-parse --show-toplevel)
 [YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
@@ -108,10 +102,33 @@ Write the accumulated entries plus the header:
 
 ---
 
+### 0e: Context Detection (Conversion Mode)
+
+Before asking the user what they want to plan, check if the conversation already contains a plan or feature discussion.
+
+**A plan is detected if ANY of these are true:**
+- The conversation contains output from plan mode (ExitPlanMode was called earlier in this session)
+- The conversation contains a numbered or bulleted list of implementation steps (3+ steps)
+- The conversation contains a brainstorming spec or design document
+- The user explicitly said "convert this" / "make this into a roadmap" (referencing existing context)
+
+**If a plan is detected → Conversion Mode:**
+1. Skip Phase 1 (Discussion) entirely — do not ask "What feature would you like to plan?"
+2. Synthesize a discussion summary from what is already in the conversation context
+3. Propose a PascalCase feature name derived from the context
+4. Go directly to the Phase Gate prompt (Step 3)
+
+**If no plan is detected:** Proceed to Step 1 as normal.
+
+---
+
 ## Step 1: Open the Discussion
+
+> **Conversion mode**: If Context Detection (Step 0e) found an existing plan, this step is skipped. Proceed to Step 3.
 
 Ask the user:
 
+VERBATIM:
 ```
 What feature would you like to plan?
 ```
@@ -141,6 +158,7 @@ When the user has shared enough context (they've slowed down, said something lik
 2. **Propose a feature name** — a PascalCase slug (no spaces) derived from the discussion.
 3. **Ask to proceed to Planning**.
 
+VERBATIM:
 ```
 Here's what I heard:
 
@@ -172,6 +190,8 @@ Issues are created later by /implement-roadmap.
 ## Step 3b: Write Discussion Summary
 
 Once the user approves the transition to Planning, **immediately** write the approved summary to memory as a structured file. This captures the user's intent before any planning transformation occurs.
+
+> **Conversion mode**: In conversion mode, the discussion summary is synthesized from the pre-existing conversation context rather than from a Phase 1 discussion. Apply the same rules — capture the user's intent faithfully, include direct quotes where possible.
 
 Accumulate this in memory (it will be written to disk in Step 5e when the directory is created):
 
@@ -244,7 +264,7 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`12`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`15`).
 
 Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
 
@@ -348,6 +368,7 @@ Before presenting the draft to the user, review the Roadmap against the Discussi
 2. **Do NOT attempt to fix it in place.** The draft is tainted — patching it risks carrying forward the same misunderstanding.
 3. **Warn the user** — tell them exactly which checks failed and what was wrong:
 
+VERBATIM:
 ```
 ⚠️ ALIGNMENT FAILURE — Roadmap does not match the discussion.
 
@@ -384,6 +405,7 @@ and the initial draft. These have been corrected:
 
 Then ask:
 
+VERBATIM:
 ```
 Above is the draft Feature Roadmap (<N> implementation steps).
 
@@ -503,6 +525,7 @@ Exit plan mode.
 
 Print the complete summary, then ask:
 
+VERBATIM:
 ```
 === PLANNING COMPLETE: <FeatureName> ===
 

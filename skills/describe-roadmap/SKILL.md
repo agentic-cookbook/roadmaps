@@ -1,8 +1,7 @@
 ---
 name: describe-roadmap
-version: "4"
-description: "Show detailed info about an active roadmap — goal, progress, and all steps with status. Use when the user wants to inspect a specific roadmap, see step details, or review what's left before implementation."
-disable-model-invocation: true
+version: "5"
+description: "Show detailed info about a roadmap — goal, progress, steps. Use when the user wants to inspect a roadmap, see step details, check progress, or review what's left."
 ---
 
 ## Version Check
@@ -10,7 +9,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print:
-   > describe-roadmap v4
+   > describe-roadmap v5
 
 Then stop.
 

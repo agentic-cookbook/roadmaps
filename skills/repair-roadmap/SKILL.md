@@ -1,15 +1,14 @@
 ---
 name: repair-roadmap
-version: "2"
-description: "Repair an existing incomplete roadmap — re-plans steps using /plan-roadmap logic, preserves the roadmap ID, archives the old version. Use when a roadmap has stuck/incorrect steps."
-disable-model-invocation: true
+version: "3"
+description: "Repair a broken or stuck roadmap by re-planning incomplete steps. Use when a roadmap has stuck steps, needs re-planning, or the user says a roadmap is broken."
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> repair-roadmap v1
+> repair-roadmap v3
 
 Then stop. Do not continue with the rest of the skill.
 
