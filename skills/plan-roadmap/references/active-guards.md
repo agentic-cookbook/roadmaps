@@ -4,7 +4,7 @@ These are not suggestions. These are hard stops.
 
 - **If you are about to create a file outside `~/.roadmaps/`** — STOP. You are writing implementation code. Return to the current step.
 - **If you are about to write ANY file during Phase 1 (Discussion)** — STOP. Discussion is conversational only. No files are created until Phase 2.
-- **If you are about to skip the Phase Gate (Discussion → Planning)** — STOP. You MUST ask the user for explicit permission to transition. This is not optional.
+- **If you are about to skip the Phase Gate approval checkpoint** — STOP. The user must always approve the transition to Planning, whether they went through Phase 1 (Discussion) or entered via Conversion Mode (Step 0e). The gate protects the user's right to approve, not the existence of a discussion phase.
 - **If you are about to skip presenting a draft to the user** — STOP. Every draft must be shown in full and approved before writing to disk.
 - **If you are about to proceed past a CHECKPOINT GATE without user acknowledgment** — STOP. Print the checkpoint and wait.
 - **If you wrote a file but did not read it back to verify** — STOP. Go back and verify.
