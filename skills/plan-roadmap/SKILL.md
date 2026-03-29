@@ -57,43 +57,32 @@ Before starting work, read `${CLAUDE_SKILL_DIR}/references/active-guards.md` for
 
 Before doing anything else, validate the environment.
 
-### 0a: Verify git repository
+### 0a: Environment validation
+
+Run all environment checks in a single command. If any check fails, STOP and tell the user the specific error.
 
 ```bash
-git rev-parse --is-inside-work-tree
+git rev-parse --is-inside-work-tree && \
+PROJECT=$(basename $(git rev-parse --show-toplevel)) && \
+mkdir -p "$HOME/.roadmaps/$PROJECT" && \
+touch "$HOME/.roadmaps/$PROJECT/.verify" && \
+rm "$HOME/.roadmaps/$PROJECT/.verify" && \
+echo "OK:$PROJECT"
 ```
 
-If this fails, **STOP**. Tell the user this skill must run inside a git repository.
-
-### 0b: Create drafts directory
-
-Drafts are written to `~/.roadmaps/<project>/`. The feature subdirectory is created in Step 5f once the feature name is known.
-
-```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-mkdir -p "$HOME/.roadmaps/$PROJECT"
-```
-
-### 0c: Verify directory is writable
-
-```bash
-PROJECT=$(basename $(git rev-parse --show-toplevel))
-touch "$HOME/.roadmaps/$PROJECT/.verify" && rm "$HOME/.roadmaps/$PROJECT/.verify"
-```
-
-If this fails, **STOP**. Tell the user the directory is not writable.
+If the output starts with `OK:`, validation passed. Extract the project name from the output. If the command fails, report the specific error (not in a git repo, directory not writable, etc.).
 
 ### 0d: Planning log
 
-This skill writes a planning log that records every decision, action, command, and user interaction. The log lives inside the roadmap directory for debugging and analysis.
+This skill writes a planning log that records every decision, action, command, and user interaction. The log file is created in Step 5f when the roadmap directory is created. Until then, no log entries are accumulated — logging begins once the file path is known.
 
-The log file is created in Step 5f when the roadmap directory is created. Until then, accumulate log entries in memory. Once the directory exists:
+Once the directory exists:
 
 ```bash
 PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 ```
 
-Write the accumulated entries plus the header:
+Write the header:
 ```
 [YYYY-MM-DD HH:MM:SS] plan-roadmap v14 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
