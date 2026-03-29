@@ -1,7 +1,8 @@
 ---
 name: implement-roadmap
-version: "27"
-description: "Implement a planned feature from its Roadmap. Uses a deterministic Python coordinator for step selection and the Agent tool to launch a worker for each step. Use after /plan-roadmap or /plan-bugfix-roadmap has created a Roadmap."
+version: "29"
+description: "Implement a feature from its Roadmap using a deterministic coordinator and worker agents. Use after /plan-roadmap or /plan-bugfix-roadmap."
+argument-hint: "[feature-name | --version]"
 disable-model-invocation: true
 ---
 
@@ -10,7 +11,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v27
+   > implement-roadmap v29
 
 2. Print the worker agent version by running:
    ```bash
@@ -149,6 +150,20 @@ gh pr close <number> -c "Superseded by fresh implementation run" 2>/dev/null || 
 
 If no artifacts exist, continue silently.
 
+## Step 1a2: Auto-Merge Preference
+
+Ask the user:
+
+```
+Auto-merge PR when implementation is complete?
+[x] yes — merge automatically after reviews pass (default)
+[ ] no — leave PR ready for manual review before merging
+```
+
+**STOP. Wait for the user's response.**
+
+Store the result as `AUTO_MERGE` (`true` if yes, `false` if no). Default is `true`.
+
 ## Step 1b: Initialize Implementation Log
 
 Create the implementation log in the roadmap directory:
@@ -282,6 +297,7 @@ Implementation log: <$IMPL_LOG>
 Review config (per-step): <$REVIEW_PER_STEP>
 Review config (final): <$REVIEW_FINAL>
 Guidelines platform: <$GUIDELINE_PLATFORM> (agentic-cookbook path)
+Auto-merge: <$AUTO_MERGE>
 
 Implement ONLY this step. Commit your changes to the existing branch.
 When done, update the roadmap to mark this step Complete, then return.

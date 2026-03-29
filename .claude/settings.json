@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Edit(Roadmaps/**)",
-      "Write(Roadmaps/**)",
-      "Read(Roadmaps/**)",
+      "Read(~/.roadmaps/**)",
+      "Write(~/.roadmaps/**)",
+      "Edit(~/.roadmaps/**)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",

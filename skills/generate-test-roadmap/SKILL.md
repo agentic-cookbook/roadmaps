@@ -1,7 +1,8 @@
 ---
 name: generate-test-roadmap
-version: "3"
+version: "4"
 description: "Generate a test roadmap with silly cat-herding steps for testing the implement-roadmap workflow. No prompts, no approvals — just creates everything and exits."
+argument-hint: "[--version]"
 disable-model-invocation: true
 ---
 
@@ -9,7 +10,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> generate-test-roadmap v3
+> generate-test-roadmap v4
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -183,6 +184,8 @@ git commit -m "docs: add Feature Roadmap for ${FEATURE_NAME}"
 git push
 ```
 
+If `git push` fails, print the error and **STOP**.
+
 ---
 
 ## Step 4: Create GitHub Issues
@@ -193,7 +196,7 @@ For each of the 20 steps, create a GitHub issue:
 gh issue create --title "Feature: [${FEATURE_NAME}] Step N: <description>" --body "<body with context, acceptance criteria, complexity>"
 ```
 
-After each issue, verify with `gh issue view <number> --json number,title,state`.
+After each issue, verify with `gh issue view <number> --json number,title,state`. If `gh issue create` fails, print the error and **STOP** — do not continue creating more issues with partial state.
 
 After all 20 issues are created:
 1. Update the Roadmap file — replace each `REPO#TBD` with the actual issue reference

@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "12"
+version: "13"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v12
+> implement-step-agent v13
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -47,6 +47,7 @@ Your task prompt contains:
 - **Dashboard URL** — base URL of the dashboard server
 - **Roadmap ID** — UUID of the roadmap in the dashboard
 - **Implementation log** — path to the implementation log file
+- **Auto-merge** — whether to merge the PR automatically (`true` or `false`, default `true`)
 
 Read the Roadmap's Verification Strategy section to understand the build and test commands.
 
@@ -252,11 +253,34 @@ If the step description contains **"Finalize & Merge PR"**, perform the followin
    - Medium findings: fix if quick, otherwise log as follow-up
    - Low/info: ignore unless trivial
 
-7. **If reviews pass**, merge with `--merge` (NOT `--squash`):
+7. **If reviews pass**:
+
+   **If Auto-merge is `true`** (default):
    - **Log**: `Merging PR #<PR_NUMBER>`
    ```bash
    gh pr merge <PR_NUMBER> --merge
    ```
+   Continue to steps 8-10 (mark complete, clean up).
+
+   **If Auto-merge is `false`**:
+   - **Log**: `PR #<PR_NUMBER> ready for manual review`
+   - Mark this step as Complete in the Roadmap.md (direct file write — roadmap is in `~/.roadmaps/`).
+   - Push any remaining commits:
+     ```bash
+     git -C <worktree_path> push
+     ```
+   - Print:
+     ```
+     PR #<PR_NUMBER> is ready for review: <PR_URL>
+     Worktree preserved at: <worktree_path>
+     Branch: <feature_branch>
+
+     To merge when ready: gh pr merge <PR_NUMBER> --merge
+     Then clean up:
+       git worktree remove <worktree_path>
+       rm -rf ~/.roadmaps/<project>/<roadmap_dir_name>
+     ```
+   - **Return.** Do NOT proceed to steps 8-10. The worktree and roadmap files are preserved for the user.
 
 8. **Mark this step as Complete** in the working directory Roadmap.md and commit:
    ```bash
