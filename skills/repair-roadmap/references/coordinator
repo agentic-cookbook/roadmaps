@@ -1,0 +1,246 @@
+#!/usr/bin/env python3
+"""Deterministic step finder for feature roadmaps.
+
+Reads a roadmap file, determines the next step via regex (no LLM),
+and outputs the result as JSON. Does NOT launch agents — the calling
+skill/agent handles that via the Agent tool.
+
+Commands:
+    coordinator next-step <roadmap-path>     Find the next non-complete, non-manual step
+    coordinator resolve [feature-name]       Find and select a roadmap file
+    coordinator summary <roadmap-path>       Print progress summary
+
+Output is always JSON to stdout. Errors go to stderr.
+"""
+
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+# Add scripts/ to path for roadmap_lib
+_scripts_dir = Path(__file__).resolve().parent.parent.parent.parent / "scripts"
+if _scripts_dir.exists():
+    sys.path.insert(0, str(_scripts_dir))
+# Also check installed location
+_installed_scripts = Path.home() / ".claude" / "scripts"
+if _installed_scripts.exists():
+    sys.path.insert(0, str(_installed_scripts))
+
+import roadmap_lib as lib
+
+
+# --- Step parsing (operates on Roadmap.md content) ---
+
+def parse_step_fields(block):
+    """Extract key-value pairs from lines like '- **Key**: value'."""
+    fields = {}
+    for line in block.splitlines():
+        m = re.match(r"^\s*-\s*\*\*(.+?)\*\*:\s*(.*)", line)
+        if m:
+            fields[m.group(1).strip()] = m.group(2).strip()
+    return fields
+
+
+def list_all_steps(roadmap_path):
+    """Return all steps as a list of dicts."""
+    content = Path(roadmap_path).read_text()
+    step_pattern = re.compile(r"^### Step (\d+):\s*(.+)$", re.MULTILINE)
+    matches = list(step_pattern.finditer(content))
+    steps = []
+    for i, match in enumerate(matches):
+        block_start = match.end()
+        block_end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
+        fields = parse_step_fields(content[block_start:block_end])
+        steps.append({
+            "step": int(match.group(1)),
+            "description": match.group(2).strip(),
+            "status": fields.get("Status", "Not Started").strip(),
+            "type": fields.get("Type", "Auto").strip(),
+            "issue": fields.get("GitHub Issue", ""),
+            "complexity": fields.get("Complexity", ""),
+        })
+    return steps
+
+
+# --- Commands ---
+
+def cmd_next_step(args):
+    """Find the next non-complete, non-manual step."""
+    if not args:
+        print(json.dumps({"error": "Usage: coordinator next-step <roadmap-path>"}))
+        sys.exit(1)
+
+    roadmap_path = args[0]
+    if not Path(roadmap_path).exists():
+        print(json.dumps({"error": f"Roadmap not found: {roadmap_path}"}))
+        sys.exit(1)
+
+    steps = list_all_steps(roadmap_path)
+    manual_skipped = []
+    for s in steps:
+        if s["status"].lower() == "complete":
+            continue
+        if s["type"].lower() == "manual":
+            manual_skipped.append(s)
+            continue
+        # Found the next implementable step
+        roadmap_dir = Path(roadmap_path).parent
+        feature_name = lib.get_feature_name(roadmap_dir)
+        total, complete = lib.count_steps(roadmap_path)
+        print(json.dumps({
+            "action": "implement",
+            "step": s["step"],
+            "description": s["description"],
+            "status": s["status"],
+            "issue": s["issue"],
+            "complexity": s["complexity"],
+            "feature": feature_name,
+            "roadmap": roadmap_path,
+            "total": total,
+            "complete": complete,
+            "manual_skipped": manual_skipped,
+        }))
+        return
+
+    # All done (or only manual steps left)
+    roadmap_dir = Path(roadmap_path).parent
+    feature_name = lib.get_feature_name(roadmap_dir)
+    total, complete = lib.count_steps(roadmap_path)
+    print(json.dumps({
+        "action": "done",
+        "feature": feature_name,
+        "roadmap": roadmap_path,
+        "total": total,
+        "complete": complete,
+        "manual_skipped": manual_skipped,
+    }))
+
+
+def cmd_resolve(args):
+    """Find and select a roadmap file."""
+    feature_name = args[0] if args else None
+
+    # Determine current project name
+    try:
+        import subprocess
+        project = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+        project = Path(project).name
+    except Exception:
+        project = None
+
+    # Scan both locations: ~/.roadmaps/<project>/ and repo's Roadmaps/
+    roadmap_dirs = []
+
+    # 1. Working directory (~/.roadmaps/<project>/)
+    if project:
+        work_dir = Path.home() / ".roadmaps" / project
+        if work_dir.exists():
+            for d in sorted(work_dir.iterdir()):
+                if d.is_dir() and (d / "Roadmap.md").exists():
+                    roadmap_dirs.append(d)
+
+    # 2. Repo's Roadmaps/ directory
+    roadmap_dirs.extend(lib.find_roadmap_dirs("."))
+
+    if not roadmap_dirs:
+        # Fallback to old layout
+        old = lib.find_roadmaps_old_layout(".")
+        if old:
+            for entry in old:
+                if entry.get("roadmap_path") and entry["location"] == "active":
+                    roadmap_dirs.append(entry["roadmap_path"].parent)
+
+    # Filter out roadmaps whose project field doesn't match
+    def matches_project(rd):
+        rm_file = lib.roadmap_path(rd)
+        if not rm_file.exists():
+            return True  # can't check, allow
+        meta, _ = lib.parse_frontmatter(rm_file)
+        rm_project = meta.get("project")
+        if rm_project and project and rm_project != project:
+            return False
+        return True
+
+    roadmap_dirs = [rd for rd in roadmap_dirs if matches_project(rd)]
+
+    if feature_name:
+        # Filter by name match
+        matches = []
+        for rd in roadmap_dirs:
+            name = lib.get_feature_name(rd)
+            rm_file = lib.roadmap_path(rd)
+            if not rm_file.exists():
+                continue
+            if feature_name.lower() in name.lower():
+                if lib.is_implementable(rd):
+                    total, complete = lib.count_steps(rm_file)
+                    matches.append({"path": str(rm_file), "name": name,
+                                    "total": total, "complete": complete})
+        if len(matches) == 1:
+            print(json.dumps(matches[0]))
+        elif len(matches) > 1:
+            print(json.dumps({"choose": matches}))
+        else:
+            print(json.dumps({"error": f"No implementable roadmap matching '{feature_name}'"}))
+            sys.exit(1)
+    else:
+        # Show all implementable roadmaps
+        roadmaps = []
+        for rd in roadmap_dirs:
+            rm_file = lib.roadmap_path(rd)
+            if not rm_file.exists():
+                continue
+            if lib.is_implementable(rd):
+                name = lib.get_feature_name(rd)
+                total, complete = lib.count_steps(rm_file)
+                roadmaps.append({"path": str(rm_file), "name": name,
+                                 "total": total, "complete": complete})
+        if len(roadmaps) == 0:
+            print(json.dumps({"error": "No available roadmaps. Run /plan-roadmap first."}))
+            sys.exit(1)
+        elif len(roadmaps) == 1:
+            print(json.dumps(roadmaps[0]))
+        else:
+            print(json.dumps({"choose": roadmaps}))
+
+
+def cmd_summary(args):
+    """Print progress summary."""
+    if not args:
+        print(json.dumps({"error": "Usage: coordinator summary <roadmap-path>"}))
+        sys.exit(1)
+    roadmap_path = args[0]
+    steps = list_all_steps(roadmap_path)
+    total, complete = lib.count_steps(roadmap_path)
+    roadmap_dir = Path(roadmap_path).parent
+    feature_name = lib.get_feature_name(roadmap_dir)
+    print(json.dumps({
+        "feature": feature_name,
+        "roadmap": roadmap_path,
+        "total": total,
+        "complete": complete,
+        "steps": steps,
+    }))
+
+
+COMMANDS = {
+    "next-step": cmd_next_step,
+    "resolve": cmd_resolve,
+    "summary": cmd_summary,
+}
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
+        print(json.dumps({"error": f"Usage: coordinator <{'|'.join(COMMANDS.keys())}> [args...]"}))
+        sys.exit(1)
+    COMMANDS[sys.argv[1]](sys.argv[2:])
+
+
+if __name__ == "__main__":
+    main()
