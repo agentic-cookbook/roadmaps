@@ -128,6 +128,7 @@ Before asking the user what they want to plan, check if the conversation already
 
 Ask the user:
 
+VERBATIM:
 ```
 What feature would you like to plan?
 ```
@@ -157,6 +158,7 @@ When the user has shared enough context (they've slowed down, said something lik
 2. **Propose a feature name** — a PascalCase slug (no spaces) derived from the discussion.
 3. **Ask to proceed to Planning**.
 
+VERBATIM:
 ```
 Here's what I heard:
 
@@ -366,6 +368,7 @@ Before presenting the draft to the user, review the Roadmap against the Discussi
 2. **Do NOT attempt to fix it in place.** The draft is tainted — patching it risks carrying forward the same misunderstanding.
 3. **Warn the user** — tell them exactly which checks failed and what was wrong:
 
+VERBATIM:
 ```
 ⚠️ ALIGNMENT FAILURE — Roadmap does not match the discussion.
 
@@ -402,6 +405,7 @@ and the initial draft. These have been corrected:
 
 Then ask:
 
+VERBATIM:
 ```
 Above is the draft Feature Roadmap (<N> implementation steps).
 
@@ -521,6 +525,7 @@ Exit plan mode.
 
 Print the complete summary, then ask:
 
+VERBATIM:
 ```
 === PLANNING COMPLETE: <FeatureName> ===
 
