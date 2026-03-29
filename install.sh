@@ -8,7 +8,7 @@
 #   3. Installs shared agents into ~/.claude/agents/ (symlink or copy)
 #   4. Installs shared skills into OpenClaw if present
 
-VERSION="1.0.0"
+VERSION="1.1.0"
 
 set -e
 
@@ -557,6 +557,106 @@ verify_dash_cli() {
     fi
 }
 
+# --- ExitPlanMode Hook Installation ---
+
+install_exitplanmode_hook() {
+    echo ""
+    echo "--- ExitPlanMode Hook ---"
+
+    local settings_file="$HOME/.claude/settings.json"
+
+    if [ ! -f "$settings_file" ]; then
+        echo "  [skip] No settings.json found at $settings_file"
+        return
+    fi
+
+    # Check if the hook already exists
+    if python3 -c "
+import json, sys
+with open('$settings_file') as f:
+    d = json.load(f)
+hooks = d.get('hooks', {}).get('PostToolUse', [])
+for h in hooks:
+    if h.get('matcher') == 'ExitPlanMode':
+        sys.exit(0)
+sys.exit(1)
+" 2>/dev/null; then
+        echo "  [ok] ExitPlanMode hook already installed"
+        return
+    fi
+
+    # Merge the new hook entry into the PostToolUse array
+    python3 -c "
+import json
+
+settings_file = '$settings_file'
+with open(settings_file) as f:
+    d = json.load(f)
+
+msg = 'ROADMAP-EVAL: Consider the plan just discussed. Would it benefit from being tracked as a multi-step Roadmap with individual PRs per step? If yes, offer to convert it with one line. If no, say nothing.'
+inner_json = json.dumps({'systemMessage': msg})
+cmd = \"echo '\" + inner_json + \"'\"
+d.setdefault('hooks', {}).setdefault('PostToolUse', []).append({
+    'matcher': 'ExitPlanMode',
+    'hooks': [{
+        'type': 'command',
+        'command': cmd
+    }]
+})
+
+with open(settings_file, 'w') as f:
+    json.dump(d, f, indent=2)
+    f.write('\n')
+" 2>/dev/null
+
+    if [ $? -eq 0 ]; then
+        echo "  [installed] ExitPlanMode hook"
+    else
+        echo "  [error] Could not install ExitPlanMode hook"
+    fi
+}
+
+# --- Rule File Installation ---
+
+install_rule_files() {
+    local method="$1"
+
+    echo ""
+    echo "--- Rule Files ---"
+
+    local rule_src="$SCRIPT_DIR/.claude/rules/ROADMAP-PLANNING-RULE.md"
+    if [ ! -f "$rule_src" ]; then
+        echo "  [skip] No ROADMAP-PLANNING-RULE.md in repo"
+        return
+    fi
+
+    local target_dir="$HOME/.claude/rules"
+    mkdir -p "$target_dir"
+    local target="$target_dir/ROADMAP-PLANNING-RULE.md"
+
+    if [ -L "$target" ] && [ "$(readlink "$target")" = "$rule_src" ]; then
+        echo "  [ok] ROADMAP-PLANNING-RULE.md (symlink)"
+    elif [ -f "$target" ]; then
+        echo "  [reinstall] ROADMAP-PLANNING-RULE.md"
+        rm -f "$target"
+        if [ "$method" = "symlink" ]; then
+            ln -s "$rule_src" "$target"
+            echo "  [symlinked] ROADMAP-PLANNING-RULE.md"
+        else
+            cp "$rule_src" "$target"
+            echo "  [copied] ROADMAP-PLANNING-RULE.md"
+        fi
+    else
+        if [ "$method" = "symlink" ]; then
+            ln -s "$rule_src" "$target"
+            echo "  [symlinked] ROADMAP-PLANNING-RULE.md"
+        else
+            cp "$rule_src" "$target"
+            echo "  [copied] ROADMAP-PLANNING-RULE.md"
+        fi
+    fi
+}
+
 # --- CLI Scripts Installation ---
 
 install_cli_scripts() {
@@ -639,6 +739,8 @@ main() {
     install_openclaw_skills "$method"
     install_openclaw_agents "$method"
     install_cli_scripts
+    install_exitplanmode_hook
+    install_rule_files "$method"
 
     echo ""
     echo "=== Done ==="
