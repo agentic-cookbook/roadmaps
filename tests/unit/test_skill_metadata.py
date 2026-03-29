@@ -24,6 +24,8 @@ SKILLS_REQUIRING_DISABLE_MODEL_INVOCATION = {
     "implement-roadmap",
     "implement-roadmap-interactively",
     "generate-test-roadmap",
+    "import-shared-project",
+    "progress-dashboard",
 }
 
 ALL_SKILLS = sorted(SKILLS_DIR.iterdir()) if SKILLS_DIR.exists() else []
