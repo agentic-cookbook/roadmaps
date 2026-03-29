@@ -35,7 +35,7 @@ Remove `disable-model-invocation: true` from skills where auto-invoke is appropr
 | implement-roadmap-interactively | Same side effects |
 | generate-test-roadmap | Testing tool, not user-facing |
 
-**progress-dashboard** already has auto-invoke enabled. No change needed.
+**progress-dashboard** also has `disable-model-invocation: true`. It stays disabled — it has restricted `allowed-tools` and is designed to be explicitly invoked during implementation, not auto-triggered.
 
 ### 2. Conversion Mode — New Entry Path for plan-roadmap
 
@@ -43,8 +43,12 @@ When plan-roadmap is invoked and a plan or feature discussion already exists in 
 
 **New Step 0e: Context Detection** (inserted after validation, before Step 1):
 
-1. Claude examines the conversation history for: structured plans, feature discussions, brainstorming output, or plan mode output.
-2. If a plan exists → enter conversion mode:
+1. Claude examines the conversation history for a pre-existing plan. A plan is detected if ANY of these are true:
+   - The conversation contains output from plan mode (ExitPlanMode was called)
+   - The conversation contains a numbered or bulleted list of implementation steps (3+ steps)
+   - The conversation contains a brainstorming spec or design document
+   - The user explicitly said "convert this" / "make this into a roadmap" (i.e., referencing existing context)
+2. If a plan is detected → enter conversion mode:
    - Skip Phase 1 (Discussion) entirely
    - Synthesize a discussion summary from what's already in context
    - Propose a feature name
@@ -53,6 +57,8 @@ When plan-roadmap is invoked and a plan or feature discussion already exists in 
 3. If no plan exists → proceed to Phase 1 (Discussion) as normal
 
 The Phase Gate is still mandatory in conversion mode. The user must approve the summary and name before any files are created.
+
+**Note:** `references/active-guards.md` must be updated to clarify that the "Discussion → Planning" guard refers to the Phase Gate approval checkpoint, not to requiring Phase 1 to have occurred. The guard protects the user's right to approve the transition, not the existence of a discussion phase.
 
 ### 3. Instant Feel — Batched Validation
 
@@ -109,32 +115,36 @@ around verbatim output.
 
 Structure: fixed scaffolding, flexible conversation.
 
+**Limitation:** This is a convention enforced by instruction, not by runtime. The model may still occasionally paraphrase, especially in long conversations where the instruction scrolls out of active attention. This is a mitigation that significantly improves consistency, not a guarantee of byte-identical output.
+
 ### 5. The Hook — Intelligent Roadmap Offering
 
 A `PostToolUse` hook on `ExitPlanMode` that triggers Claude to evaluate whether the just-completed plan warrants a Roadmap.
 
-**Hook configuration (settings.json):**
+**Hook configuration — added to the `PostToolUse` array in `~/.claude/settings.json` (global, so it applies to all projects that have roadmap skills installed):**
+
 ```json
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "ExitPlanMode",
-        "command": "echo 'ROADMAP-EVAL: Consider the plan just discussed. Would it benefit from being tracked as a multi-step Roadmap with individual PRs per step? If yes, offer to convert it. If no, say nothing.'"
-      }
-    ]
-  }
+  "matcher": "ExitPlanMode",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "echo '{\"hookSpecificOutput\":{\"additionalContext\":\"ROADMAP-EVAL: Consider the plan just discussed. Would it benefit from being tracked as a multi-step Roadmap with individual PRs per step? If yes, offer to convert it with one line. If no, say nothing.\"}}'"
+    }
+  ]
 }
 ```
 
-**Claude's behavior:**
+**Mechanism:** PostToolUse hook stdout is parsed as JSON. The `hookSpecificOutput.additionalContext` field is injected into Claude's context. Claude then acts on the instruction.
+
+**Claude's behavior after receiving the additionalContext:**
 - Evaluates plan complexity against conversation context
 - Simple changes (rename, config, one-file fix) → says nothing
 - Multi-step, multi-PR work → offers one line: "This looks like it could benefit from a structured Roadmap. Want me to convert it? (/plan-roadmap)"
 - If the user ignores or declines, Claude moves on. No follow-up.
 - If plan-roadmap is already active, the hook stays silent.
 
-The hook is installed by `install.sh` and removed by `uninstall.sh`.
+**Installation:** `install.sh` merges this entry into the existing `PostToolUse` array in `~/.claude/settings.json`. It must not overwrite existing PostToolUse hooks. `uninstall.sh` removes the `ExitPlanMode` matcher entry from the array.
 
 ### 6. The Rule File — ROADMAP-PLANNING-RULE.md
 
@@ -166,7 +176,7 @@ Do not ask for confirmation — the user's intent is clear. Invoke the skill.
 - Do not invoke for /implement-roadmap — that requires explicit invocation.
 ```
 
-Installed by `install.sh`, removed by `uninstall.sh`.
+**Location:** This rule ships as part of the cat-herding repo in `.claude/rules/ROADMAP-PLANNING-RULE.md`. It is version-controlled like the other rules (PRINCIPLES-RULE.md, etc.). For users who install skills to `~/.claude/skills/` via `install.sh`, the rule file is symlinked to the consuming project's `.claude/rules/` — the same way skills are symlinked to `~/.claude/skills/`. `uninstall.sh` removes the symlink.
 
 ## Files Changed
 
@@ -177,8 +187,9 @@ Installed by `install.sh`, removed by `uninstall.sh`.
 | `skills/list-roadmaps/SKILL.md` | Remove `disable-model-invocation`, new description, version bump |
 | `skills/describe-roadmap/SKILL.md` | Remove `disable-model-invocation`, new description, version bump |
 | `skills/repair-roadmap/SKILL.md` | Remove `disable-model-invocation`, new description, version bump |
-| `install.sh` | Install ROADMAP-PLANNING-RULE.md to `.claude/rules/`, install hook to `settings.json` |
-| `uninstall.sh` | Remove rule file, remove hook |
+| `skills/plan-roadmap/references/active-guards.md` | Clarify Phase Gate guard to allow conversion mode |
+| `install.sh` | Symlink ROADMAP-PLANNING-RULE.md to consuming project's `.claude/rules/`, merge ExitPlanMode hook into `~/.claude/settings.json` PostToolUse array |
+| `uninstall.sh` | Remove rule symlink, remove ExitPlanMode hook entry from PostToolUse array |
 
 ## Files Created
 
@@ -193,9 +204,7 @@ Installed by `install.sh`, removed by `uninstall.sh`.
 | `skills/implement-roadmap/SKILL.md` | Keeps `disable-model-invocation` — heavy side effects |
 | `skills/implement-roadmap-interactively/SKILL.md` | Same |
 | `skills/generate-test-roadmap/SKILL.md` | Testing tool |
-| `skills/progress-dashboard/SKILL.md` | Already auto-invocable |
-| `agents/implement-step-agent.md` | No changes needed |
-| `scripts/*` | No changes needed |
+| `skills/progress-dashboard/SKILL.md` | Keeps `disable-model-invocation` — restricted tools, explicit invocation only |
 
 ## No New Dependencies
 
