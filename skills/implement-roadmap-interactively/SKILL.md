@@ -1,7 +1,8 @@
 ---
 name: implement-roadmap-interactively
-version: "10"
+version: "11"
 description: "Implement a planned feature from its Roadmap step by step with worktrees, PRs, and reviews. Use after /plan-roadmap has created a Roadmap."
+argument-hint: "[--version]"
 disable-model-invocation: true
 ---
 
@@ -9,7 +10,7 @@ disable-model-invocation: true
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> implement-roadmap-interactively v10
+> implement-roadmap-interactively v11
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -218,39 +219,7 @@ Work inside the worktree for all implementation.
 
 ### Step 8: Create PR
 
-**Control check.** Create a PR with a comprehensive description:
-
-Write the PR body to a temp file, then create the PR:
-
-```bash
-cat > /tmp/gh-pr-body.md <<'EOF'
-## Summary
-
-<What this PR does>
-
-## Linked Issue
-
-Closes #<issue_number>
-
-## Changes
-
-<Bulleted list of changes>
-
-## Testing
-
-<How this was tested>
-
-## Checklist
-
-- [ ] Build passes
-- [ ] Tests pass
-- [ ] Follows project conventions
-EOF
-```
-
-```bash
-gh pr create --title "<Step description>" --body-file /tmp/gh-pr-body.md
-```
+**Control check.** Create a PR with a comprehensive description that includes a summary, linked issue (`Closes #<issue_number>`), list of changes, and testing notes. Use `gh pr create`.
 
 ### Step 9: Run Reviews
 
@@ -273,10 +242,7 @@ Delegate to available review skills (`pre-review`, `pr-review-toolkit`, `code-re
 
 **If `superpowers:finishing-a-development-branch` skill is available**: Invoke it to handle the merge.
 
-**Otherwise**: Merge manually:
-```bash
-gh pr merge --squash
-```
+**Otherwise**: Squash-merge the PR with `gh pr merge --squash`.
 
 ### Step 12: Update Roadmap
 
@@ -288,12 +254,7 @@ gh pr merge --squash
 
 ### Step 13: Close GitHub Issue
 
-**Control check.** Add a summary comment to the GitHub issue and close it:
-
-```bash
-gh issue comment <number> --body "Completed in PR #<pr_number>. <Brief summary of what was done.>"
-gh issue close <number>
-```
+**Control check.** Add a summary comment to the GitHub issue referencing the merged PR, then close the issue.
 
 ### CHECKPOINT GATE — Step Complete
 
