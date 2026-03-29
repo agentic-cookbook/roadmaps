@@ -1,15 +1,14 @@
 ---
 name: plan-roadmap
-version: "12"
-description: "Plan a new feature — discuss, then create a Roadmap. Use when starting a new feature or component."
-disable-model-invocation: true
+version: "14"
+description: "Plan a feature as a structured Roadmap with steps and PRs. Use when planning a feature, converting a plan to a roadmap, organizing work into steps, or saving a plan as a roadmap."
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v12
+> plan-roadmap v14
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -90,7 +89,7 @@ PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 
 Write the accumulated entries plus the header:
 ```
-[YYYY-MM-DD HH:MM:SS] plan-roadmap v12 started
+[YYYY-MM-DD HH:MM:SS] plan-roadmap v14 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
 [YYYY-MM-DD HH:MM:SS] repo: $(git rev-parse --show-toplevel)
 [YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
@@ -244,7 +243,7 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`12`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`14`).
 
 Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
 
