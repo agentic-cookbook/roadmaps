@@ -129,13 +129,13 @@ A `PostToolUse` hook on `ExitPlanMode` that triggers Claude to evaluate whether 
   "hooks": [
     {
       "type": "command",
-      "command": "echo '{\"hookSpecificOutput\":{\"additionalContext\":\"ROADMAP-EVAL: Consider the plan just discussed. Would it benefit from being tracked as a multi-step Roadmap with individual PRs per step? If yes, offer to convert it with one line. If no, say nothing.\"}}'"
+      "command": "echo '{\"systemMessage\":\"ROADMAP-EVAL: Consider the plan just discussed. Would it benefit from being tracked as a multi-step Roadmap with individual PRs per step? If yes, offer to convert it with one line. If no, say nothing.\"}'"
     }
   ]
 }
 ```
 
-**Mechanism:** PostToolUse hook stdout is parsed as JSON. The `hookSpecificOutput.additionalContext` field is injected into Claude's context. Claude then acts on the instruction.
+**Mechanism:** PostToolUse hook stdout is parsed as JSON. The `systemMessage` field is included in Claude's context. Claude then acts on the instruction.
 
 **Claude's behavior after receiving the additionalContext:**
 - Evaluates plan complexity against conversation context
