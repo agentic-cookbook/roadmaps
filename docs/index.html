@@ -1618,7 +1618,7 @@ change-history:
 </div>
 
 <footer>
-  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a> &middot; <span style="color:var(--text-dim);font-size:0.6rem;">v3</span>
+  <a href="https://github.com/mikefullerton/cat-herding" style="color:var(--text-dim);text-decoration:none;">Cat Herding</a> &middot; Automated Roadmap Planning &amp; Implementation for Claude Code &middot; <a href="https://github.com/mikefullerton/cat-herding/issues" style="color:var(--text-dim);text-decoration:none;">Issues</a> &middot; <span style="color:var(--text-dim);font-size:0.6rem;">v4</span>
 </footer>
 
 <script>
@@ -1643,8 +1643,13 @@ document.querySelectorAll('nav a').forEach(function(a) {
     var target = document.querySelector(this.getAttribute('href'));
     if (target) {
       e.preventDefault();
+      var h = document.querySelector('header');
+      var offset = target.offsetTop;
+      if (getComputedStyle(h).position === 'sticky') {
+        offset -= h.offsetHeight;
+      }
       setTimeout(function() {
-        window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+        window.scrollTo({ top: offset, behavior: 'smooth' });
       }, 50);
     }
   });
