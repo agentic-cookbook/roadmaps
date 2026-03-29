@@ -14,6 +14,12 @@ Then stop. Do not continue with the rest of the skill.
 
 ---
 
+## Output Rules
+
+Text inside `VERBATIM:` blocks MUST be printed exactly as written — character for character. No paraphrasing, no rewording, no additions, no omissions. Do not add greetings, commentary, or transitions around verbatim output.
+
+---
+
 # Plan Roadmap
 
 Two-phase collaborative planning workflow for new features.
