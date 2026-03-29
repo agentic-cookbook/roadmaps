@@ -1,14 +1,16 @@
 ---
 name: import-shared-project
-version: "1"
+version: "2"
 description: "Add a shared project reference to the current project's CLAUDE.md. Takes a project name (looked up in ~/projects/) or a Git URL (cloned next to the current project)."
+argument-hint: "<project-name-or-git-url>"
+disable-model-invocation: true
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> import-shared-project v1
+> import-shared-project v2
 
 Then stop. Do not continue with the rest of the skill.
 
