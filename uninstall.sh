@@ -296,6 +296,61 @@ remove_cli_scripts() {
     done
 }
 
+# --- ExitPlanMode Hook Removal ---
+
+remove_exitplanmode_hook() {
+    echo ""
+    echo "--- ExitPlanMode Hook ---"
+
+    local settings_file="$HOME/.claude/settings.json"
+
+    if [ ! -f "$settings_file" ]; then
+        echo "  [skip] No settings.json"
+        return
+    fi
+
+    python3 -c "
+import json, sys
+
+settings_file = '$settings_file'
+with open(settings_file) as f:
+    d = json.load(f)
+
+hooks = d.get('hooks', {}).get('PostToolUse', [])
+original_len = len(hooks)
+hooks = [h for h in hooks if h.get('matcher') != 'ExitPlanMode']
+
+if len(hooks) == original_len:
+    sys.exit(1)  # not found
+
+d['hooks']['PostToolUse'] = hooks
+with open(settings_file, 'w') as f:
+    json.dump(d, f, indent=2)
+    f.write('\n')
+" 2>/dev/null
+
+    if [ $? -eq 0 ]; then
+        echo "  [removed] ExitPlanMode hook"
+    else
+        echo "  [skip] ExitPlanMode hook not found"
+    fi
+}
+
+# --- Rule File Removal ---
+
+remove_rule_files() {
+    echo ""
+    echo "--- Rule Files ---"
+
+    local target="$HOME/.claude/rules/ROADMAP-PLANNING-RULE.md"
+    if [ -L "$target" ] || [ -f "$target" ]; then
+        rm -f "$target"
+        echo "  [removed] ROADMAP-PLANNING-RULE.md"
+    else
+        echo "  [skip] ROADMAP-PLANNING-RULE.md not found"
+    fi
+}
+
 # =============================================================================
 # Main
 # =============================================================================
@@ -309,6 +364,8 @@ main() {
     remove_agents "$AGENTS_DIR" "Claude Agents"
     remove_guidelines
     remove_cli_scripts
+    remove_exitplanmode_hook
+    remove_rule_files
 
     local openclaw_dir
     openclaw_dir=$(find_openclaw_skills_dir)
