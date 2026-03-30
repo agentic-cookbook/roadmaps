@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "15"
+version: "16"
 description: "Plan a feature as a structured Roadmap with steps and PRs. Use when planning a feature, converting a plan to a roadmap, organizing work into steps, or saving a plan as a roadmap."
 ---
 
@@ -8,7 +8,7 @@ description: "Plan a feature as a structured Roadmap with steps and PRs. Use whe
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v15
+> plan-roadmap v16
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -84,7 +84,7 @@ PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 
 Write the header:
 ```
-[YYYY-MM-DD HH:MM:SS] plan-roadmap v15 started
+[YYYY-MM-DD HH:MM:SS] plan-roadmap v16 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
 [YYYY-MM-DD HH:MM:SS] repo: $(git rev-parse --show-toplevel)
 [YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
@@ -264,7 +264,7 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`15`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`16`).
 
 Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
 
@@ -286,7 +286,13 @@ Break the feature into ordered implementation steps. Each step must be:
 - **Independently testable** with clear acceptance criteria
 - **Clear about what "done" means**
 
-For each step, fill in: Description, Type (Auto or Manual), Complexity estimate (S/M/L), Dependencies, Acceptance criteria, Testing/verification approach.
+For each step, fill in: Description, Type (Auto or Manual), Complexity estimate (S/M/L), Dependencies, Expected Files, Acceptance criteria, Testing/verification approach.
+
+**Expected Files** — List the files the step will create, modify, and test. Use exact paths relative to the repo root. This is used by the spec compliance check during implementation to verify the agent stays in scope.
+
+**Acceptance Criteria** — Must be specific and verifiable. Each criterion should name a file path and expected behavior. Test criteria should name the specific test function (e.g., `test_auth_rejects_expired_token`).
+
+**Testing / Verification** — Must include "Build passes", "Existing tests pass", and name specific new test functions that will be written.
 
 **Step types:**
 - **Auto** — Claude can implement this step autonomously (code changes, tests, PRs). **Default to Auto** unless the step literally cannot be performed via code or CLI.
