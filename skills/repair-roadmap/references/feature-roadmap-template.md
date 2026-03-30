@@ -134,6 +134,14 @@ _Links to related GitHub issues, features, or prior work._
 
 _Repeat for each step..._
 
+## Conformance Vectors (Optional)
+
+_Map acceptance criteria to specific test scenarios. Use when traceability between requirements and tests is important. Omit for simple features._
+
+| ID | Criterion | Test Function | Expected Outcome |
+|----|-----------|---------------|------------------|
+| AC-1 | _Acceptance criterion from step_ | `test_function_name` | _Expected result_ |
+
 ## Deviations from Plan
 
 _Filled in at completion — what changed from the original plan and why._
