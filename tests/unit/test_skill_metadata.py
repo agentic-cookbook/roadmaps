@@ -258,6 +258,29 @@ class TestRepairRoadmapReferences:
 
 
 # ---------------------------------------------------------------------------
+# Lint verification: template and agent must support lint
+# ---------------------------------------------------------------------------
+
+class TestLintVerification:
+    """Templates must include Lint row and agent must have lint phase."""
+
+    def test_template_has_lint_row(self):
+        """Feature roadmap template must have a Lint row in Verification Strategy."""
+        template = (SKILLS_DIR / "plan-roadmap" / "references" / "feature-roadmap-template.md").read_text()
+        assert "| Lint |" in template, "Template missing Lint row in Verification Strategy"
+
+    def test_agent_has_lint_section(self):
+        """implement-step-agent must have a lint verification section."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "### 4.3. Lint" in agent, "Agent missing lint verification section (4.3)"
+
+    def test_agent_gate_includes_lint(self):
+        """implement-step-agent's mandatory gate must include lint."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "LINT_GATE_FAILED" in agent, "Agent gate missing LINT_GATE_FAILED log entry"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 

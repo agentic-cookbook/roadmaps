@@ -73,6 +73,7 @@ _Links to related GitHub issues, features, or prior work._
 |-------|-------------------|
 | Build | `{{BUILD_COMMAND}}` |
 | Test | `{{TEST_COMMAND}}` |
+| Lint | `{{LINT_COMMAND}}` |
 | Local verification | _Describe how to manually verify_ |
 | Manual verification flags | _List steps that require human verification_ |
 
