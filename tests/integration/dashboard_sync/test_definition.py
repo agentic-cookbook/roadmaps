@@ -106,6 +106,61 @@ class TestDashboardReflectsCurrentState:
             assert complete_count == step_num
 
 
+class TestProgressIncrementsOnOverview:
+    """Overview API must show incrementing progress after each step completes."""
+
+    def test_progress_increments_on_overview(self, dashboard_server):
+        ds = dashboard_server
+        rid = str(uuid.uuid4())
+        total_steps = 5
+
+        ds.cli.create_roadmap("ProgressTest", id=rid, status="running")
+        ds.cli.set_steps(rid, [
+            {
+                "number": i,
+                "description": f"Step {i}",
+                "status": "not_started",
+                "step_type": "Auto",
+                "complexity": "S",
+            }
+            for i in range(1, total_steps + 1)
+        ])
+
+        # Verify initial state: 0 complete
+        data = ds.api_get(f"/api/v1/roadmaps?detail=true")
+        roadmap = next(r for r in data if r["id"] == rid)
+        done = sum(1 for s in roadmap["steps"] if s["status"] == "complete")
+        assert done == 0, f"Expected 0 complete initially, got {done}"
+        assert len(roadmap["steps"]) == total_steps
+
+        # Complete each step and verify progress increments
+        for step_num in range(1, total_steps + 1):
+            ds.cli.begin_step(rid, step_num)
+
+            # Verify in_progress state
+            data = ds.api_get(f"/api/v1/roadmaps?detail=true")
+            roadmap = next(r for r in data if r["id"] == rid)
+            active = sum(
+                1 for s in roadmap["steps"] if s["status"] == "in_progress"
+            )
+            assert active == 1, (
+                f"Step {step_num}: expected 1 in_progress, got {active}"
+            )
+
+            ds.cli.finish_step(rid, step_num)
+
+            # Verify completion count incremented
+            data = ds.api_get(f"/api/v1/roadmaps?detail=true")
+            roadmap = next(r for r in data if r["id"] == rid)
+            done = sum(
+                1 for s in roadmap["steps"] if s["status"] == "complete"
+            )
+            assert done == step_num, (
+                f"After completing step {step_num}: "
+                f"expected {step_num} complete, got {done}"
+            )
+
+
 class TestSinglePROnOverview:
     """add_pr makes the PR visible in the overview API."""
 
