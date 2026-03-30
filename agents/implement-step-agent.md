@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "13"
+version: "14"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v13
+> implement-step-agent v14
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -375,7 +375,34 @@ Read the review config from the task prompt (`Review config (per-step): [...]`).
    ```
 
 4. **If high/critical findings**: fix them, re-run build + test + review (max 3 iterations). **Log**: `Fixing review finding: <description>`
-5. **If only medium/low or no findings**: continue to Step 5.
+5. **If only medium/low or no findings**: continue to 4.6.
+
+### 4.6. Spec Compliance Check
+
+After the code review passes, verify the implementation matches the step:
+
+1. Re-read this step's **Description** and **Acceptance Criteria** from the Roadmap.
+2. Review the git diff for this step: `git -C <worktree_path> diff HEAD~1`
+3. Check:
+   - **Completeness:** Is every acceptance criterion addressed by the diff?
+   - **Scope:** Does the diff contain changes NOT related to this step's description?
+4. If incomplete: implement the missing parts, re-run build/test, return to 4.5.
+5. If overscoped: revert the unrelated changes, re-run build/test, return to 4.5.
+6. **Log**: `SPEC_COMPLIANCE: PASS` or `SPEC_COMPLIANCE: FAIL — <reason>`
+
+This check runs ONCE (not in a retry loop). If it fails a second time, log `SPEC_COMPLIANCE_WARNING` and continue — the final PR review will catch it.
+
+### 4.9. Build/Test Gate (MANDATORY)
+
+Before marking this step as Complete, run a final verification:
+
+1. Run the build command from the Verification Strategy.
+   If it fails, DO NOT mark the step Complete. **Log**: `BUILD_GATE_FAILED` and return.
+
+2. Run the test command from the Verification Strategy.
+   If it fails, DO NOT mark the step Complete. **Log**: `TEST_GATE_FAILED` and return.
+
+**This is a HARD GATE.** A step with a failing build or test CANNOT be marked Complete. The retry logic in sections 3-4 should have already fixed these issues. This gate is a final safety check — if build/tests still fail after implementation and retries, the step fails.
 
 ### 5. Update Roadmap
 
@@ -417,8 +444,20 @@ Then stop. Do not continue to other steps.
 
 ---
 
-## ERROR HANDLING
+## ERROR HANDLING — Self-Correction Protocol
 
-- **Build failure**: Attempt to fix. If fix fails after 3 attempts, log the error and return.
-- **Test failure**: Attempt to fix. If fix fails after 3 attempts, log the error and return.
-- **Commit failure**: Log the git error output and return.
+When build or tests fail, follow this diagnostic loop (max 3 iterations):
+
+1. **Read the error output.** Do not guess — read the actual error message.
+2. **Diagnose the root cause.** Is it a syntax error? Missing import? Wrong API usage? Test assertion failure?
+3. **Fix the specific issue.** Make the minimal change that addresses the root cause. Do not refactor or restructure.
+4. **Re-run the failing command.** Verify the fix worked.
+5. **If fixed:** Log `SELF_CORRECTION: fixed on attempt <N> — <what was wrong>`. Continue with the next section.
+6. **If still failing:** Return to step 1 with the new error. Increment the attempt counter.
+
+After 3 failed iterations:
+- **Log**: `SELF_CORRECTION_EXHAUSTED: <summary of all 3 attempts>`
+- Mark the step as failed (NOT Complete)
+- Return with a detailed error report: what was tried, what failed, what the remaining error is
+
+**Commit failure:** Log the git error output and return immediately (no retry).
