@@ -1,14 +1,15 @@
 ---
 name: repair-roadmap
-version: "3"
+version: "4"
 description: "Repair a broken or stuck roadmap by re-planning incomplete steps. Use when a roadmap has stuck steps, needs re-planning, or the user says a roadmap is broken."
+argument-hint: "<roadmap-name>"
 ---
 
 ## Version Check
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> repair-roadmap v3
+> repair-roadmap v4
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -52,7 +53,7 @@ REPAIR_LOG="$ROADMAP_DIR/repair.log"
 
 Write the header once the roadmap is resolved:
 ```
-[YYYY-MM-DD HH:MM:SS] repair-roadmap v1 started
+[YYYY-MM-DD HH:MM:SS] repair-roadmap v4 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
 [YYYY-MM-DD HH:MM:SS] roadmap: $ROADMAP_DIR
 ```
@@ -66,7 +67,7 @@ Throughout this skill, append to `$REPAIR_LOG` before every significant action (
 Find the roadmap to repair. Use the coordinator:
 
 ```bash
-python3 "${CLAUDE_SKILL_DIR}/../implement-roadmap/references/coordinator" resolve $ARGUMENTS
+python3 "${CLAUDE_SKILL_DIR}/references/coordinator" resolve $ARGUMENTS
 ```
 
 This scans both `~/.roadmaps/<project>/` and `Roadmaps/` in the repo.
@@ -131,7 +132,7 @@ The repair skill NEVER removes steps, features, or acceptance criteria unless th
 Activate plan mode with deep thinking enabled.
 
 Read the plan-roadmap template:
-- `${CLAUDE_SKILL_DIR}/../plan-roadmap/references/feature-roadmap-template.md`
+- `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 **Before making any changes, record the original step inventory:**
 

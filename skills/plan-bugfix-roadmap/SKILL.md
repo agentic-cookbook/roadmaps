@@ -1,6 +1,6 @@
 ---
 name: plan-bugfix-roadmap
-version: "5"
+version: "6"
 description: "Create a bugfix roadmap from GitHub issues. Use when the user wants to plan bug fixes, organize issues into a roadmap, or batch fix multiple bugs."
 argument-hint: "<issue-numbers or 'all'>"
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), Bash(gh api *), Bash(git add *), Bash(git commit *), Bash(git push *), Bash(git status *), Bash(git diff *), Bash(git log *), Bash(cat *), Bash(date *)
@@ -10,7 +10,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash(mkdir *), Bash(gh issue *), B
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-bugfix-roadmap v5
+> plan-bugfix-roadmap v6
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -208,7 +208,7 @@ Commit and push.
 
 ---
 
-## Step 8: Final Summary
+## Step 7: Final Summary
 
 ```
 === BUGFIX ROADMAP COMPLETE: <FeatureName> ===

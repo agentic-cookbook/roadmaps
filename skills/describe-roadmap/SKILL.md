@@ -1,7 +1,8 @@
 ---
 name: describe-roadmap
-version: "5"
+version: "6"
 description: "Show detailed info about a roadmap — goal, progress, steps. Use when the user wants to inspect a roadmap, see step details, check progress, or review what's left."
+argument-hint: "[feature-name | --version]"
 ---
 
 ## Version Check
@@ -9,7 +10,7 @@ description: "Show detailed info about a roadmap — goal, progress, steps. Use 
 If `$ARGUMENTS` is `--version`:
 
 1. Print:
-   > describe-roadmap v5
+   > describe-roadmap v6
 
 Then stop.
 
