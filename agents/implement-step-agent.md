@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "16"
+version: "17"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v16
+> implement-step-agent v17
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -308,6 +308,23 @@ Then stop. Do not continue to other steps.
 ## STANDARD IMPLEMENTATION FLOW
 
 The sections below apply to **regular implementation steps** — any step that is NOT "Create Draft PR" or "Finalize & Merge PR".
+
+### 1c. Plan Deviation Check
+
+Before implementing, read the codebase and compare what the step assumes against what actually exists. Check:
+
+1. **Files exist** — Do the files the step expects to modify actually exist? Are they at the expected paths?
+2. **APIs/interfaces match** — Does the step assume an API, function signature, or data structure that has changed or doesn't exist?
+3. **Dependencies available** — Are the libraries, tools, or services the step depends on present?
+4. **Prior steps' output** — If this step depends on earlier steps, is their output present and in the expected format?
+
+**Classification:**
+
+- **No deviation**: Proceed normally.
+- **Minor deviation** (name change, extra parameter, slightly different structure): Proceed with the implementation, adapting to the actual codebase state. Log: `PLAN_DEVIATION_MINOR: <what differs and how you're adapting>`. Add a note to the PR comment for this step.
+- **Major deviation** (different architecture, missing dependency, step assumptions are fundamentally wrong): Do NOT implement. Log: `PLAN_DEVIATION_MAJOR: <what differs and why implementation cannot proceed>`. Mark the step status as `Blocked` in the Roadmap.md. Return immediately with a detailed explanation of the deviation.
+
+The coordinator will pause when it encounters a Blocked step and report to the user for a decision.
 
 Implementation follows the cookbook's **Make It Work / Make It Right** discipline. Each step has two phases:
 
