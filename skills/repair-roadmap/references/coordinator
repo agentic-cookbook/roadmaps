@@ -248,10 +248,86 @@ def cmd_summary(args):
     }))
 
 
+def cmd_resume(args):
+    """Detect partially-completed steps and output recovery action."""
+    if len(args) < 2:
+        print(json.dumps({"error": "Usage: coordinator resume <roadmap-path> <worktree-path>"}))
+        sys.exit(1)
+
+    roadmap_path = args[0]
+    worktree_path = args[1]
+
+    if not Path(roadmap_path).exists():
+        print(json.dumps({"error": f"Roadmap not found: {roadmap_path}"}))
+        sys.exit(1)
+
+    steps = list_all_steps(roadmap_path)
+    total, complete = lib.count_steps(roadmap_path)
+    roadmap_dir = Path(roadmap_path).parent
+    feature_name = lib.get_feature_name(roadmap_dir)
+
+    # Find the first non-complete step
+    current_step = None
+    for s in steps:
+        if s["status"].lower() not in ("complete", "blocked"):
+            if s["type"].lower() != "manual":
+                current_step = s
+                break
+
+    if current_step is None:
+        print(json.dumps({
+            "action": "done",
+            "feature": feature_name,
+            "total": total,
+            "complete": complete,
+        }))
+        return
+
+    # Check worktree state
+    state = "clean"
+    if Path(worktree_path).exists():
+        import subprocess
+        # Check for uncommitted changes
+        result = subprocess.run(
+            ["git", "-C", worktree_path, "status", "--porcelain"],
+            capture_output=True, text=True,
+        )
+        if result.stdout.strip():
+            state = "uncommitted"
+        else:
+            # Check for commits ahead of main that aren't reflected in roadmap
+            result = subprocess.run(
+                ["git", "-C", worktree_path, "log", "--oneline",
+                 "origin/main..HEAD"],
+                capture_output=True, text=True,
+            )
+            commits_ahead = len(result.stdout.strip().splitlines()) if result.stdout.strip() else 0
+            if commits_ahead > 0 and current_step["status"].lower() != "in progress":
+                state = "committed-not-marked"
+            elif commits_ahead > 0:
+                state = "in-progress"
+    else:
+        state = "no-worktree"
+
+    print(json.dumps({
+        "action": "resume",
+        "step": current_step["step"],
+        "description": current_step["description"],
+        "status": current_step["status"],
+        "state": state,
+        "feature": feature_name,
+        "roadmap": roadmap_path,
+        "worktree": worktree_path,
+        "total": total,
+        "complete": complete,
+    }))
+
+
 COMMANDS = {
     "next-step": cmd_next_step,
     "resolve": cmd_resolve,
     "summary": cmd_summary,
+    "resume": cmd_resume,
 }
 
 

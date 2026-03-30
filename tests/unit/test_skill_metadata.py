@@ -423,6 +423,26 @@ class TestGuidelineComplianceReview:
 
 
 # ---------------------------------------------------------------------------
+# Idempotent resume: coordinator resume command
+# ---------------------------------------------------------------------------
+
+class TestIdempotentResume:
+    """Coordinator must have a resume command for interrupted implementations."""
+
+    def test_coordinator_has_resume_command(self):
+        """Coordinator must have a resume command registered."""
+        coordinator = (SKILLS_DIR / "implement-roadmap" / "references" / "coordinator").read_text()
+        assert '"resume"' in coordinator, "Coordinator missing resume command registration"
+
+    def test_coordinator_resume_outputs_state(self):
+        """Resume command must output worktree state classification."""
+        coordinator = (SKILLS_DIR / "implement-roadmap" / "references" / "coordinator").read_text()
+        assert "uncommitted" in coordinator, "Resume missing uncommitted state"
+        assert "committed-not-marked" in coordinator, "Resume missing committed-not-marked state"
+        assert "no-worktree" in coordinator, "Resume missing no-worktree state"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 
