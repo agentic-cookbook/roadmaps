@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "18"
+version: "19"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v18
+> implement-step-agent v19
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -70,6 +70,7 @@ Log entries to write (same format as the coordinator):
 - `PR_CREATED: #<number> (draft)`
 - `PR_READY: #<number>`
 - `PR_MERGED: #<number>`
+- `DESIGN_DECISION: <decision> — Reason: <why>`
 
 If the log path is empty or the file is not writable, skip logging — it is not required.
 
@@ -364,6 +365,7 @@ Implement the **core happy-path functionality** for this step:
 - Each commit message references the GitHub issue: `feat: description (#<issue>)`
 - Follow existing patterns in the codebase
 - **Log** after each commit: `Committed: <commit message>`
+- **Log design decisions**: When you make a non-obvious choice (e.g., choosing one API over another, structuring data a particular way, using a specific pattern), log: `DESIGN_DECISION: <decision> — Reason: <why>`. Include these in the per-step PR comment.
 
 Run the build command. Fix errors until the build is clean.
 - **Log**: `Build passed` (or `Build failed — fixing` if retrying)
@@ -516,7 +518,15 @@ git -C <worktree_path> push
 PR_NUMBER=$(gh pr list --head <feature_branch> --json number --jq '.[0].number')
 gh pr comment $PR_NUMBER --body "**Step <N>: <description>**
 
-<brief summary of what was implemented, files changed, and how it was tested>"
+<brief summary of what was implemented, files changed, and how it was tested>
+
+<if any DESIGN_DECISION entries were logged, include them:>
+**Design decisions:**
+- <decision> — Reason: <why>
+
+<if any PLAN_DEVIATION_MINOR entries were logged, include them:>
+**Plan deviations (minor):**
+- <what differed and how it was adapted>"
 ```
 
 - **Log**: `Pushed and commented on PR #$PR_NUMBER`
