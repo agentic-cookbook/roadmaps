@@ -386,6 +386,24 @@ class TestVerificationSummary:
 
 
 # ---------------------------------------------------------------------------
+# Design decision audit trail
+# ---------------------------------------------------------------------------
+
+class TestDesignDecisionAuditTrail:
+    """Agent must log design decisions and include them in PR comments."""
+
+    def test_agent_has_design_decision_log_type(self):
+        """Agent must define DESIGN_DECISION log entry type."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "DESIGN_DECISION:" in agent, "Agent missing DESIGN_DECISION log entry type"
+
+    def test_agent_includes_decisions_in_pr_comment(self):
+        """Agent must include design decisions in per-step PR comments."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "Design decisions:" in agent, "Agent missing design decisions in PR comment template"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 
