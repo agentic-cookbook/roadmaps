@@ -17,10 +17,11 @@ from pathlib import Path
 import pytest
 from playwright.sync_api import expect
 
+from tests.integration.helpers import next_test_number
+
 POLL_MS = 1000
 POLL_TIMEOUT = 8000  # max wait for polled UI update
 SCREENSHOT_DIR = "/tmp/dashboard-screenshots/test"
-COUNTER_FILE = Path(__file__).parent / ".test-run-counter"
 
 STEPS = [
     {"number": 1, "description": "Create Draft PR",
@@ -36,17 +37,6 @@ STEPS = [
 ]
 
 STEP_NAMES = [s["description"] for s in STEPS]
-
-
-def _next_test_number():
-    """Read and increment a persisted test run counter."""
-    try:
-        n = int(COUNTER_FILE.read_text().strip())
-    except (FileNotFoundError, ValueError):
-        n = 0
-    n += 1
-    COUNTER_FILE.write_text(str(n))
-    return n
 
 
 def screenshot(page, name):
@@ -68,8 +58,7 @@ class TestImplementRoadmapDashboardLifecycle:
         rid = str(uuid.uuid4())
         poll = f"?poll={POLL_MS}"
         n = len(STEPS)
-        test_num = _next_test_number()
-        roadmap_name = f"Dashboard Lifecycle Test #{test_num}"
+        roadmap_name = f"Dashboard Lifecycle Test #{next_test_number()}"
 
         # --- 1. Create roadmap with steps via API ---
         ds.cli.create_roadmap(roadmap_name, id=rid, status="running")
@@ -160,3 +149,40 @@ class TestImplementRoadmapDashboardLifecycle:
         # Clean up pages
         detail.close()
         overview.close()
+
+
+class TestProgressUpdatesWithoutPollParam:
+    """Detail page must show progress updates without ?poll= parameter.
+
+    This tests the real-world path: the dash CLI opens the browser
+    without ?poll=, relying on the default polling fallback.
+    """
+
+    def test_progress_increments_without_poll_param(self, dashboard_server, context):
+        ds = dashboard_server
+        rid = str(uuid.uuid4())
+        n = 3
+
+        ds.cli.create_roadmap(f"No-Poll Progress Test #{next_test_number()}", id=rid, status="running")
+        ds.cli.set_steps(rid, [
+            {"number": i, "description": f"Step {i}",
+             "status": "not_started", "step_type": "Auto", "complexity": "S"}
+            for i in range(1, n + 1)
+        ])
+
+        # Open detail page WITHOUT ?poll= — the real-world case
+        detail = context.new_page()
+        detail.goto(f"{ds.url}/roadmap/{rid}")
+        expect(detail.locator("#progress-label")).to_contain_text(
+            f"0 / {n}", timeout=POLL_TIMEOUT
+        )
+
+        # Complete each step and verify progress updates
+        for step_num in range(1, n + 1):
+            ds.cli.begin_step(rid, step_num)
+            ds.cli.finish_step(rid, step_num)
+            expect(detail.locator("#progress-label")).to_contain_text(
+                f"{step_num} / {n}", timeout=POLL_TIMEOUT
+            )
+
+        detail.close()

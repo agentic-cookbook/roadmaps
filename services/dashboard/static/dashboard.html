@@ -1364,13 +1364,10 @@ async function loadSidebarRoadmaps() {
 // --- Init ---
 debugLog('Dashboard loaded, connecting to API');
 loadData();
-var pollMs = parseInt(new URLSearchParams(location.search).get('poll'));
-if (pollMs) {
-  debugLog('Polling mode: every ' + pollMs + 'ms');
-  setInterval(function() { loadData(); }, pollMs);
-} else {
-  connectSSE();
-}
+var pollMs = parseInt(new URLSearchParams(location.search).get('poll')) || 3000;
+debugLog('Polling every ' + pollMs + 'ms');
+setInterval(function() { loadData(); }, pollMs);
+connectSSE();
 </script>
 </body>
 </html>

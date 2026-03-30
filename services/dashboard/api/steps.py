@@ -42,17 +42,42 @@ def update_step(roadmap_id, number):
 @api.route("/roadmaps/<roadmap_id>/steps/<int:number>/begin", methods=["POST"])
 def begin_step(roadmap_id, number):
     models.begin_step(g.db, roadmap_id, number)
+    progress = _step_progress(roadmap_id)
+    models.add_runtime_event(
+        g.db, roadmap_id,
+        f"Progress: {progress['done']}/{progress['total']} steps ({progress['pct']}%)",
+    )
     from .sse import broadcast
-    broadcast("step_updated", {"roadmap_id": roadmap_id, "step_number": number, "status": "in_progress"})
+    broadcast("step_updated", {
+        "roadmap_id": roadmap_id, "step_number": number,
+        "status": "in_progress", "progress": progress,
+    })
     return jsonify({"ok": True})
 
 
 @api.route("/roadmaps/<roadmap_id>/steps/<int:number>/finish", methods=["POST"])
 def finish_step(roadmap_id, number):
     models.finish_step(g.db, roadmap_id, number)
+    progress = _step_progress(roadmap_id)
+    models.add_runtime_event(
+        g.db, roadmap_id,
+        f"Progress: {progress['done']}/{progress['total']} steps ({progress['pct']}%)",
+    )
     from .sse import broadcast
-    broadcast("step_updated", {"roadmap_id": roadmap_id, "step_number": number, "status": "complete"})
+    broadcast("step_updated", {
+        "roadmap_id": roadmap_id, "step_number": number,
+        "status": "complete", "progress": progress,
+    })
     return jsonify({"ok": True})
+
+
+def _step_progress(roadmap_id):
+    """Compute current step progress for a roadmap."""
+    steps = models.list_steps(g.db, roadmap_id)
+    done = sum(1 for s in steps if s["status"] == "complete")
+    total = len(steps)
+    pct = round(done / total * 100) if total > 0 else 0
+    return {"done": done, "total": total, "pct": pct}
 
 
 @api.route("/roadmaps/<roadmap_id>/steps/<int:number>/error", methods=["POST"])
