@@ -372,6 +372,20 @@ class TestPlanDeviationHandling:
 
 
 # ---------------------------------------------------------------------------
+# Verification summary: agent posts consolidated results to PR
+# ---------------------------------------------------------------------------
+
+class TestVerificationSummary:
+    """Agent must post a verification summary comment to the PR."""
+
+    def test_agent_has_verification_summary(self):
+        """Agent must have verification summary section in Finalize step."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "Verification Summary" in agent, "Agent missing Verification Summary section"
+        assert "VERIFICATION_SUMMARY" in agent, "Agent missing VERIFICATION_SUMMARY log entry"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 

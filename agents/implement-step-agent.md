@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "17"
+version: "18"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v17
+> implement-step-agent v18
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -252,6 +252,29 @@ If the step description contains **"Finalize & Merge PR"**, perform the followin
    - **Log**: `Fixing review finding: <description>`
    - Medium findings: fix if quick, otherwise log as follow-up
    - Low/info: ignore unless trivial
+
+6b. **Post verification summary** to the PR as a comment:
+
+   ```bash
+   gh pr comment <PR_NUMBER> --body "## Verification Summary
+
+   | Check | Result |
+   |-------|--------|
+   | Build | PASS |
+   | Tests | <N> passed, <N> failed |
+   | Lint | PASS / SKIPPED |
+   | Review: <agent-1> | PASS/FAIL (<N> high, <N> medium, <N> low) |
+   | Review: <agent-2> | PASS/FAIL (<N> high, <N> medium, <N> low) |
+   | Steps | <complete>/<total> complete |
+
+   **Self-corrections**: <N> (steps <list>) or None
+   **Plan deviations**: <N> minor, <N> major or None
+   **Review iterations**: <N>"
+   ```
+
+   Populate from the implementation log. This provides a single consolidated view of all verification results on the PR before merge.
+
+   - **Log**: `VERIFICATION_SUMMARY: posted to PR #<PR_NUMBER>`
 
 7. **If reviews pass**:
 
