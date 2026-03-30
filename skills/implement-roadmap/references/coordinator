@@ -79,8 +79,12 @@ def cmd_next_step(args):
 
     steps = list_all_steps(roadmap_path)
     manual_skipped = []
+    blocked_steps = []
     for s in steps:
         if s["status"].lower() == "complete":
+            continue
+        if s["status"].lower() == "blocked":
+            blocked_steps.append(s)
             continue
         if s["type"].lower() == "manual":
             manual_skipped.append(s)
@@ -100,6 +104,22 @@ def cmd_next_step(args):
             "roadmap": roadmap_path,
             "total": total,
             "complete": complete,
+            "manual_skipped": manual_skipped,
+        }))
+        return
+
+    # Check if blocked steps are preventing progress
+    if blocked_steps:
+        roadmap_dir = Path(roadmap_path).parent
+        feature_name = lib.get_feature_name(roadmap_dir)
+        total, complete = lib.count_steps(roadmap_path)
+        print(json.dumps({
+            "action": "blocked",
+            "feature": feature_name,
+            "roadmap": roadmap_path,
+            "total": total,
+            "complete": complete,
+            "blocked_steps": blocked_steps,
             "manual_skipped": manual_skipped,
         }))
         return

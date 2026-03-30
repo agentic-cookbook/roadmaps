@@ -343,6 +343,35 @@ class TestThreePhaseDiscipline:
 
 
 # ---------------------------------------------------------------------------
+# Plan deviation handling: agent and coordinator support deviations
+# ---------------------------------------------------------------------------
+
+class TestPlanDeviationHandling:
+    """Agent must detect deviations and coordinator must handle blocked status."""
+
+    def test_agent_has_deviation_check(self):
+        """Agent must have plan deviation check section."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "Plan Deviation Check" in agent, "Agent missing Plan Deviation Check section"
+
+    def test_agent_logs_minor_deviation(self):
+        """Agent must log minor deviations."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "PLAN_DEVIATION_MINOR" in agent, "Agent missing PLAN_DEVIATION_MINOR log"
+
+    def test_agent_logs_major_deviation(self):
+        """Agent must log major deviations."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "PLAN_DEVIATION_MAJOR" in agent, "Agent missing PLAN_DEVIATION_MAJOR log"
+
+    def test_coordinator_handles_blocked(self):
+        """Coordinator must handle blocked status and output blocked action."""
+        coordinator = (SKILLS_DIR / "implement-roadmap" / "references" / "coordinator").read_text()
+        assert '"blocked"' in coordinator, "Coordinator missing blocked action"
+        assert "blocked_steps" in coordinator, "Coordinator missing blocked_steps output"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 
