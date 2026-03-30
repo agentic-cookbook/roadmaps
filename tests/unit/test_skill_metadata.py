@@ -404,6 +404,25 @@ class TestDesignDecisionAuditTrail:
 
 
 # ---------------------------------------------------------------------------
+# Guideline compliance in final review
+# ---------------------------------------------------------------------------
+
+class TestGuidelineComplianceReview:
+    """Final review must verify opted-in concerns from planning."""
+
+    def test_agent_has_guideline_compliance_step(self):
+        """Agent must have guideline compliance check in Finalize."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "GUIDELINE_COMPLIANCE_START" in agent, "Agent missing GUIDELINE_COMPLIANCE_START"
+        assert "GUIDELINE_COMPLIANCE:" in agent, "Agent missing GUIDELINE_COMPLIANCE log entries"
+
+    def test_agent_reads_concerns_from_frontmatter(self):
+        """Agent must read concerns field from Roadmap frontmatter."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "opted-in" in agent, "Agent doesn't reference opted-in concerns"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 
