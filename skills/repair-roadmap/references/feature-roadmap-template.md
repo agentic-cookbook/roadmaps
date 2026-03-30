@@ -10,6 +10,10 @@ description: "{{DESCRIPTION}}"
 reviews:
   per-step: [code-reviewer]
   final: [code-reviewer, silent-failure-hunter, pr-test-analyzer]
+concerns:
+  always: [native-controls, surface-design-decisions, no-blocking-main-thread, small-atomic-commits, post-generation-verification, linting-from-day-one, simplicity, work-right-fast, dependency-injection, immutability, fail-fast, design-for-deletion, yagni, explicit-over-implicit, separation-of-concerns, comprehensive-unit-testing, test-pyramid, good-test-properties, unit-test-patterns, flaky-test-prevention, test-data, testing-workflow]
+  opted-in: []
+  opted-out: []
 change-history:
   - date: "{{DATE}}"
     description: "Initial draft"
