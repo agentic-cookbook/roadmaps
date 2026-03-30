@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "29"
+version: "30"
 description: "Implement a feature from its Roadmap using a deterministic coordinator and worker agents. Use after /plan-roadmap or /plan-bugfix-roadmap."
 argument-hint: "[feature-name | --version]"
 disable-model-invocation: true
@@ -11,7 +11,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v29
+   > implement-roadmap v30
 
 2. Print the worker agent version by running:
    ```bash
@@ -149,6 +149,40 @@ gh pr close <number> -c "Superseded by fresh implementation run" 2>/dev/null || 
 ```
 
 If no artifacts exist, continue silently.
+
+## Step 1a1: Environment Pre-Flight
+
+Before creating the worktree, verify the environment is healthy:
+
+1. **Build health** — Run the build command from the Roadmap's Verification Strategy on the current branch:
+   ```bash
+   <BUILD_COMMAND>
+   ```
+   If the build fails, **STOP**: "Build is already broken on main. Fix the build before starting implementation."
+
+2. **Test health** — Run the test command:
+   ```bash
+   <TEST_COMMAND>
+   ```
+   If tests fail, **WARN** the user:
+   ```
+   <N> tests failing on main before implementation starts. Continue anyway?
+   [x] yes — proceed despite failing tests
+   [ ] no — stop so I can fix them
+   ```
+   **STOP. Wait for the user's response.**
+
+3. **Dashboard service** — Check if reachable:
+   ```bash
+   curl -sf "$DASHBOARD_URL/api/v1/health" > /dev/null 2>&1 && echo "DASHBOARD_OK" || echo "DASHBOARD_UNREACHABLE"
+   ```
+   If unreachable, **WARN**: "Dashboard service not running. Progress will not be tracked visually." Continue without stopping.
+
+4. **Clean working tree** — Check for uncommitted changes:
+   ```bash
+   git status --porcelain
+   ```
+   If dirty, **WARN**: "Uncommitted changes in working tree. These will not be in the worktree." Continue without stopping.
 
 ## Step 1a2: Auto-Merge Preference
 
