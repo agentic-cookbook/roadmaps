@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "19"
+version: "20"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v19
+> implement-step-agent v20
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -240,6 +240,24 @@ If the step description contains **"Finalize & Merge PR"**, perform the followin
    REVIEW_FINDING: [<severity>] <description>
    REVIEW_RESULT: <agent-type> — PASS|FAIL (<counts>)
    ```
+
+5b. **Guideline compliance check**:
+   - **Log**: `GUIDELINE_COMPLIANCE_START`
+
+   Read the `concerns` field from the Roadmap.md frontmatter. For each concern in `opted-in`:
+
+   1. Read the concern's guideline file (path from `pipeline-concerns.json`)
+   2. Check if the PR diff addresses the concern (e.g., if `instrumented-logging` is opted-in, verify logging was added; if `accessibility` is opted-in, verify a11y attributes exist)
+   3. Log each: `GUIDELINE_COMPLIANCE: <concern> — PASS|MISSING`
+
+   Concerns in `always` are checked by the standard code-reviewer agent. This step focuses specifically on `opted-in` concerns that the user selected during planning.
+
+   If any opted-in concern is `MISSING`:
+   - Log: `GUIDELINE_COMPLIANCE_FAIL: <list of missing concerns>`
+   - Include in the verification summary (step 6b) as findings
+   - Treat as medium-severity findings (fix if quick, otherwise note as follow-up)
+
+   If all pass: `GUIDELINE_COMPLIANCE: ALL PASS (<N> concerns verified)`
 
 6. **Fix high/critical findings** (max 3 iterations):
    - Fix the issues
