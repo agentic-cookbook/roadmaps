@@ -462,6 +462,28 @@ class TestConformanceVectors:
 
 
 # ---------------------------------------------------------------------------
+# Standardized progress format
+# ---------------------------------------------------------------------------
+
+class TestProgressFormat:
+    """implement-roadmap must have standardized progress output format."""
+
+    def test_skill_has_progress_format_section(self):
+        """Skill must document the progress output format."""
+        skill = (SKILLS_DIR / "implement-roadmap" / "SKILL.md").read_text()
+        assert "## Progress Output Format" in skill, "Skill missing Progress Output Format section"
+
+    def test_progress_format_has_phases(self):
+        """Progress format must include Preflight, Implementing, Verification, Review, Complete."""
+        skill = (SKILLS_DIR / "implement-roadmap" / "SKILL.md").read_text()
+        assert "[Preflight" in skill, "Missing Preflight progress format"
+        assert "[Implementing" in skill, "Missing Implementing progress format"
+        assert "[Verification]" in skill, "Missing Verification progress format"
+        assert "[Review]" in skill, "Missing Review progress format"
+        assert "[Complete]" in skill, "Missing Complete progress format"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 

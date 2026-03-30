@@ -1,6 +1,6 @@
 ---
 name: implement-roadmap
-version: "30"
+version: "31"
 description: "Implement a feature from its Roadmap using a deterministic coordinator and worker agents. Use after /plan-roadmap or /plan-bugfix-roadmap."
 argument-hint: "[feature-name | --version]"
 disable-model-invocation: true
@@ -11,7 +11,7 @@ disable-model-invocation: true
 If `$ARGUMENTS` is `--version`:
 
 1. Print the skill version:
-   > implement-roadmap v30
+   > implement-roadmap v31
 
 2. Print the worker agent version by running:
    ```bash
@@ -29,6 +29,27 @@ Then stop. Do not continue with the rest of the skill.
 Uses a deterministic Python script for step selection (no LLM judgment) and the Agent tool to launch a worker agent for each step.
 
 **Do NOT modify the coordinator script, the worker agent, or any skill files.** If something fails, report the error.
+
+## Progress Output Format
+
+Use standardized progress indicators throughout the skill. Print these at each phase transition:
+
+```
+[Preflight 1/4] Resolving roadmap...
+[Preflight 2/4] Checking previous artifacts...
+[Preflight 3/4] Environment pre-flight...
+[Preflight 4/4] Initializing dashboard...
+[Implementing Step N/M] <step description>
+[Implementing Step N/M] Phase 1 — Make It Work
+[Implementing Step N/M] Phase 2 — Make It Right
+[Implementing Step N/M] Lint / Review / Spec compliance
+[Verification] Build / Test / Lint gate
+[Review] Final multi-agent review (<N> agents)
+[Review] Guideline compliance check
+[Complete] PR #<N> merged — <feature name>
+```
+
+This format is used in terminal output and by the cookbook statusline script (`.cookbook/statusline.sh`) to show progress in the Claude Code status bar.
 
 ## CRITICAL INVARIANT
 
