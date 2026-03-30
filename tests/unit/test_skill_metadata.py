@@ -443,6 +443,25 @@ class TestIdempotentResume:
 
 
 # ---------------------------------------------------------------------------
+# Conformance test vectors: template section
+# ---------------------------------------------------------------------------
+
+class TestConformanceVectors:
+    """Template must have optional Conformance Vectors section."""
+
+    def test_template_has_conformance_vectors(self):
+        """Feature roadmap template must have Conformance Vectors section."""
+        template = (SKILLS_DIR / "plan-roadmap" / "references" / "feature-roadmap-template.md").read_text()
+        assert "## Conformance Vectors" in template, "Template missing Conformance Vectors section"
+
+    def test_conformance_vectors_has_table(self):
+        """Conformance Vectors section must have a mapping table."""
+        template = (SKILLS_DIR / "plan-roadmap" / "references" / "feature-roadmap-template.md").read_text()
+        assert "| ID |" in template, "Conformance Vectors missing table header"
+        assert "Test Function" in template, "Conformance Vectors missing Test Function column"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 
