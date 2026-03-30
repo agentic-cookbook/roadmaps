@@ -52,6 +52,19 @@ def _find_test_repo():
 
 TEST_REPO_PATH = _find_test_repo()
 
+_TEST_COUNTER_FILE = Path(__file__).parent / ".test-run-counter"
+
+
+def next_test_number():
+    """Read and increment a persisted test run counter shared across all tests."""
+    try:
+        n = int(_TEST_COUNTER_FILE.read_text().strip())
+    except (FileNotFoundError, ValueError):
+        n = 0
+    n += 1
+    _TEST_COUNTER_FILE.write_text(str(n))
+    return n
+
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.integration.helpers import PROJECT_ROOT
+from tests.integration.helpers import PROJECT_ROOT, next_test_number
 
 
 class TestStepStatusTransitions:
@@ -24,7 +24,7 @@ class TestStepStatusTransitions:
         ds = dashboard_server
         rid = str(uuid.uuid4())
 
-        ds.cli.create_roadmap("SyncTest", id=rid)
+        ds.cli.create_roadmap(f"Step Transitions Test #{next_test_number()}", id=rid)
         ds.cli.set_steps(rid, [
             {
                 "number": 1, "description": "Step 1",
@@ -51,7 +51,7 @@ class TestRoadmapStatusLifecycle:
         ds = dashboard_server
         rid = str(uuid.uuid4())
 
-        ds.cli.create_roadmap("StatusTest", id=rid, status="idle")
+        ds.cli.create_roadmap(f"Status Lifecycle Test #{next_test_number()}", id=rid, status="idle")
         data = ds.api_get(f"/api/v1/roadmaps/{rid}")
         assert data["status"] == "idle"
 
@@ -71,7 +71,7 @@ class TestRoadmapStateLifecycle:
         ds = dashboard_server
         rid = str(uuid.uuid4())
 
-        ds.cli.create_roadmap("StateTest", id=rid, state="Ready")
+        ds.cli.create_roadmap(f"State Lifecycle Test #{next_test_number()}", id=rid, state="Ready")
         ds.cli.transition_state(rid, "Implementing")
         ds.cli.transition_state(rid, "Complete")
 
@@ -86,7 +86,7 @@ class TestDashboardReflectsCurrentState:
         ds = dashboard_server
         rid = str(uuid.uuid4())
 
-        ds.cli.create_roadmap("ReflectTest", id=rid, status="running")
+        ds.cli.create_roadmap(f"Completion Count Test #{next_test_number()}", id=rid, status="running")
         ds.cli.set_steps(rid, [
             {
                 "number": i, "description": f"Step {i}",
@@ -114,7 +114,7 @@ class TestProgressIncrementsOnOverview:
         rid = str(uuid.uuid4())
         total_steps = 5
 
-        ds.cli.create_roadmap("ProgressTest", id=rid, status="running")
+        ds.cli.create_roadmap(f"Overview Progress Test #{next_test_number()}", id=rid, status="running")
         ds.cli.set_steps(rid, [
             {
                 "number": i,
@@ -169,7 +169,7 @@ class TestProgressHooks:
         rid = str(uuid.uuid4())
         total = 5
 
-        ds.cli.create_roadmap("ProgressHookTest", id=rid, status="running")
+        ds.cli.create_roadmap(f"Progress Hooks Test #{next_test_number()}", id=rid, status="running")
         ds.cli.set_steps(rid, [
             {
                 "number": i, "description": f"Step {i}",
@@ -218,7 +218,7 @@ class TestSinglePROnOverview:
         ds = dashboard_server
         rid = str(uuid.uuid4())
 
-        ds.cli.create_roadmap("PRTest", id=rid)
+        ds.cli.create_roadmap(f"PR Overview Test #{next_test_number()}", id=rid)
         # add_pr calls a route that doesn't exist standalone;
         # use sync to add PRs instead
         ds.cli.sync(rid, {
@@ -242,7 +242,7 @@ class TestPRLinkOnStepCard:
         ds = dashboard_server
         rid = str(uuid.uuid4())
 
-        ds.cli.create_roadmap("PRStepTest", id=rid, status="running")
+        ds.cli.create_roadmap(f"PR Step Link Test #{next_test_number()}", id=rid, status="running")
         ds.cli.set_steps(rid, [
             {"number": 1, "description": "Create Draft PR",
              "status": "not_started", "step_type": "Auto", "complexity": "S"},
@@ -350,8 +350,7 @@ class TestDashServerMustBeStarted:
         env["DASHBOARD_DB"] = db_path
         env["DASHBOARD_PORT"] = str(port)
         env["DASH_FEATURE"] = "AllAuto3Step"
-        # Prevent dash from opening a browser during the test
-        env["DISPLAY"] = ""
+        env["DASH_NO_BROWSER"] = "1"
 
         # --- Step 1: dash init (no step names, same as implement-roadmap) ---
         result = subprocess.run(
