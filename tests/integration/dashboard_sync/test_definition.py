@@ -161,6 +161,56 @@ class TestProgressIncrementsOnOverview:
             )
 
 
+class TestProgressHooks:
+    """Progress runtime events are logged after every step status change."""
+
+    def test_progress_events_logged_on_each_step(self, dashboard_server):
+        ds = dashboard_server
+        rid = str(uuid.uuid4())
+        total = 5
+
+        ds.cli.create_roadmap("ProgressHookTest", id=rid, status="running")
+        ds.cli.set_steps(rid, [
+            {
+                "number": i, "description": f"Step {i}",
+                "status": "not_started", "step_type": "Auto",
+                "complexity": "S",
+            }
+            for i in range(1, total + 1)
+        ])
+
+        for step_num in range(1, total + 1):
+            ds.cli.begin_step(rid, step_num)
+            ds.cli.finish_step(rid, step_num)
+
+            # Verify runtime events contain correct progress entry
+            data = ds.api_get(f"/api/v1/roadmaps/{rid}")
+            events = data["events"]
+            progress_events = [
+                e for e in events if e["message"].startswith("Progress:")
+            ]
+
+            # Two progress events per step (begin + finish)
+            assert len(progress_events) == step_num * 2, (
+                f"After step {step_num}: expected {step_num * 2} progress "
+                f"events, got {len(progress_events)}"
+            )
+
+            # Last progress event should show correct done/total
+            last_event = progress_events[-1]
+            expected = f"Progress: {step_num}/{total} steps"
+            assert expected in last_event["message"], (
+                f"After step {step_num}: expected '{expected}' in "
+                f"'{last_event['message']}'"
+            )
+
+            # Cross-check: API step count matches event
+            complete_count = sum(
+                1 for s in data["steps"] if s["status"] == "complete"
+            )
+            assert complete_count == step_num
+
+
 class TestSinglePROnOverview:
     """add_pr makes the PR visible in the overview API."""
 

@@ -160,3 +160,40 @@ class TestImplementRoadmapDashboardLifecycle:
         # Clean up pages
         detail.close()
         overview.close()
+
+
+class TestProgressUpdatesWithoutPollParam:
+    """Detail page must show progress updates without ?poll= parameter.
+
+    This tests the real-world path: the dash CLI opens the browser
+    without ?poll=, relying on the default polling fallback.
+    """
+
+    def test_progress_increments_without_poll_param(self, dashboard_server, context):
+        ds = dashboard_server
+        rid = str(uuid.uuid4())
+        n = 3
+
+        ds.cli.create_roadmap("NoPollTest", id=rid, status="running")
+        ds.cli.set_steps(rid, [
+            {"number": i, "description": f"Step {i}",
+             "status": "not_started", "step_type": "Auto", "complexity": "S"}
+            for i in range(1, n + 1)
+        ])
+
+        # Open detail page WITHOUT ?poll= — the real-world case
+        detail = context.new_page()
+        detail.goto(f"{ds.url}/roadmap/{rid}")
+        expect(detail.locator("#progress-label")).to_contain_text(
+            f"0 / {n}", timeout=POLL_TIMEOUT
+        )
+
+        # Complete each step and verify progress updates
+        for step_num in range(1, n + 1):
+            ds.cli.begin_step(rid, step_num)
+            ds.cli.finish_step(rid, step_num)
+            expect(detail.locator("#progress-label")).to_contain_text(
+                f"{step_num} / {n}", timeout=POLL_TIMEOUT
+            )
+
+        detail.close()
