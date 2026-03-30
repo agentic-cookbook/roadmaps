@@ -281,6 +281,42 @@ class TestLintVerification:
 
 
 # ---------------------------------------------------------------------------
+# Guideline applicability checklist: template and skill must support concerns
+# ---------------------------------------------------------------------------
+
+class TestGuidelineConcerns:
+    """Templates must have concerns field and skill must have concern selection step."""
+
+    def test_template_has_concerns_field(self):
+        """Feature roadmap template must have a concerns field in frontmatter."""
+        template = (SKILLS_DIR / "plan-roadmap" / "references" / "feature-roadmap-template.md").read_text()
+        assert "concerns:" in template, "Template missing concerns field in frontmatter"
+
+    def test_template_concerns_has_always_list(self):
+        """Concerns field must include an always list with core engineering concerns."""
+        template = (SKILLS_DIR / "plan-roadmap" / "references" / "feature-roadmap-template.md").read_text()
+        assert "always:" in template, "Template missing always list in concerns"
+        assert "fail-fast" in template, "Template missing fail-fast in always concerns"
+        assert "separation-of-concerns" in template, "Template missing separation-of-concerns in always concerns"
+
+    def test_template_concerns_has_opt_lists(self):
+        """Concerns field must include opted-in and opted-out lists."""
+        template = (SKILLS_DIR / "plan-roadmap" / "references" / "feature-roadmap-template.md").read_text()
+        assert "opted-in:" in template, "Template missing opted-in list in concerns"
+        assert "opted-out:" in template, "Template missing opted-out list in concerns"
+
+    def test_skill_has_concern_selection_step(self):
+        """plan-roadmap must have Step 3c for concern selection."""
+        skill = (SKILLS_DIR / "plan-roadmap" / "SKILL.md").read_text()
+        assert "## Step 3c: Concern Selection" in skill, "Skill missing Step 3c"
+
+    def test_skill_references_pipeline_concerns(self):
+        """plan-roadmap must reference the cookbook's pipeline-concerns.json."""
+        skill = (SKILLS_DIR / "plan-roadmap" / "SKILL.md").read_text()
+        assert "pipeline-concerns.json" in skill, "Skill doesn't reference pipeline-concerns.json"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 ---
 name: plan-roadmap
-version: "16"
+version: "17"
 description: "Plan a feature as a structured Roadmap with steps and PRs. Use when planning a feature, converting a plan to a roadmap, organizing work into steps, or saving a plan as a roadmap."
 ---
 
@@ -8,7 +8,7 @@ description: "Plan a feature as a structured Roadmap with steps and PRs. Use whe
 
 If `$ARGUMENTS` is `--version`, respond with exactly:
 
-> plan-roadmap v16
+> plan-roadmap v17
 
 Then stop. Do not continue with the rest of the skill.
 
@@ -84,7 +84,7 @@ PLAN_LOG="$HOME/.roadmaps/$PROJECT/YYYY-MM-DD-<FeatureName>/planning.log"
 
 Write the header:
 ```
-[YYYY-MM-DD HH:MM:SS] plan-roadmap v16 started
+[YYYY-MM-DD HH:MM:SS] plan-roadmap v17 started
 [YYYY-MM-DD HH:MM:SS] project: $PROJECT
 [YYYY-MM-DD HH:MM:SS] repo: $(git rev-parse --show-toplevel)
 [YYYY-MM-DD HH:MM:SS] user: $(git config user.name) <$(git config user.email)>
@@ -242,6 +242,55 @@ Log: `[timestamp] ACTION: Discussion summary captured`
 
 ---
 
+## Step 3c: Concern Selection
+
+Present the agentic cookbook's opt-in concerns in a single consolidated prompt. The "always" concerns (core engineering + testing, steps 1-22) are automatically included — do not ask the user about them.
+
+Read the concern checklist: `../agentic-cookbook/cookbook/workflow/pipeline-concerns.json`
+
+Filter to items where `"apply": "ask"`. Present them grouped in a single prompt:
+
+VERBATIM:
+```
+=== Guideline Concerns ===
+
+Core engineering and testing guidelines are always applied.
+The following opt-in concerns can be included. Defaults shown.
+
+  [x] show-progress — Progress indication for async work
+  [x] instrumented-logging — Structured logging for all components
+  [ ] deep-linking — Views are deep linkable
+  [ ] scriptable-automatable — Scripting/automation support
+  [x] accessibility — Platform accessibility APIs
+  [x] localizability — User-facing strings localizable
+  [x] rtl-layout — Right-to-left layout support
+  [x] accessibility-display-options — Reduced motion, high contrast, etc.
+  [x] privacy-security — Data minimization, secure storage
+  [x] feature-flags — Features gated behind flags
+  [ ] analytics — User action tracking
+  [ ] ab-testing — A/B testing / experimentation
+  [x] debug-mode — Debug panel entries
+  [ ] property-based-testing — For data transformations
+  [ ] mutation-testing — Test quality validation
+  [ ] security-testing — SAST, dependency scanning
+
+Toggle any items, then confirm.
+```
+
+**STOP. Wait for the user's response.**
+
+- If the user confirms without changes: proceed with the shown defaults.
+- If the user toggles items: update the selections accordingly.
+- Items marked `[x]` become `opted-in`. Items marked `[ ]` become `opted-out`.
+
+Record the selections. These will be written to the Roadmap.md frontmatter `concerns` field in Step 5b, and used by the implement-step-agent during verification and final review.
+
+Log: `[timestamp] CONCERNS: opted-in: [<list>], opted-out: [<list>]`
+
+> **Conversion mode**: This step is NOT skipped in conversion mode. Even when converting an existing plan, the user must confirm which concerns apply.
+
+---
+
 # PHASE 2: PLANNING
 
 > **Goal**: Transform the discussion into structured planning artifacts. Files are written to `~/.roadmaps/<project>/`.
@@ -264,7 +313,9 @@ Read: `${CLAUDE_SKILL_DIR}/references/feature-roadmap-template.md`
 
 ### 5b: Draft the document
 
-Set the `plan-version` field in the frontmatter to the current version of this skill (`16`).
+Set the `plan-version` field in the frontmatter to the current version of this skill (`17`).
+
+**Concerns**: Populate the `concerns` field in the frontmatter using the selections from Step 3c. The `always` list is fixed (all 22 core engineering + testing concerns). The `opted-in` and `opted-out` lists come from the user's Step 3c choices.
 
 Set the `project` field to the git repo name (`basename $(git rev-parse --show-toplevel)`).
 
