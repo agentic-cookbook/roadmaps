@@ -317,6 +317,32 @@ class TestGuidelineConcerns:
 
 
 # ---------------------------------------------------------------------------
+# Three-phase discipline: agent must have Phase 1 and Phase 2
+# ---------------------------------------------------------------------------
+
+class TestThreePhaseDiscipline:
+    """implement-step-agent must structure implementation as Phase 1 (Work) + Phase 2 (Right)."""
+
+    def test_agent_has_phase_1(self):
+        """Agent must have Phase 1 — Make It Work."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "Phase 1" in agent and "Make It Work" in agent, "Agent missing Phase 1 — Make It Work"
+
+    def test_agent_has_phase_2(self):
+        """Agent must have Phase 2 — Make It Right."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "Phase 2" in agent and "Make It Right" in agent, "Agent missing Phase 2 — Make It Right"
+
+    def test_agent_logs_phase_transitions(self):
+        """Agent must log phase start/complete events."""
+        agent = (Path(__file__).resolve().parent.parent.parent / "agents" / "implement-step-agent.md").read_text()
+        assert "PHASE_1_START" in agent, "Agent missing PHASE_1_START log"
+        assert "PHASE_1_COMPLETE" in agent, "Agent missing PHASE_1_COMPLETE log"
+        assert "PHASE_2_START" in agent, "Agent missing PHASE_2_START log"
+        assert "PHASE_2_COMPLETE" in agent, "Agent missing PHASE_2_COMPLETE log"
+
+
+# ---------------------------------------------------------------------------
 # Auto-merge feature: coordinator skill + worker agent consistency
 # ---------------------------------------------------------------------------
 

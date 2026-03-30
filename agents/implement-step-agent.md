@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "15"
+version: "16"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v15
+> implement-step-agent v16
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -309,17 +309,50 @@ Then stop. Do not continue to other steps.
 
 The sections below apply to **regular implementation steps** — any step that is NOT "Create Draft PR" or "Finalize & Merge PR".
 
-### 2. Implement
+Implementation follows the cookbook's **Make It Work / Make It Right** discipline. Each step has two phases:
 
-- **Log**: `Reading codebase and planning implementation`
+### 2. Phase 1 — Make It Work
 
-Write the code following project conventions:
+- **Log**: `PHASE_1_START: Reading codebase and implementing core functionality`
+
+Implement the **core happy-path functionality** for this step:
 
 - Read `CLAUDE.md` files for project-specific guidance
+- Focus on making the primary feature work correctly — do NOT handle edge cases or error paths yet
+- Write happy-path tests alongside the code
 - Make discrete, reasonable commits as work progresses
 - Each commit message references the GitHub issue: `feat: description (#<issue>)`
 - Follow existing patterns in the codebase
 - **Log** after each commit: `Committed: <commit message>`
+
+Run the build command. Fix errors until the build is clean.
+- **Log**: `Build passed` (or `Build failed — fixing` if retrying)
+
+Run the test suite. Ensure new happy-path tests and existing tests pass.
+- **Log**: `Tests passed (<N> passed)` (or `Tests failed — fixing` if retrying)
+
+Commit Phase 1 work before proceeding.
+- **Log**: `PHASE_1_COMPLETE: Core functionality implemented and tested`
+
+### 2b. Phase 2 — Make It Right
+
+- **Log**: `PHASE_2_START: Adding error handling and edge cases`
+
+Now harden the implementation:
+
+- Add error handling for invalid inputs and failure modes
+- Handle edge cases identified in the acceptance criteria
+- Add validation at system boundaries
+- Write tests for error paths and edge cases
+- Refactor for clarity if the Phase 1 code is hard to follow
+- **Do NOT optimize** unless the step explicitly calls for it (Phase 3 — Make It Fast — is skipped unless there is measured evidence of a performance problem)
+- **Log** after each commit: `Committed: <commit message>`
+
+Run the build command. Fix errors until clean.
+Run the test suite. Ensure all tests pass.
+
+Commit Phase 2 work.
+- **Log**: `PHASE_2_COMPLETE: Error handling and edge cases addressed`
 
 ### 3. Build and Verify
 
@@ -335,8 +368,8 @@ Run the build command from the Roadmap's Verification Strategy section. Fix erro
 
 Run the test suite from the Roadmap's Verification Strategy section:
 
-- Write new tests as appropriate for the step's acceptance criteria
-- Ensure existing tests still pass
+- Ensure all tests (happy-path from Phase 1 + edge-case from Phase 2) pass
+- Verify coverage of acceptance criteria
 - **Log**: `Tests passed (<N> passed)` (or `Tests failed — fixing` if retrying)
 
 ### 4.3. Lint
