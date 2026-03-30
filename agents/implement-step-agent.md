@@ -381,14 +381,19 @@ Read the review config from the task prompt (`Review config (per-step): [...]`).
 
 After the code review passes, verify the implementation matches the step:
 
-1. Re-read this step's **Description** and **Acceptance Criteria** from the Roadmap.
+1. Re-read this step's **Description**, **Acceptance Criteria**, and **Expected Files** from the Roadmap.
 2. Review the git diff for this step: `git -C <worktree_path> diff HEAD~1`
-3. Check:
+3. Extract the list of files changed in the diff (paths only).
+4. Check:
    - **Completeness:** Is every acceptance criterion addressed by the diff?
+   - **File scope:** Compare changed files against the Expected Files list:
+     - Every file in the diff should appear in the Expected Files (Create, Modify, or Test).
+     - Every file in Expected Files should appear in the diff (unless the step legitimately didn't need it).
+     - Files not in Expected Files are out of scope unless they are generated files (lockfiles, snapshots) or transitive dependencies of an expected change.
    - **Scope:** Does the diff contain changes NOT related to this step's description?
-4. If incomplete: implement the missing parts, re-run build/test, return to 4.5.
-5. If overscoped: revert the unrelated changes, re-run build/test, return to 4.5.
-6. **Log**: `SPEC_COMPLIANCE: PASS` or `SPEC_COMPLIANCE: FAIL — <reason>`
+5. If incomplete: implement the missing parts, re-run build/test, return to 4.5.
+6. If overscoped: revert the unrelated changes, re-run build/test, return to 4.5.
+7. **Log**: `SPEC_COMPLIANCE: PASS` or `SPEC_COMPLIANCE: FAIL — <reason>`
 
 This check runs ONCE (not in a retry loop). If it fails a second time, log `SPEC_COMPLIANCE_WARNING` and continue — the final PR review will catch it.
 
