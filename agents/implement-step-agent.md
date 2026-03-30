@@ -1,6 +1,6 @@
 ---
 name: implement-step-agent
-version: "14"
+version: "15"
 description: Implement a single roadmap step. Receives step number and details in the prompt. Works in the coordinator's shared worktree, implements, tests, commits, updates roadmap, comments on issue, then returns. Handles special steps for GitHub issue creation and feature PR creation/review.
 permissionMode: bypassPermissions
 ---
@@ -9,7 +9,7 @@ permissionMode: bypassPermissions
 
 If the task prompt is `--version`, respond with exactly:
 
-> implement-step-agent v14
+> implement-step-agent v15
 
 Then stop. Do not continue with the rest of the agent.
 
@@ -339,6 +339,18 @@ Run the test suite from the Roadmap's Verification Strategy section:
 - Ensure existing tests still pass
 - **Log**: `Tests passed (<N> passed)` (or `Tests failed — fixing` if retrying)
 
+### 4.3. Lint
+
+- **Log**: `Running lint`
+
+Read the Roadmap's Verification Strategy for the Lint command. If a lint command is defined:
+
+1. Run the lint command in the worktree.
+2. If lint fails, fix the violations and re-run (max 3 iterations).
+3. **Log**: `LINT_PASSED` or `LINT_FAILED: <error>` (if retrying, log `Lint failed — fixing`)
+
+If no lint command is defined in the Verification Strategy, skip this section and log `LINT_SKIPPED: no lint command defined`.
+
 ### 4.5. Per-Step Review
 
 Run a quick code review on the changes made in this step before pushing.
@@ -397,7 +409,7 @@ After the code review passes, verify the implementation matches the step:
 
 This check runs ONCE (not in a retry loop). If it fails a second time, log `SPEC_COMPLIANCE_WARNING` and continue — the final PR review will catch it.
 
-### 4.9. Build/Test Gate (MANDATORY)
+### 4.9. Build/Test/Lint Gate (MANDATORY)
 
 Before marking this step as Complete, run a final verification:
 
@@ -407,7 +419,10 @@ Before marking this step as Complete, run a final verification:
 2. Run the test command from the Verification Strategy.
    If it fails, DO NOT mark the step Complete. **Log**: `TEST_GATE_FAILED` and return.
 
-**This is a HARD GATE.** A step with a failing build or test CANNOT be marked Complete. The retry logic in sections 3-4 should have already fixed these issues. This gate is a final safety check — if build/tests still fail after implementation and retries, the step fails.
+3. Run the lint command from the Verification Strategy (if defined).
+   If it fails, DO NOT mark the step Complete. **Log**: `LINT_GATE_FAILED` and return.
+
+**This is a HARD GATE.** A step with a failing build, test, or lint CANNOT be marked Complete. The retry logic in sections 3-4.3 should have already fixed these issues. This gate is a final safety check — if build/tests/lint still fail after implementation and retries, the step fails.
 
 ### 5. Update Roadmap
 
