@@ -90,11 +90,17 @@ _Links to related GitHub issues, features, or prior work._
 - **Status**: Not Started | In Progress | Complete | Blocked
 - **Complexity**: S | M | L
 - **Dependencies**: None | Step N
+- **Expected Files**:
+  - Create: `exact/path/to/new/file.ext`
+  - Modify: `exact/path/to/existing/file.ext`
+  - Test: `tests/path/to/test_file.ext`
 - **Acceptance Criteria**:
-  - [ ] Criterion 1
-  - [ ] Criterion 2
+  - [ ] _Specific, verifiable criterion with file path and expected behavior_
+  - [ ] _Test: `test_function_name` — verifies specific behavior_
 - **Testing / Verification**:
-  - [ ] Verification approach 1
+  - [ ] Build passes
+  - [ ] Existing tests pass
+  - [ ] New tests written and passing: `test_name_1`, `test_name_2`
 - **PR**: _TBD_
 - **Notes**: _Any implementation notes or blockers_
 
@@ -106,10 +112,16 @@ _Links to related GitHub issues, features, or prior work._
 - **Status**: Not Started
 - **Complexity**: S | M | L
 - **Dependencies**: None | Step N
+- **Expected Files**:
+  - Create: `exact/path/to/file.ext`
+  - Modify: `exact/path/to/file.ext`
+  - Test: `tests/path/to/test_file.ext`
 - **Acceptance Criteria**:
-  - [ ] Criterion 1
+  - [ ] _Specific criterion with file path and behavior_
 - **Testing / Verification**:
-  - [ ] Verification approach 1
+  - [ ] Build passes
+  - [ ] Existing tests pass
+  - [ ] New tests: `test_name`
 - **PR**: _TBD_
 - **Notes**:
 
