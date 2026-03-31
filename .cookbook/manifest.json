@@ -1,0 +1,11 @@
+{
+  "generated": "2026-03-30T00:00:00Z",
+  "generator_version": "10.0.0",
+  "source_cookbook": "../agentic-cookbook",
+  "rule_type": "minimal",
+  "preferences": {
+    "committing_workflow": true,
+    "show_recipe_prompts": true,
+    "show_contribution_prompts": true
+  }
+}

@@ -82,3 +82,14 @@ Available agents: `code-reviewer`, `silent-failure-hunter`, `pr-test-analyzer`, 
 - Never directly modify roadmap state — build tools for it
 - Commit and push immediately after making changes
 
+## Agentic Cookbook
+
+This project uses the [agentic-cookbook](https://github.com/mikefullerton/agentic-cookbook).
+
+- **Cookbook path**: `../agentic-cookbook/`
+- **Rule**: `cookbook.md` (minimal, ~10 lines — guardrails only)
+- **Pipeline**: `/cookbook-start` to begin, `/cookbook-next` to advance one step
+- **Preferences**: Recipe prompts enabled, contribution prompts enabled, committing included
+- **Available skills**: /configure-cookbook, /install-cookbook, /cookbook-start, /cookbook-next, /lint-project-with-cookbook, /plan-cookbook-recipe, /contribute-to-cookbook
+
+Run `/configure-cookbook` to manage preferences.
