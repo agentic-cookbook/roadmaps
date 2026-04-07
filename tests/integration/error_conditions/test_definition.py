@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.integration.helpers import _run_git, simulate_step, simulate_failed_step
+from tests.integration.helpers import _run_git, simulate_step, simulate_failed_step, WORKTREE_DIR
 
 
 class TestWorkerFailureStopsLoop:
@@ -23,7 +23,7 @@ class TestWorkerFailureStopsLoop:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/Fail-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/fail-{suffix}"
+            WORKTREE_DIR / f"fail-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -97,7 +97,7 @@ class TestExistingWorktreeHandled:
         branch1 = f"feature/wt-exist-1-{suffix}"
         branch2 = f"feature/wt-exist-2-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/exist-{suffix}"
+            WORKTREE_DIR / f"exist-{suffix}"
         )
 
         # Create first worktree
@@ -131,7 +131,7 @@ class TestExistingRemoteBranchHandled:
 
         # Attempt worktree with -b for same branch -- should fail
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/brexist-{suffix}"
+            WORKTREE_DIR / f"brexist-{suffix}"
         )
         result = _run_git(
             ["worktree", "add", worktree_path, "-b", branch_name],

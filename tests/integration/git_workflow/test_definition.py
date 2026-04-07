@@ -9,6 +9,7 @@ from tests.integration.helpers import (
     _run_gh,
     simulate_step,
     TEST_REPO_REMOTE,
+    WORKTREE_DIR,
 )
 
 
@@ -29,7 +30,7 @@ class TestAllCommitsOnSingleBranch:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/BranchTest-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/branch-{suffix}"
+            WORKTREE_DIR / f"branch-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -75,11 +76,7 @@ class TestWorktreeCreatedAtExpectedPath:
         feature_name = f"WtPath-{suffix}"
         feature_branch = f"feature/{feature_name}"
 
-        # Use the skill's formula
-        repo_basename = repo_path.name
-        worktree_path = str(
-            repo_path.parent / f"{repo_basename}-wt" / feature_name
-        )
+        worktree_path = str(WORKTREE_DIR / feature_name)
 
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -104,7 +101,7 @@ class TestWorktreeCleanedUpOnSuccess:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/WtClean-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/clean-{suffix}"
+            WORKTREE_DIR / f"clean-{suffix}"
         )
 
         _run_git(
@@ -138,7 +135,7 @@ class TestPRUsesMergeNotSquash:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/MergeTest-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/merge-{suffix}"
+            WORKTREE_DIR / f"merge-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -199,7 +196,7 @@ class TestPRBodyContainsClosesLines:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/ClosesTest-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/closes-{suffix}"
+            WORKTREE_DIR / f"closes-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],

@@ -1,4 +1,4 @@
-"""Integration tests for planning functions against cat-herding-tests repo."""
+"""Integration tests for planning functions against roadmaps-tests repo."""
 
 import sys
 from pathlib import Path

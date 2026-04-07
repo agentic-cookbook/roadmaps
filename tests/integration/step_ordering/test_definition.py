@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.integration.helpers import _run_git, simulate_step
+from tests.integration.helpers import _run_git, simulate_step, WORKTREE_DIR
 
 
 class TestStepsExecuteInNumericalOrder:
@@ -22,7 +22,7 @@ class TestStepsExecuteInNumericalOrder:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/Order-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/order-{suffix}"
+            WORKTREE_DIR / f"order-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -57,7 +57,7 @@ class TestSkipsAlreadyCompleteSteps:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/Partial-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/partial-{suffix}"
+            WORKTREE_DIR / f"partial-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -86,7 +86,7 @@ class TestDependenciesRespected:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/Deps-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/deps-{suffix}"
+            WORKTREE_DIR / f"deps-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],

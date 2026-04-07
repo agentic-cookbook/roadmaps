@@ -9,6 +9,7 @@ from tests.integration.helpers import (
     _run_gh,
     simulate_step,
     TEST_REPO_REMOTE,
+    WORKTREE_DIR,
 )
 
 
@@ -35,7 +36,7 @@ class TestAllAutoStepsSinglePR:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/AllAuto3Step-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/all-auto-{suffix}"
+            WORKTREE_DIR / f"all-auto-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -123,7 +124,7 @@ class TestMixedAutoManualSkipsManual:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/MixedAutoManual-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/mixed-{suffix}"
+            WORKTREE_DIR / f"mixed-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -203,7 +204,7 @@ class TestSingleStepRoadmap:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/SingleStep-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/single-{suffix}"
+            WORKTREE_DIR / f"single-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],

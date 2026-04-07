@@ -11,46 +11,30 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 COORDINATOR = PROJECT_ROOT / "skills" / "implement-roadmap" / "references" / "coordinator"
-TEST_REPO_REMOTE = "mikefullerton/cat-herding-tests"
+TEST_REPO_REMOTE = "agentic-cookbook/roadmaps-tests"
+
+# Well-known location of the test repo
+_TEST_REPO_DEFAULT = Path.home() / "projects" / "tests" / "roadmaps-tests"
 
 
 def _find_test_repo():
-    """Find cat-herding-tests repo, handling worktree paths.
+    """Find the roadmaps-tests repo.
 
-    When running from a worktree (e.g., cat-herding-wt/atomic-batch-pr),
-    PROJECT_ROOT.parent is cat-herding-wt/, not the projects directory.
-    Use git to find the main worktree and look for cat-herding-tests next to it.
+    Resolution order:
+    1. ROADMAPS_TEST_REPO env var (explicit override)
+    2. ~/projects/tests/roadmaps-tests (well-known location)
     """
     # 1. Explicit override
-    env = os.environ.get("CAT_HERDING_TEST_REPO")
+    env = os.environ.get("ROADMAPS_TEST_REPO")
     if env:
         return Path(env)
 
-    # 2. Direct sibling (works from main checkout)
-    candidate = PROJECT_ROOT.parent / "cat-herding-tests"
-    if candidate.exists():
-        return candidate
-
-    # 3. Find main worktree via git, look for test repo next to it
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(PROJECT_ROOT), "worktree", "list"],
-            capture_output=True, text=True,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            # First line is always the main worktree
-            main_repo = Path(result.stdout.splitlines()[0].split()[0])
-            candidate = main_repo.parent / "cat-herding-tests"
-            if candidate.exists():
-                return candidate
-    except Exception:
-        pass
-
-    # 4. Fallback
-    return PROJECT_ROOT.parent / "cat-herding-tests"
+    # 2. Well-known location
+    return _TEST_REPO_DEFAULT
 
 
 TEST_REPO_PATH = _find_test_repo()
+WORKTREE_DIR = Path.home() / "projects" / "tests" / "roadmaps-tests-wt"
 
 _TEST_COUNTER_FILE = Path(__file__).parent / ".test-run-counter"
 

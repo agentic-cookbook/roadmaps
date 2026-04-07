@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.integration.helpers import _run_git, simulate_step
+from tests.integration.helpers import _run_git, simulate_step, WORKTREE_DIR
 
 
 class TestAlreadyCompleteRoadmapReturnsDone:
@@ -24,7 +24,7 @@ class TestAlreadyCompleteRoadmapReturnsDone:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/Done-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/done-{suffix}"
+            WORKTREE_DIR / f"done-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],
@@ -55,7 +55,7 @@ class TestPartialCompletionResumes:
         suffix = test_branch.name.split("/")[-1]
         feature_branch = f"feature/Resume-{suffix}"
         worktree_path = str(
-            repo_path.parent / f"cat-herding-tests-wt/resume-{suffix}"
+            WORKTREE_DIR / f"resume-{suffix}"
         )
         _run_git(
             ["worktree", "add", worktree_path, "-b", feature_branch],

@@ -36,12 +36,12 @@ NOW_DATE = NOW.strftime("%Y-%m-%d")
 NOW_TIMESTAMP = NOW.strftime("%Y-%m-%d-%H%M%S")
 
 REPOS_WITH_ROADMAPS = [
-    "cat-herding-tests",  # test repo first
-    "cat-herding",
-    "catnip",
-    "claude-config",
-    "scratching-post",
-    "temporal",
+    "tests/roadmaps-tests",  # test repo first
+    "active/cat-herding",
+    "active/catnip",
+    "deprecated/claude-config",
+    "active/scratching-post",
+    "active/temporal",
 ]
 
 

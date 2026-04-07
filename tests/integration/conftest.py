@@ -1,4 +1,4 @@
-"""Shared fixtures for integration tests against cat-herding-tests repo."""
+"""Shared fixtures for integration tests against roadmaps-tests repo."""
 
 import json
 import os
@@ -21,6 +21,7 @@ from tests.integration.helpers import (
     PROJECT_ROOT,
     TEST_REPO_PATH,
     TEST_REPO_REMOTE,
+    WORKTREE_DIR,
 )
 
 # Add project paths
@@ -54,11 +55,14 @@ def test_repo():
     if not (TEST_REPO_PATH / ".git").exists():
         pytest.skip(f"{TEST_REPO_PATH} is not a git repository")
 
+    # Ensure worktree output dir exists
+    WORKTREE_DIR.mkdir(parents=True, exist_ok=True)
+
     # Verify remote
     result = _run_git(["remote", "get-url", "origin"], cwd=TEST_REPO_PATH)
     remote = result.stdout.strip()
-    if "cat-herding-tests" not in remote:
-        pytest.skip(f"Test repo remote is {remote}, expected cat-herding-tests")
+    if "roadmaps-tests" not in remote:
+        pytest.skip(f"Test repo remote is {remote}, expected roadmaps-tests")
 
     return TEST_REPO_PATH
 

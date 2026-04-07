@@ -67,7 +67,7 @@ def planning_dir_with_files(test_branch):
     for issue_num in created_issues:
         try:
             from tests.integration.helpers import _run_gh
-            _run_gh(["issue", "close", "--repo", "mikefullerton/cat-herding-tests", str(issue_num)], check=False)
+            _run_gh(["issue", "close", "--repo", "agentic-cookbook/roadmaps-tests", str(issue_num)], check=False)
         except Exception:
             pass
     if rd.exists():
