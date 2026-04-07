@@ -421,4 +421,4 @@ claude --agent implement-step-agent "Implement step 1 of MyFeature. Step 1: Desc
 
 ## Coding Guidelines
 
-Coding guidelines have moved to the [agentic-cookbook](https://github.com/mikefullerton/agentic-cookbook) repository. Run `/configure-agentic-cookbook` to set up guideline consumption for this project.
+Coding guidelines have moved to the [agentic-cookbook](https://github.com/agentic-cookbook/cookbook) repository. Run `/configure-agentic-cookbook` to set up guideline consumption for this project.
