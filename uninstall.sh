@@ -1,5 +1,5 @@
 #!/bin/bash
-# Remove cat-herding shared skills and agents from this machine.
+# Remove Roadmaps shared skills and agents from this machine.
 # Run: ./uninstall.sh
 #
 # What it does:
@@ -71,7 +71,7 @@ remove_skills() {
     installed=$(find_installed_skills "$target_dir")
 
     if [ -z "$installed" ]; then
-        echo "  No cat-herding skills found in $target_dir"
+        echo "  No Roadmaps skills found in $target_dir"
         return
     fi
 
@@ -137,7 +137,7 @@ remove_agents() {
     installed=$(find_installed_agents "$target_dir")
 
     if [ -z "$installed" ]; then
-        echo "  No cat-herding agents found in $target_dir"
+        echo "  No Roadmaps agents found in $target_dir"
         return
     fi
 
@@ -247,7 +247,7 @@ remove_guidelines() {
         [ -L "$link" ] || continue
         local dest
         dest=$(readlink "$link")
-        if [[ "$dest" == *"cat-herding/guidelines/"* ]]; then
+        if [[ "$dest" == *"roadmaps/guidelines/"* ]]; then
             rm -f "$link"
             echo "  [removed] $(basename "$link")"
             found=1
@@ -255,7 +255,7 @@ remove_guidelines() {
     done
 
     if [ "$found" -eq 0 ]; then
-        echo "  No cat-herding guideline symlinks found"
+        echo "  No Roadmaps guideline symlinks found"
         return
     fi
 

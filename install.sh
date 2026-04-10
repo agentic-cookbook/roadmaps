@@ -1,5 +1,5 @@
 #!/bin/bash
-# Machine bootstrap for cat-herding shared Claude Code skills and agents.
+# Machine bootstrap for Roadmaps shared Claude Code skills and agents.
 # Run once on each new machine: ./install.sh
 #
 # What it does:
@@ -715,7 +715,7 @@ install_cli_scripts() {
 # =============================================================================
 
 main() {
-    echo "=== Cat Herding Setup (v${VERSION}) ==="
+    echo "=== Roadmaps Setup (v${VERSION}) ==="
     echo "Repo: $SCRIPT_DIR"
 
     echo ""
