@@ -125,7 +125,7 @@ tests/
 ## Running Tests
 
 ```bash
-cd ~/projects/cat-herding
+cd ~/projects/active/cat-herding
 pip3 install pytest
 python3 -m pytest tests/ -v
 ```

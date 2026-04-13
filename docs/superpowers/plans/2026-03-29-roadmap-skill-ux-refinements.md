@@ -45,7 +45,7 @@ def test_disable_model_invocation_policy(self, skill_name):
 
 - [ ] **Step 2: Run the test to verify it fails (current skills still have the old fields)**
 
-Run: `cd /Users/mfullerton/projects/cat-herding && python3 -m pytest tests/unit/test_skill_metadata.py::TestFrontmatterFields::test_disable_model_invocation_policy -v`
+Run: `cd /Users/mfullerton/projects/active/cat-herding && python3 -m pytest tests/unit/test_skill_metadata.py::TestFrontmatterFields::test_disable_model_invocation_policy -v`
 
 Expected: FAIL for plan-roadmap, plan-bugfix-roadmap, list-roadmaps, describe-roadmap, repair-roadmap (they still have `disable-model-invocation: true`)
 
@@ -700,7 +700,7 @@ git commit -m "feat(uninstall): add ExitPlanMode hook and ROADMAP-PLANNING-RULE 
 
 - [ ] **Step 1: Run the full test suite**
 
-Run: `cd /Users/mfullerton/projects/cat-herding && python3 -m pytest tests/ -v`
+Run: `cd /Users/mfullerton/projects/active/cat-herding && python3 -m pytest tests/ -v`
 
 Expected: ALL tests pass, including the updated `test_disable_model_invocation_policy`
 
